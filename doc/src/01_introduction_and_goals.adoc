@@ -1,0 +1,69 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
+[[section-introduction-and-goals]]
+== Introduction and Goals
+
+This documentation serves not only as a technical documentation for implementations, decisions as well as integrations, but also as documentation for the less technical parts of the project.
+This can there for contain content regarding user behaviour, business related calculations and so forth.
+
+=== Why are we developing Pyro?
+
+The idea of Pyro is simple.
+Modern systems are often bound to configurations that define their usability.
+Generally speaking, it is normal for releases of software products to introduce new features into the codebase, which are initially turned off by so-called _feature flags_.
+Once everything else is ready, flipping the flag activates the feature for the system.
+
+By itself this is a relatively basic feature.
+A simple _on/off_ switch, so to say.
+But the growing complexity and requirements from business often end up with hugely complicated setups.
+Suddenly, it's not _either on or off_, but it can be something in between.
+Or it's a value that is used as input for a given functionality.
+
+As long as the system you support is limited to one _userbase_, this remains an acceptable effort for companies.
+In certain cases, this does not remain like this.
+Take for example a platform, that serves multiple countries and deals with local regulations.
+The fact alone that each country has different currencies, or minimum invoice durations leads to the requirement of creating such a _configuration of feature flags_ per region.
+
+If you now go one level lower you have the granularity of users.
+Whilst this can still be done, it's a huge effort to create a reliable, maintainable system for this.
+Oftentimes this collides with priorities; business wants a fast time to market, the technicalities of such solutions is none of their concern.
+To some degree, this can also be viewed as a question of opex vs capex; do I want to invest a large amount of money now, at once, that only provides scaffolding for the future, or do I want to spend this budget into sellable functionality?
+
+At the same time, the more granular these _configurations of feature flags_ get, the more business is involved in them.
+Who has them turned on?
+Which values are set for who?
+When do we turn them off?
+
+Generally speaking, at this point in time the responsibility of creating and setting such flags is moved over to business.
+This requires additional effort; business personal will not want to meddle with developer level tooling, but will expect a comfortable dashboard and system to do this from, which also provides analytics to some degree.
+
+_Pyro_ aims to solve this issue by abstracting away this functionality.
+Customers delegate this to us, so their internal development can focus on delivering features that generate actual monetary value.
+This is done by offering
+_configurable feature flags_ down to the user level - including templating, usage metrics and a simple API.
+
+=== What does "Pyro" even mean?
+
+Pyro stands for "fire".
+In this case, we draw the connection to greek mythology, where _Prometheus_ handed humanity fire, which allowed them to prosper.
+In this case, we want to achieve the same with _Pyro_: Allow business to focus on prospering.
+
+=== Requirements Overview
+
+Requirements are usually not technology bound.
+This means they should normally not contain technical details, but focus on the requirement that business / users have.
+For example, "As a user, I want the app to automatically be in my language".
+
+Once such a requirement is defined, it has to be broken down into feasible technical options, and a solution has to be selected.
+In case it's not feasible, it is of utmost importance to document this for those who come after.
+
+=== Quality Goals
+
+=== Stakeholders
+
+[options="header",cols="1,2,2"]
+|===
+|Role/Name|Contact|Expectations
+| _<Role-1>_ | _<Contact-1>_ | _<Expectation-1>_
+| _<Role-2>_ | _<Contact-2>_ | _<Expectation-2>_
+|===
