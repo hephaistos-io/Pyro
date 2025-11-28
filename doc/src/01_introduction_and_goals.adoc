@@ -57,6 +57,121 @@ For example, "As a user, I want the app to automatically be in my language".
 Once such a requirement is defined, it has to be broken down into feasible technical options, and a solution has to be selected.
 In case it's not feasible, it is of utmost importance to document this for those who come after.
 
+=== Flow concept
+
+The following two diagrams demonstrate the rough idea/concept behind Pyro. They are by no means final or to be taken as correct.
+
+
+ifdef::env-github[]
+:MERMAID: source, mermaid
+endif::[]
+ifndef::env-github[]
+:MERMAID: mermaid
+endif::[]
+
+[{MERMAID}]
+....
+graph TB
+    subgraph "Pyro Platform"
+        Dashboard[["🖥️ Pyro Dashboard"]]
+        API[["🔌 Pyro API"]]
+        
+        subgraph "Data Storage"
+            AppConfig[(Application Config)]
+            DefaultFlags[(Default Flags)]
+            UserFlags[(User-Specific Flags)]
+        end
+        
+        subgraph "API Endpoints"
+            GET["GET /flags/{userId}"]
+            POST["POST /flags/{userId}"]
+            PATCH["PATCH /flags/{userId}"]
+        end
+    end
+    
+    subgraph "Customer Side"
+        Customer[👤 Customer/Developer]
+        CustomerApp[["📱 Customer Application"]]
+        EndUser1[👥 End User 1]
+        EndUser2[👥 End User 2]
+        EndUserN[👥 End User N]
+    end
+    
+    %% Setup Flow
+    Customer -->|"1. Register App"| Dashboard
+    Dashboard -->|"2. Create App Config"| AppConfig
+    Customer -->|"3. Define Default Flags"| Dashboard
+    Dashboard -->|"4. Store Defaults"| DefaultFlags
+    
+    %% Runtime Flow
+    EndUser1 -->|"Uses"| CustomerApp
+    EndUser2 -->|"Uses"| CustomerApp
+    EndUserN -->|"Uses"| CustomerApp
+    
+    CustomerApp -->|"5. Request User Flags"| GET
+    GET -->|"Check User Flags"| UserFlags
+    UserFlags -->|"If not exists, use"| DefaultFlags
+    GET -->|"6. Return Flags"| CustomerApp
+    
+    CustomerApp -->|"7. Create/Update User Flags"| POST
+    POST -->|"Store"| UserFlags
+    
+    CustomerApp -->|"8. Modify User Flags"| PATCH
+    PATCH -->|"Update"| UserFlags
+    
+    %% Styling
+    classDef platform fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef customer fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef storage fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef api fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    
+    class Dashboard,API platform
+    class Customer,CustomerApp,EndUser1,EndUser2,EndUserN customer
+    class AppConfig,DefaultFlags,UserFlags storage
+    class GET,POST,PATCH api
+....
+
+[{MERMAID}]  
+.... 
+sequenceDiagram
+    participant C as Customer
+    participant D as Pyro Dashboard
+    participant DB as Pyro Database
+    participant App as Customer App
+    participant API as Pyro API
+    participant U as End User
+    
+    rect rgb(240, 248, 255)
+        Note over C,DB: Setup Phase
+        C->>D: Login to Dashboard
+        C->>D: Create New Application
+        D->>DB: Store App Configuration
+        C->>D: Define Default Feature Flags
+        D->>DB: Store Default Flags
+        D-->>C: Application ID & API Keys
+    end
+    
+    rect rgb(255, 250, 240)
+        Note over App,U: Runtime Phase
+        U->>App: Use Application
+        App->>API: GET /flags/{userId}
+        API->>DB: Query User Flags
+        alt User flags exist
+            DB-->>API: Return user-specific flags
+        else No user flags
+            DB-->>API: Return default flags
+        end
+        API-->>App: Return flag values
+        App-->>U: Render features based on flags
+        
+        opt Flag Update Needed
+            App->>API: POST/PATCH /flags/{userId}
+            API->>DB: Update user-specific flags
+            API-->>App: Confirmation
+        end
+    end 
+....
+
 === Quality Goals
 
 === Stakeholders
