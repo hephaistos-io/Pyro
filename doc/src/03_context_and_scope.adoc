@@ -5,7 +5,34 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 === Business Context
 
-**<Diagram or Table>**
+
+ifdef::env-github[]
+:MERMAID: source, mermaid
+endif::[]
+ifndef::env-github[]
+:MERMAID: mermaid
+endif::[]
+
+[{MERMAID}]
+....
+graph TB
+    Pyro["Pyro Platform"]
+
+    subgraph "Customer Side"
+        CustomerDev["Customer Developper"]
+        CustomerMaintainer["Customer Maintainer"]
+    end
+    
+
+    subgraph "Customer Side Extern"
+        CustomerUser["Customer User"]
+    end
+
+    CustomerDev --> |"adds features"| Pyro
+    CustomerMaintainer --> |"creates feature sets"| Pyro
+    CustomerMaintainer --> |"assigns feature sets for users"| Pyro
+    CustomerUser --> |"saves preferences"| Pyro
+....
 
 **<optionally: Explanation of external domain interfaces>**
 
