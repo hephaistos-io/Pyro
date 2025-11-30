@@ -38,7 +38,37 @@ graph TB
 
 === Technical Context
 
-**<Diagram or Table>**
+
+ifdef::env-github[]
+:MERMAID: source, mermaid
+endif::[]
+ifndef::env-github[]
+:MERMAID: mermaid
+endif::[]
+
+[{MERMAID}]
+....
+graph TB
+    subgraph "Pyro"
+        PyroDashboard["Dashboard"]
+        PyroAPI["API"]
+    end
+
+    subgraph "Customer Side"
+        CustomerBackend["Customer Backend"]
+    end
+    
+
+    subgraph "Customer Side Extern"
+        CustomerClient["Customer Client"]
+    end
+
+    CustomerBackend --> |"fetches backend feature set"| PyroAPI
+    CustomerBackend --> |"fetches user feature sets"| PyroAPI
+    CustomerBackend --> |"updates user feature sets"| PyroAPI
+    CustomerClient --> |"fetches user set"| PyroAPI
+    CustomerClient --> |"saves user preferences"| PyroAPI
+....
 
 **<optionally: Explanation of technical interfaces>**
 
