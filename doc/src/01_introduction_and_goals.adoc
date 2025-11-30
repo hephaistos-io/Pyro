@@ -173,7 +173,9 @@ sequenceDiagram
 ....
 
 === Quality Goals
-
+Reliability:: The service needs to be reachable 24/7 since other applications may not be functional without it
+Compatibility:: The service will be integrated into other applications and needs to be widely compatible with many technologies
+EaseOfUse:: Pyro is not only catered to the developper and should also be easily configurable for non technical person to create feature sets and administering set sets
 === Stakeholders
 
 [options="header",cols="1,2,2"]
