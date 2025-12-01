@@ -178,6 +178,24 @@ Reliability:: The service needs to be reachable 24/7 since other applications ma
 Compatibility:: The service will be integrated into other applications and needs to be widely compatible with many technologies
 EaseOfUse:: Pyro is not only catered to the developper and should also be easily configurable for non technical person to create feature sets and administering set sets
 
+=== Branch Organisation
+
+==== Main
+* Newest stable state of application
+* Automatic deploy to a test environment
+
+===== Restrictions
+* no pushes or deletes
+* pull requests required with min. 2 approvals
+* only squash or rebase as operations possible
+
+==== Feature Branch
+* Are created from or linked to issues
+* Are branched from main or parent feature branch
+
+===== Restrictions
+* Only get merged to main by pull request
+
 === Stakeholders
 
 [options="header",cols="1,2,2"]
