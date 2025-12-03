@@ -1,0 +1,21 @@
+pyro:
+  security:
+    jwt:
+      secret: ${PYRO_JWT_SECRET:4407a837731d92425e627e49632afbabd538a25e080fafed65a9ff7e71a9f5d1}
+      expiration_duration_seconds: 7200
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+logging:
+  file:
+    name: build/logs/pyro.log
+  level:
+    root: DEBUG

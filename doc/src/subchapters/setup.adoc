@@ -57,6 +57,11 @@ Whilst right now, there is only one backend service, in the case more are added,
 
 So you can only run the spring application you're interested in.
 
+Additional information:
+
+When running the application locally with `/gradlew bootRun`, you can access the openAPI spec via http://localhost:8080/api/v3/api-docs.
+Beware that it's basic JSON, but you should be able to download it and generate code (i.e. for frontend) from it.
+
 [NOTE]
 ====
 If you're using intelliJ and import the gradle config (it should ask you automatically), you can select the specific tasks to run from your gradle view.
