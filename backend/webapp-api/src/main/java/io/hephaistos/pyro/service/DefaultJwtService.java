@@ -45,7 +45,6 @@ public class DefaultJwtService implements JwtService {
      */
     @Override
     public String decomposeToken(String token) {
-        validateToken(token);
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()

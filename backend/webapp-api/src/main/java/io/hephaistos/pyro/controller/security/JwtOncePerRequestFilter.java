@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.Optional;
 
 import static java.util.Objects.isNull;
@@ -41,18 +40,9 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        var jwtToken = extractJwtToken(request);
-
-        if (jwtToken.isEmpty()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        extractJwtToken(request).map(jwtService::decomposeToken)
-                .ifPresentOrElse(email -> updateSecurityContext(email, request), () -> {
-                    throw new InvalidParameterException(
-                            "Authorization header is either not present or invalid!");
-                });
+        extractJwtToken(request).filter(jwtService::validateToken)
+                .map(jwtService::decomposeToken)
+                .ifPresent(email -> updateSecurityContext(email, request));
 
         filterChain.doFilter(request, response);
     }
