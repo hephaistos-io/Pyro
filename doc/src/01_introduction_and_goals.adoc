@@ -1,12 +1,12 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-introduction-and-goals]]
-== Introduction and Goals
+= Introduction and Goals
 
 This documentation serves not only as a technical documentation for implementations, decisions as well as integrations, but also as documentation for the less technical parts of the project.
 This can there for contain content regarding user behaviour, business related calculations and so forth.
 
-=== Why are we developing Pyro?
+== Why are we developing Pyro?
 
 The idea of Pyro is simple.
 Modern systems are often bound to configurations that define their usability.
@@ -42,13 +42,13 @@ Customers delegate this to us, so their internal development can focus on delive
 This is done by offering
 _configurable feature flags_ down to the user level - including templating, usage metrics and a simple API.
 
-=== What does "Pyro" even mean?
+== What does "Pyro" even mean?
 
 Pyro stands for "fire".
 In this case, we draw the connection to greek mythology, where _Prometheus_ handed humanity fire, which allowed them to prosper.
 In this case, we want to achieve the same with _Pyro_: Allow business to focus on prospering.
 
-=== Requirements Overview
+== Requirements Overview
 
 Requirements are usually not technology bound.
 This means they should normally not contain technical details, but focus on the requirement that business / users have.
@@ -57,7 +57,7 @@ For example, "As a user, I want the app to automatically be in my language".
 Once such a requirement is defined, it has to be broken down into feasible technical options, and a solution has to be selected.
 In case it's not feasible, it is of utmost importance to document this for those who come after.
 
-=== Flow concept
+== Flow concept
 
 The following two diagrams demonstrate the rough idea/concept behind Pyro. They are by no means final or to be taken as correct.
 
@@ -172,13 +172,19 @@ sequenceDiagram
     end 
 ....
 
-=== Quality Goals
+:leveloffset: +1
+
+include::subchapters/setup.adoc[]
+
+:leveloffset: -1
+
+== Quality Goals
 
 Reliability:: The service needs to be reachable 24/7 since other applications may not be functional without it
 Compatibility:: The service will be integrated into other applications and needs to be widely compatible with many technologies
 EaseOfUse:: Pyro is not only catered to the developper and should also be easily configurable for non technical person to create feature sets and administering set sets
 
-=== Stakeholders
+== Stakeholders
 
 [options="header",cols="1,2,2"]
 |===
