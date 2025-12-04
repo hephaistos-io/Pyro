@@ -1,0 +1,102 @@
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Built by engineers, for engineers</div>
+    <h1>Feature configuration at <span>super granular</span> level</h1>
+    <p class="hero-text">Ship features with confidence. Control who sees what, when, and how — down to the individual
+      user. Simple to integrate, powerful to use.</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" routerLink="/pricing">Get notified</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="config-card">
+      <div class="config-header">
+        <span class="config-title">view-preferences</span>
+        <span class="config-env">movie-streamer</span>
+      </div>
+
+      <!-- Quality -->
+      <div class="feature-row">
+        <div class="feature-info">
+          <div class="feature-icon">🎬</div>
+          <div>
+            <div class="feature-name">quality</div>
+            <div class="feature-meta">Video resolution</div>
+          </div>
+        </div>
+        <div class="segment-toggle">
+          <button
+            (click)="setQuality('FHD')"
+            [class.active]="quality === 'FHD'"
+            class="segment-btn">FHD
+          </button>
+          <button
+            (click)="setQuality('4K')"
+            [class.active]="quality === '4K'"
+            class="segment-btn">4K
+          </button>
+        </div>
+      </div>
+
+      <!-- Devices -->
+      <div class="feature-row">
+        <div class="feature-info">
+          <div class="feature-icon">📱</div>
+          <div>
+            <div class="feature-name">devices</div>
+            <div class="feature-meta">Max concurrent devices</div>
+          </div>
+        </div>
+        <div class="slider-control">
+          <input
+            (input)="updateDevices($event)"
+            [value]="devices"
+            class="device-slider"
+            max="6"
+            min="1"
+            type="range">
+          <span class="slider-value">{{ devices }}</span>
+        </div>
+      </div>
+
+      <!-- Offline Play -->
+      <div class="feature-row">
+        <div class="feature-info">
+          <div class="feature-icon">⬇️</div>
+          <div>
+            <div class="feature-name">offline_play</div>
+            <div class="feature-meta">Download for offline</div>
+          </div>
+        </div>
+        <div
+          (click)="toggleOfflinePlay()"
+          [class.active]="offlinePlay"
+          class="toggle"></div>
+      </div>
+
+      <!-- Design (Theme Toggle) -->
+      <div class="feature-row">
+        <div class="feature-info">
+          <div class="feature-icon">🎨</div>
+          <div>
+            <div class="feature-name">design</div>
+            <div class="feature-meta">Interface theme</div>
+          </div>
+        </div>
+        <div class="segment-toggle">
+          <button
+            (click)="setDesign('light')"
+            [class.active]="design === 'light'"
+            class="segment-btn">light
+          </button>
+          <button
+            (click)="setDesign('dark')"
+            [class.active]="design === 'dark'"
+            class="segment-btn">dark
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

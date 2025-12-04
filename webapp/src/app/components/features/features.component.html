@@ -1,0 +1,15 @@
+<section class="features" id="features">
+  <div class="section-header">
+    <div class="section-label">Why Pyro</div>
+    <h2>Built simple. Stays simple.</h2>
+    <p class="section-text">No bloat. No complexity. Just the tools you need to ship features faster.</p>
+  </div>
+
+  <div class="features-grid">
+    <div *ngFor="let feature of features" class="feature-card">
+      <div [innerHTML]="feature.icon" class="feature-card-icon"></div>
+      <h3>{{ feature.title }}</h3>
+      <p>{{ feature.description }}</p>
+    </div>
+  </div>
+</section>

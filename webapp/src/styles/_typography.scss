@@ -1,0 +1,69 @@
+@use 'variables' as *;
+
+// Font families as variables for easier maintenance
+$font-serif: 'Fraunces', serif;
+$font-sans: 'DM Sans', sans-serif;
+
+h1 {
+  font-family: $font-serif;
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: $charcoal;
+  margin-bottom: 1.5rem;
+
+  span {
+    color: $pyro-red;
+  }
+
+  :host-context(.dark-mode) & {
+    color: $dark-text;
+  }
+}
+
+h2 {
+  font-family: $font-serif;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin-bottom: 1rem;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text;
+  }
+}
+
+h3 {
+  font-family: $font-serif;
+  font-weight: 600;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text;
+  }
+}
+
+// Section utilities
+.section-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 5rem;
+}
+
+.section-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $pyro-red;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.section-text {
+  color: $charcoal-light;
+  font-size: 1.1rem;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text-muted;
+  }
+}
