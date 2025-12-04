@@ -24,6 +24,14 @@ subprojects {
             implementation("org.springframework.boot:spring-boot-starter-data-jpa:4.0.0")
             implementation("org.springframework.boot:spring-boot-starter-security:4.0.0")
             implementation("org.springframework.boot:spring-boot-starter-webmvc:4.0.0")
+            implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0")
+
+            implementation("io.jsonwebtoken:jjwt-api:0.13.0")
+            implementation("io.jsonwebtoken:jjwt-impl:0.13.0")
+            implementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
+
+            runtimeOnly("org.hsqldb:hsqldb:2.7.4")
+
             testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test:4.0.0")
             testImplementation("org.springframework.boot:spring-boot-starter-security-test:4.0.0")
             testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test:4.0.0")
