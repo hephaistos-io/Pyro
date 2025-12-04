@@ -61,3 +61,20 @@ So you can only run the spring application you're interested in.
 ====
 If you're using intelliJ and import the gradle config (it should ask you automatically), you can select the specific tasks to run from your gradle view.
 ====
+
+=== WebApp
+
+==== Tooling
+
+At this time, the webapp was created with the following:
+
+* Node.js: 24.11.1
+* npm: 11.6.4
+* Angular CLI: 21.0.1
+* Angular: 21.0.2
+
+==== Running the webapp locally
+
+To run the web app locally, change to the `webapp` directory, run `npm install` and afterwards `ng serve`.
+Additional information can be found in the `README.md` file in the `webapp` directory.
+
