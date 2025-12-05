@@ -54,7 +54,7 @@
       background: rgba($pyro-red, 0.15);
     }
 
-    :deep(svg), ::ng-deep svg {
+    :deep(svg) {
       width: 24px;
       height: 24px;
       color: $pyro-red;

@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {NgFor} from '@angular/common';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
@@ -16,9 +16,10 @@ interface Feature {
   styleUrl: './features.component.scss'
 })
 export class FeaturesComponent {
+  private sanitizer = inject(DomSanitizer);
   features: Feature[];
 
-  constructor(private sanitizer: DomSanitizer) {
+  constructor() {
     this.features = [
       {
         icon: this.sanitizer.bypassSecurityTrustHtml(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
