@@ -1,0 +1,6 @@
+// Dark mode mixin for consistent application
+@mixin dark-mode {
+  :host-context(.dark-mode) & {
+    @content;
+  }
+}

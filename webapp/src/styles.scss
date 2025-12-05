@@ -1,1 +1,43 @@
-/* You can add global styles to this file, and also import other style files */
+// Use modern @use syntax - import from barrel file in styles directory
+@use 'styles/index' as *;
+
+// CSS Custom Properties (for runtime theming)
+:root {
+  --pyro-red: #{$pyro-red};
+  --pyro-red-light: #{$pyro-red-light};
+  --pyro-red-pale: #{$pyro-red-pale};
+  --pyro-red-deep: #{$pyro-red-deep};
+  --charcoal: #{$charcoal};
+  --charcoal-light: #{$charcoal-light};
+  --off-white: #{$off-white};
+  --warm-gray: #{$warm-gray};
+}
+
+// Global resets
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Body base styles
+body {
+  font-family: $font-sans;
+  background: $off-white;
+  color: $charcoal;
+  line-height: 1.6;
+  overflow-x: hidden;
+  transition: background 0.4s ease, color 0.4s ease;
+
+  &.dark-mode {
+    background: $dark-bg;
+    color: $dark-text;
+
+    // Override CSS variables for dark mode
+    --off-white: #{$dark-bg};
+    --warm-gray: #{$dark-border};
+    --charcoal: #{$dark-text};
+    --charcoal-light: #{$dark-text-muted};
+    --pyro-red-pale: #{rgba($pyro-red, 0.15)};
+  }
+}

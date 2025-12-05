@@ -1,0 +1,58 @@
+<section class="pricing">
+  <div class="pricing-content">
+    <div class="section-label">Coming Soon</div>
+    <h1>We're working on it</h1>
+    <p class="pricing-text">
+      We're crafting docs and prices that make sense for teams of all sizes.
+      Be the first to know when we launch.
+    </p>
+
+    @if (!submitted) {
+      <div class="signup-form">
+        <div class="input-group" [class.has-error]="error">
+          <input
+            type="email"
+            [(ngModel)]="email"
+            placeholder="Enter your email"
+            (keyup.enter)="onSubmit()"
+          />
+          <button class="btn btn-primary" (click)="onSubmit()">
+            Notify Me
+          </button>
+        </div>
+        @if (error) {
+          <span class="error-message">{{ error }}</span>
+        }
+      </div>
+      <p class="privacy-note">We'll only email you about development updates. No spam.</p>
+    } @else {
+      <div class="success-message">
+        <div class="success-icon">✓</div>
+        <h3>You're on the list!</h3>
+        <p>We'll notify you at <strong>{{ email }}</strong> when pricing is available.</p>
+      </div>
+    }
+  </div>
+
+  <div class="features-preview">
+    <h3>What to expect</h3>
+    <ul>
+      <li>
+        <span class="check">✓</span>
+        <span>Comprehensive documentation</span>
+      </li>
+      <li>
+        <span class="check">✓</span>
+        <span>Free tier for small projects</span>
+      </li>
+      <li>
+        <span class="check">✓</span>
+        <span>Usage-based scaling</span>
+      </li>
+      <li>
+        <span class="check">✓</span>
+        <span>Enterprise options with SLAs</span>
+      </li>
+    </ul>
+  </div>
+</section>

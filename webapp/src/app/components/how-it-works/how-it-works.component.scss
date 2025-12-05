@@ -1,0 +1,91 @@
+@use '../../../styles/index' as *;
+
+.how-it-works {
+  padding: 8rem 4rem;
+}
+
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.step {
+  text-align: center;
+  max-width: 220px;
+  position: relative;
+  padding: 2rem;
+  background: $off-white;
+  border-radius: 16px;
+  transition: background 0.4s ease;
+
+  :host-context(.dark-mode) & {
+    background: $dark-card;
+  }
+
+  &:not(.last)::after {
+    content: '→';
+    position: absolute;
+    right: -2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $pyro-red;
+    font-size: 1.5rem;
+
+    :host-context(.dark-mode) & {
+      color: $dark-border;
+    }
+  }
+
+  &-number {
+    width: 40px;
+    height: 40px;
+    background: $pyro-red;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin: 0 auto 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 0.95rem;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .steps {
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .step {
+    width: 100%;
+    max-width: 300px;
+
+    &:not(.last)::after {
+      display: none;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .how-it-works {
+    padding: 4rem 1.5rem;
+  }
+}
