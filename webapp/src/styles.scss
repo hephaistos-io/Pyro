@@ -38,6 +38,6 @@ body {
     --warm-gray: #{$dark-border};
     --charcoal: #{$dark-text};
     --charcoal-light: #{$dark-text-muted};
-    --pyro-red-pale: rgba(201, 76, 76, 0.15);
+    --pyro-red-pale: #{rgba($pyro-red, 0.15)};
   }
 }

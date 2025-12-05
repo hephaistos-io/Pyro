@@ -105,7 +105,7 @@
   animation: fadeUp 0.5s ease-out both;
 
   :host-context(.dark-mode) & {
-    background: rgba(201, 76, 76, 0.15);
+    background: rgba($pyro-red, 0.15);
   }
 
   .success-icon {
@@ -214,7 +214,7 @@
     flex-shrink: 0;
 
     :host-context(.dark-mode) & {
-      background: rgba(201, 76, 76, 0.15);
+      background: rgba($pyro-red, 0.15);
     }
   }
 }

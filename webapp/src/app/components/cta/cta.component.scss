@@ -7,7 +7,7 @@
   transition: background 0.4s ease;
 
   :host-context(.dark-mode) & {
-    background: linear-gradient(180deg, $dark-bg 0%, rgba(201, 76, 76, 0.1) 100%);
+    background: linear-gradient(180deg, $dark-bg 0%, rgba($pyro-red, 0.1) 100%);
   }
 
   h2 {

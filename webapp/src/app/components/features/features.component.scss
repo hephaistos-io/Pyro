@@ -28,12 +28,12 @@
   &:hover {
     transform: translateY(-8px);
     border-color: $pyro-red-light;
-    box-shadow: 0 20px 40px rgba(201, 76, 76, 0.08);
+    box-shadow: 0 20px 40px rgba($pyro-red, 0.08);
   }
 
   :host-context(.dark-mode) & {
     background: $dark-card;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba($white, 0.08);
 
     &:hover {
       border-color: $pyro-red-light;
@@ -51,7 +51,7 @@
     margin-bottom: 1.5rem;
 
     :host-context(.dark-mode) & {
-      background: rgba(201, 76, 76, 0.15);
+      background: rgba($pyro-red, 0.15);
     }
 
     :deep(svg), ::ng-deep svg {

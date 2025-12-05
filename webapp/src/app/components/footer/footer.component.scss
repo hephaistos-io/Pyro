@@ -10,7 +10,7 @@ footer {
   transition: background 0.4s ease;
 
   :host-context(.dark-mode) & {
-    background: #111111;
+    background: $dark-bg-deeper;
   }
 }
 
@@ -23,7 +23,7 @@ footer {
 
 .footer-note {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba($white, 0.5);
 }
 
 @media (max-width: 768px) {
