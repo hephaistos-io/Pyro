@@ -16,7 +16,11 @@ interface Step {
 })
 export class HowItWorksComponent {
   steps: Step[] = [
-    {number: 1, title: 'Install the SDK', description: 'Add Pyro to your project with a single package install.'},
+    {
+      number: 1,
+      title: 'Import the OpenAPI Spec',
+      description: 'Generate the code aligning the most with your codebase.'
+    },
     {
       number: 2,
       title: 'Create a Feature',
