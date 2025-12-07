@@ -54,6 +54,8 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
      */
     private Optional<String> extractJwtToken(HttpServletRequest request) {
         return Optional.ofNullable(request.getHeader(AUTHORIZATION_HEADER))
+                .filter(header -> header.startsWith("Bearer "))
+                .filter(header -> header.length() > 7)
                 .map(header -> header.substring(7));
     }
 
