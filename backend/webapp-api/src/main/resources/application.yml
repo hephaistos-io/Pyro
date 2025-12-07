@@ -10,9 +10,25 @@ server:
     context-path: /api
 
 spring:
+  datasource:
+    url: jdbc:hsqldb:mem:pyro
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+    username: sa
+    password:
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate  # Changed from create-drop - Flyway manages schema now
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.HSQLDialect
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    validate-on-migrate: true
 
 logging:
   file:
