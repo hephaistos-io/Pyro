@@ -1,0 +1,67 @@
+package io.hephaistos.pyro.controller.dto;
+
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Tag("unit")
+class UserRegistrationRequestValidationTest {
+
+    private static Validator validator;
+
+    @BeforeAll
+    static void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {"john.doe@example.com", "john.doe+test@example.com", "john@mail.example.com",
+                    "user@localhost.localdomain", "test_user@example.co.uk",
+                    "user.name+tag@example.com"})
+    void validEmailPassesValidation(String email) {
+        UserRegistrationRequest request =
+                new UserRegistrationRequest("John", "Doe", email, "password123");
+
+        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"not-an-email", "john@", "@example.com", "john doe@example.com",
+            "john@@example.com", "john@.com", "john@example"})
+    void invalidEmailFormatFailsValidation(String email) {
+        UserRegistrationRequest request =
+                new UserRegistrationRequest("John", "Doe", email, "password123");
+
+        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).allMatch(v -> v.getPropertyPath().toString().equals("email"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "   "})
+    @NullSource
+    void blankOrNullEmailFailsValidation(String email) {
+        UserRegistrationRequest request =
+                new UserRegistrationRequest("John", "Doe", email, "password123");
+
+        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).allMatch(v -> v.getPropertyPath().toString().equals("email"));
+    }
+}
