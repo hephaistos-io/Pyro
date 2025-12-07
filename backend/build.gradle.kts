@@ -35,9 +35,8 @@ subprojects {
 
             runtimeOnly("org.hsqldb:hsqldb:2.7.4")
 
-            testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test:4.0.0")
-            testImplementation("org.springframework.boot:spring-boot-starter-security-test:4.0.0")
-            testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test:4.0.0")
+            testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
+            testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
         }
     }
