@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.controller.dto;
 
+import io.hephaistos.pyro.validation.ValidEmail;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
@@ -9,10 +10,14 @@ public record UserRegistrationRequest(@Schema(requiredMode = REQUIRED) @NotBlank
         message = "First name can't be blank") String firstName,
                                       @Schema(requiredMode = REQUIRED) @NotBlank(
                                               message = "Last name can't be blank") String lastName,
-                                      //TODO email format check
                                       @Schema(example = "your@email.com",
-                                              requiredMode = REQUIRED) @NotBlank(
+                                              requiredMode = REQUIRED) @ValidEmail @NotBlank(
                                               message = "E-Mail can't be blank") String email,
                                       @Schema(requiredMode = REQUIRED) @NotBlank(
                                               message = "password can't be blank") String password) {
+
+    @Override
+    public String toString() {
+        return "UserRegistrationRequest[firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + "]";
+    }
 }
