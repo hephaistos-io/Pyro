@@ -37,6 +37,7 @@ subprojects {
 
             testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
             testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
+            testImplementation("org.springframework.security:spring-security-test:7.0.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
         }
     }
