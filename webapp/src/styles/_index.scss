@@ -1,0 +1,8 @@
+// Central barrel file that re-exports all shared style modules
+// This allows components to import from a single entry point
+
+@forward 'variables';
+@forward 'mixins';
+@forward 'animations';
+@forward 'typography';
+@forward 'buttons';

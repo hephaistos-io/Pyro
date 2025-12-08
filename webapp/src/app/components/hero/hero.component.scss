@@ -1,0 +1,327 @@
+@use '../../../styles/index' as *;
+
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 8rem 4rem 4rem;
+  position: relative;
+
+  &-content {
+    max-width: 680px;
+    animation: fadeUp 1s ease-out 0.2s both;
+  }
+
+  &-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: $pyro-red-pale;
+    color: $pyro-red;
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+
+    &::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: $pyro-red;
+      border-radius: 50%;
+    }
+
+    :host-context(.dark-mode) & {
+      background: rgba($pyro-red, 0.15);
+    }
+  }
+
+  &-text {
+    font-size: 1.2rem;
+    color: $charcoal-light;
+    margin-bottom: 2.5rem;
+    max-width: 520px;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text-muted;
+    }
+  }
+
+  &-cta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &-visual {
+    position: absolute;
+    right: 4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 35%;
+    max-width: 580px;
+    animation: fadeIn 1.2s ease-out 0.5s both;
+  }
+}
+
+// Config Card
+.config-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 40px rgba($black, 0.06);
+  border: 1px solid rgba($black, 0.04);
+  transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+
+  :host-context(.dark-mode) & {
+    background: $dark-card;
+    border-color: rgba($white, 0.08);
+    box-shadow: 0 4px 40px rgba($black, 0.3);
+  }
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $warm-gray;
+
+  :host-context(.dark-mode) & {
+    border-bottom-color: $dark-border;
+  }
+}
+
+.config-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.config-env {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  background: $pyro-red-pale;
+  color: $pyro-red;
+  border-radius: 100px;
+
+  :host-context(.dark-mode) & {
+    background: rgba($pyro-red, 0.15);
+  }
+}
+
+// Feature Rows
+.feature-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid $warm-gray;
+  animation: slideIn 0.5s ease-out both;
+
+  &:nth-child(2) {
+    animation-delay: 0.6s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.7s;
+  }
+
+  &:nth-child(4) {
+    animation-delay: 0.8s;
+  }
+
+  &:nth-child(5) {
+    animation-delay: 0.9s;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  :host-context(.dark-mode) & {
+    border-bottom-color: $dark-border;
+  }
+}
+
+.feature-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+  background: $warm-gray;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.4s ease;
+
+  :host-context(.dark-mode) & {
+    background: $dark-border;
+  }
+}
+
+.feature-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.feature-meta {
+  font-size: 0.75rem;
+  color: $charcoal-light;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text-muted;
+  }
+}
+
+// Toggle Switch
+.toggle {
+  width: 44px;
+  height: 24px;
+  background: $warm-gray;
+  border-radius: 100px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &.active {
+    background: $pyro-red;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba($black, 0.1);
+  }
+
+  &.active::after {
+    transform: translateX(20px);
+  }
+
+  :host-context(.dark-mode) &:not(.active) {
+    background: $dark-border;
+  }
+}
+
+// Segment Toggle
+.segment-toggle {
+  display: flex;
+  background: $warm-gray;
+  border-radius: 8px;
+  padding: 3px;
+  transition: background 0.4s ease;
+
+  :host-context(.dark-mode) & {
+    background: $dark-border;
+  }
+}
+
+.segment-btn {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $charcoal-light;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-family: $font-sans;
+
+  &.active {
+    background: $pyro-red;
+    color: white;
+  }
+
+  :host-context(.dark-mode) & {
+    color: $dark-text-muted;
+
+    &.active {
+      color: white;
+    }
+  }
+}
+
+// Slider Control
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100px;
+    height: 6px;
+    background: $warm-gray;
+    border-radius: 3px;
+    outline: none;
+    transition: background 0.4s ease;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: $pyro-red;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba($pyro-red, 0.3);
+    }
+
+    &::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: $pyro-red;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba($pyro-red, 0.3);
+    }
+
+    :host-context(.dark-mode) & {
+      background: $dark-border;
+    }
+  }
+}
+
+.slider-value {
+  min-width: 24px;
+  height: 24px;
+  background: $pyro-red;
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+// Responsive
+@media (max-width: 1205px) {
+  .hero-visual {
+    display: none;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 4rem 1.5rem;
+  }
+}

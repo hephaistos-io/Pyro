@@ -1,0 +1,46 @@
+@use 'variables' as *;
+@use 'typography' as *;
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  font-family: $font-sans;
+
+  &-primary {
+    background: $pyro-red;
+    color: white;
+
+    &:hover {
+      background: $pyro-red-deep;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba($pyro-red, 0.3);
+    }
+  }
+
+  &-secondary {
+    background: transparent;
+    color: $charcoal;
+    border: 1.5px solid $charcoal;
+
+    &:hover {
+      background: $charcoal;
+      color: white;
+    }
+
+    :host-context(.dark-mode) & {
+      color: $dark-text;
+      border-color: $dark-text;
+
+      &:hover {
+        background: $dark-text;
+        color: $dark-bg;
+      }
+    }
+  }
+}

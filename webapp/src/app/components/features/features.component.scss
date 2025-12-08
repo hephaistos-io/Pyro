@@ -1,0 +1,94 @@
+@use '../../../styles/index' as *;
+
+.features {
+  padding: 8rem 4rem;
+  background: white;
+  transition: background 0.4s ease;
+
+  :host-context(.dark-mode) & {
+    background: $dark-bg;
+  }
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  padding: 2.5rem;
+  border-radius: 16px;
+  background: $off-white;
+  transition: all 0.4s ease;
+  border: 1px solid transparent;
+
+  &:hover {
+    transform: translateY(-8px);
+    border-color: $pyro-red-light;
+    box-shadow: 0 20px 40px rgba($pyro-red, 0.08);
+  }
+
+  :host-context(.dark-mode) & {
+    background: $dark-card;
+    border-color: rgba($white, 0.08);
+
+    &:hover {
+      border-color: $pyro-red-light;
+    }
+  }
+
+  &-icon {
+    width: 48px;
+    height: 48px;
+    background: $pyro-red-pale;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+
+    :host-context(.dark-mode) & {
+      background: rgba($pyro-red, 0.15);
+    }
+
+    :deep(svg) {
+      width: 24px;
+      height: 24px;
+      color: $pyro-red;
+    }
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.75rem;
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 0.95rem;
+    line-height: 1.6;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .features {
+    padding: 4rem 1.5rem;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
