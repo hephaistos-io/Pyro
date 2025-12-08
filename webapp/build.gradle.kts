@@ -20,3 +20,13 @@ tasks.register<Delete>("cleanGenerated") {
 
   delete("src/app/api/generated")
 }
+
+tasks.register<Exec>("bootRun") {
+  group = "application"
+  description = "Run dev server"
+
+  commandLine(
+    "bash", "-c",
+    "ng serve"
+  )
+}
