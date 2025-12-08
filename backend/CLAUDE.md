@@ -24,6 +24,7 @@ input before proceeding with big, impactful changes.
 
 - Gradle wrapper (`./gradlew`) is at the root level
 - Backend services are in `backend/` subdirectory
+- You MUST execute gradlew commands in the root of the project, as the wrapper is located there.
 
 **Running the application:**
 

@@ -9,159 +9,143 @@ dependencies, code quality, and security.
 
 ## 🔴 HIGH PRIORITY
 
-### 5. Missing Password Strength Requirements
+### 5. Modern Password Strength Validation (NIST 2025)
 
-**Issue:** No password validation or strength requirements enforced.
+**Issue:** No password validation or strength requirements enforced. Current codebase accepts any password including "
+123456".
+
+**⚠️ IMPORTANT - Paradigm Shift:**
+NIST 800-63B (2025) has fundamentally changed password requirements. The old approach of composition rules (requiring
+uppercase, numbers, special chars) is now considered **harmful** as it leads to predictable patterns like "Password1!".
 
 **Current State:**
-
 - Password "123456" is accepted (see test: UserServiceTest.java)
 - No minimum length requirement
-- No complexity requirements (uppercase, numbers, special chars)
-- Vulnerable to brute force attacks
+- No strength estimation
+- No breach checking
 
-**Suggested Fix:**
+**Modern Approach (NIST 2025 Compliant):**
 
-Create custom validator: `webapp-api/src/main/java/io/hephaistos/pyro/validation/PasswordValidator.java`
+Instead of regex composition rules, implement:
+
+1. **Length-based validation** (primary security factor)
+2. **Breached password checking** (Have I Been Pwned API)
+3. **User feedback** (coordinated with frontend strength meter)
+
+**Recommended Implementation (Pragmatic Approach):**
+
+**Step 1: Update UserRegistrationRequest**
 
 ```java
+@Min(15)
+@NotBlank(message = "Password must be at least 15 characters")
+String password;
+```
 
-@Target({FIELD, PARAMETER})
-@Retention(RUNTIME)
-@Constraint(validatedBy = PasswordStrengthValidator.class)
-public @interface ValidPassword {
-    String message() default "Password must be at least 8 characters with uppercase, lowercase, number, and special character";
+**Step 2: Add HIBP Breach Checking Service**
 
-    Class<?>[] groups() default {};
+Create: `webapp-api/src/main/java/io/hephaistos/pyro/service/BreachedPasswordService.java`
 
-    Class<? extends Payload>[] payload() default {};
-}
+```java
+@Service
+public class BreachedPasswordService {
+    private static final String HIBP_API = "https://api.pwnedpasswords.com/range/";
+    private final RestClient restClient = RestClient.create();
 
+    /**
+     * Checks if password appears in known data breaches using k-anonymity model.
+     * Only sends first 5 chars of SHA-1 hash to API (privacy-preserving).
+     */
+    public boolean isPasswordBreached(String password) {
+        try {
+            String sha1Hash = DigestUtils.sha1Hex(password).toUpperCase();
+            String prefix = sha1Hash.substring(0, 5);
+            String suffix = sha1Hash.substring(5);
 
-public class PasswordStrengthValidator implements ConstraintValidator<ValidPassword, String> {
-    private static final String PASSWORD_PATTERN =
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+            String response = restClient.get()
+                .uri(HIBP_API + prefix)
+                .retrieve()
+                .body(String.class);
 
-    @Override
-    public boolean isValid(String password, ConstraintValidatorContext context) {
-        return password != null && password.matches(PASSWORD_PATTERN);
+            return response != null && response.contains(suffix);
+        } catch (Exception e) {
+            // Fail open - don't block registration if API is down
+            return false;
+        }
     }
 }
 ```
 
-Then apply to `UserRegistrationRequest`:
+**Step 3: Integrate in Registration Flow**
+
+Update `DefaultUserService.registerUser()`:
 
 ```java
-
-@ValidPassword
-@NotBlank(message = "Password can't be blank")
-String password
-```
-
-**Effort:** 1 hour
-**Priority:** HIGH
-
----
-
-### 6. Race Condition in Duplicate Email Check
-
-**File:** `webapp-api/src/main/java/io/hephaistos/pyro/service/DefaultUserService.java:28-39`
-
-**Issue:**
-
-```java
-
 @Override
-public void registerUser(UserRegistrationRequest userRegistrationRequest) {
-    if (getUserByEmail(userRegistrationRequest.email()).isPresent()) {
-        throw new IllegalArgumentException("Email already exists");
+public void registerUser(UserRegistrationRequest request) {
+    // Length check (handled by @Min(15) annotation)
+
+    // Breach check
+    if (breachedPasswordService.isPasswordBreached(request.password())) {
+        throw new IllegalArgumentException(
+            "This password has been found in data breaches. Please choose a different password."
+        );
     }
 
-    var userEntity = new UserEntity();
-    // ... set fields
-    userRepository.save(userEntity);  // ❌ Race condition!
+    // Existing registration logic...
 }
 ```
 
-**Problem:**
+**Why This Approach:**
 
-- Check-then-act pattern without proper transaction isolation
-- Two concurrent registrations with the same email can both pass the check
-- Database has UNIQUE constraint, but will result in `SQLException` instead of graceful error
+- ✅ Simple to implement (1-2 hours)
+- ✅ Gets most security benefit (length + breach checking)
+- ✅ No complex dependencies (uses Spring's RestClient)
+- ✅ Complies with NIST 2025 guidelines
+- ✅ Privacy-preserving (k-anonymity model)
 
-**Suggested Fix:**
+**⚠️ PARADIGM SHIFT - Why This Is Different:**
 
-```java
+NIST fundamentally changed password guidance in 2025 based on research showing that:
 
-@Override
-@Transactional(isolation = Isolation.SERIALIZABLE)
-public void registerUser(UserRegistrationRequest userRegistrationRequest) {
-    if (getUserByEmail(userRegistrationRequest.email()).isPresent()) {
-        throw new IllegalArgumentException("Email already exists");
-    }
+1. **Composition rules DON'T work** - They make passwords predictable (Password1!)
+2. **Length > Complexity** - "correct horse battery staple" (28 chars) beats "P@ssw0rd!" (9 chars)
+3. **Breaches matter more** - 850M+ passwords already compromised, checking these is critical
 
-    var userEntity = new UserEntity();
-    // ... set fields
-    userRepository.save(userEntity);
-}
-```
+**Key Differences from Old Approach:**
 
-Or handle the database constraint violation:
+- ✅ Minimum 15 characters (vs 8) for single-factor authentication
+- ✅ Checks against 850M+ breached passwords via HIBP
+- ✅ Allows ALL printable characters (spaces, emoji, unicode)
+- ❌ NO composition rules (no "must have uppercase/number/special" etc.)
+- ❌ NO password rotation (unless breach suspected)
 
-```java
-try{
-        userRepository.save(userEntity);
-}catch(
-DataIntegrityViolationException ex){
-        throw new
+**This is NOT "different but equivalent" - it's demonstrably MORE secure.**
 
-IllegalArgumentException("Email already exists");
-}
-```
+**NIST Guidelines Alignment:**
 
-**Effort:** 30 minutes
+- Minimum length: 8 characters (multi-factor) or 15 (single-factor) ✅
+- Maximum length: At least 64 characters ✅
+- All printable ASCII + Unicode allowed ✅
+- Check against breach database ✅
+- NO composition rules ❌ (explicitly recommended against)
+- NO periodic rotation ❌ (unless compromise suspected)
+
+**Effort:** 1-2 hours (pragmatic approach with length + HIBP)
 **Priority:** HIGH
+
+**Optional Enhancement:** For better UX, consider adding nbvcxz library later for pattern-based strength estimation and
+user feedback. This is not required for security but improves user experience.
+
+**References:**
+
+- [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [Have I Been Pwned API](https://haveibeenpwned.com/API/v3#PwnedPasswords)
 
 ---
 
-### 7. Fix Test Dependencies Configuration
-
-**File:** `build.gradle.kts:38-40`
-
-**Issue:**
-
-```kotlin
-testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test:4.0.0")
-testImplementation("org.springframework.boot:spring-boot-starter-security-test:4.0.0")
-testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test:4.0.0")
-```
-
-**Problem:**
-These artifact names **do not exist** in Spring Boot. The correct artifact is `spring-boot-starter-test`, which includes
-JUnit, Mockito, AssertJ, and Spring test support.
-
-**Suggested Fix:**
-
-In `backend/build.gradle.kts`, replace the three test starters with:
-
-```kotlin
-testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
-testImplementation("org.springframework.security:spring-security-test:7.0.0")
-```
-
-In `backend/webapp-api/build.gradle.kts`:
-
-```kotlin
-testImplementation("org.springframework.boot:spring-boot-starter-test")
-testImplementation("org.springframework.security:spring-security-test")
-```
-
-**Effort:** 10 minutes
-**Priority:** HIGH
-
----
-
-### 8. Add Comprehensive Test Coverage
+### 7. Add Comprehensive Test Coverage
 
 **Current State:**
 
@@ -916,14 +900,13 @@ public class DefaultUserService {
 
 **Critical Issues:** 0
 
-**High Priority Issues:** 4
+**High Priority Issues:** 2
 
 - No password strength requirements
-- Race condition in registration
-- Test configuration issues
 - Insufficient test coverage
 
-**Overall Security Grade:** ⚠️ B- (critical issues resolved, needs validation improvements)
+**Overall Security Grade:** ⚠️ A- (critical issues resolved, race condition handled, test dependencies configured
+correctly, needs password validation)
 
 ### Code Quality Assessment
 
@@ -980,10 +963,10 @@ public class DefaultUserService {
 ### Week 2: Validation & Testing
 
 4. ✅ Add email validation - COMPLETED
-5. Implement password strength requirements (Item #5)
-6. Fix race condition (Item #6)
-7. Fix test dependencies (Item #7)
-8. Start adding controller tests (Item #8)
+5. ✅ Fix race condition in registration - COMPLETED
+6. ✅ Fix test dependencies - COMPLETED (already configured correctly)
+7. Implement password strength requirements (Item #5)
+8. Start adding controller tests (Item #7)
 
 ### Week 3: Dependencies & Configuration
 
@@ -1002,8 +985,8 @@ public class DefaultUserService {
 
 ---
 
-**Total Issues Identified:** 22
-**Critical:** 0 | **High:** 4 | **Medium:** 8 | **Low:** 10
+**Total Issues Identified:** 20
+**Critical:** 0 | **High:** 2 | **Medium:** 8 | **Low:** 10
 
-**Next Steps:** All critical security issues resolved! Email validation complete. Focus on remaining high-priority
-items: password strength, testing, and race conditions.
+**Next Steps:** All critical security issues resolved! Email validation, race condition handling, and test dependencies
+complete. Focus on remaining high-priority items: password strength validation and test coverage expansion.
