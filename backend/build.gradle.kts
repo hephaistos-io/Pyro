@@ -2,6 +2,7 @@ plugins {
     java apply true
     id("io.spring.dependency-management") version "1.1.7" apply false
     id("org.springframework.boot") version "4.0.0" apply false
+    id("org.springdoc.openapi-gradle-plugin") version "1.9.0" apply false
 }
 
 subprojects {
@@ -30,11 +31,13 @@ subprojects {
             implementation("io.jsonwebtoken:jjwt-impl:0.13.0")
             implementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
+            implementation("org.flywaydb:flyway-core:10.20.1")
+
             runtimeOnly("org.hsqldb:hsqldb:2.7.4")
 
-            testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test:4.0.0")
-            testImplementation("org.springframework.boot:spring-boot-starter-security-test:4.0.0")
-            testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test:4.0.0")
+            testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
+            testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
+            testImplementation("org.springframework.security:spring-security-test:7.0.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
         }
     }

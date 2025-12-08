@@ -4,6 +4,7 @@ import io.hephaistos.pyro.controller.dto.UserRegistrationRequest;
 import io.hephaistos.pyro.data.UserEntity;
 import io.hephaistos.pyro.data.repository.UserRepository;
 import org.jspecify.annotations.NullMarked;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -36,7 +37,13 @@ public class DefaultUserService implements UserService, UserDetailsService {
         userEntity.setLastName(userRegistrationRequest.lastName());
         userEntity.setPassword(passwordEncoder.encode(userRegistrationRequest.password()));
 
-        userRepository.save(userEntity);
+        try {
+            userRepository.save(userEntity);
+        }
+        catch (DataIntegrityViolationException ex) {
+            // Handle race condition: another thread saved the same email between our check and save
+            throw new IllegalArgumentException("Email already exists");
+        }
     }
 
     @Override
