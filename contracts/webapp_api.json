@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.0.1",
   "info": {
     "title": "OpenAPI definition",
     "version": "v0"
@@ -94,51 +94,52 @@
   "components": {
     "schemas": {
       "UserRegistrationRequest": {
-        "type": "object",
-        "properties": {
-          "firstName": {
-            "type": "string",
-            "minLength": 1
-          },
-          "lastName": {
-            "type": "string",
-            "minLength": 1
-          },
-          "email": {
-            "type": "string",
-            "example": "your@email.com",
-            "minLength": 1
-          },
-          "password": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
         "required": [
           "email",
           "firstName",
           "lastName",
           "password"
-        ]
-      },
-      "UserAuthenticationRequest": {
+        ],
         "type": "object",
         "properties": {
+          "firstName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "lastName": {
+            "minLength": 1,
+            "type": "string"
+          },
           "email": {
+            "minLength": 1,
             "type": "string",
             "format": "email",
-            "example": "your@email.com",
-            "minLength": 1
+            "example": "your@email.com"
           },
           "password": {
-            "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "type": "string"
           }
-        },
+        }
+      },
+      "UserAuthenticationRequest": {
         "required": [
           "email",
           "password"
-        ]
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email",
+            "example": "your@email.com"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
       },
       "AuthenticationResponse": {
         "type": "object",
