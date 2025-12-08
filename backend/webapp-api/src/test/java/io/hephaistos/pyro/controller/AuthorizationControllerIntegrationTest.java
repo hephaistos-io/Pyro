@@ -43,7 +43,7 @@ class AuthorizationControllerIntegrationTest {
     @ValueSource(
             strings = {"john.doe@example.com", "john.doe+test@example.com", "john@mail.example.com",
                     "user@localhost.localdomain", "test_user@example.co.uk",
-                    "user.name+tag@example.com"})
+                    "user.name+tag@example.com", "john@example"})
     void validEmailReturns201CreatedAndPersistsToDatabase(String email) {
         UserRegistrationRequest request =
                 new UserRegistrationRequest("John", "Doe", email, "password123");
@@ -60,7 +60,7 @@ class AuthorizationControllerIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"not-an-email", "john@", "@example.com", "john doe@example.com",
-            "john@@example.com", "john@.com", "john@example"})
+            "john@@example.com", "john@.com"})
     void invalidEmailFormatReturns400BadRequestAndDoesNotPersist(String email) {
         UserRegistrationRequest request =
                 new UserRegistrationRequest("John", "Doe", email, "password123");

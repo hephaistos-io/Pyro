@@ -1,7 +1,7 @@
 package io.hephaistos.pyro.controller.dto;
 
-import io.hephaistos.pyro.validation.ValidEmail;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -12,8 +12,8 @@ public record UserRegistrationRequest(@Schema(requiredMode = REQUIRED) @NotBlank
                                       @Schema(requiredMode = REQUIRED) @NotBlank(
                                               message = "Last name can't be blank") String lastName,
                                       @Schema(example = "your@email.com",
-                                              requiredMode = REQUIRED) @ValidEmail @NotBlank(
-                                              message = "E-Mail can't be blank") String email,
+                                              requiredMode = REQUIRED) @NotBlank(
+                                              message = "E-Mail can't be blank") @Email String email,
                                       @Schema(requiredMode = REQUIRED) @NotBlank(
                                               message = "password can't be blank") String password) {
 
