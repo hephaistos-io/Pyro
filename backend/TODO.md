@@ -9,142 +9,6 @@ dependencies, code quality, and security.
 
 ## 🔴 HIGH PRIORITY
 
-### 5. Modern Password Strength Validation (NIST 2025)
-
-**Issue:** No password validation or strength requirements enforced. Current codebase accepts any password including "
-123456".
-
-**⚠️ IMPORTANT - Paradigm Shift:**
-NIST 800-63B (2025) has fundamentally changed password requirements. The old approach of composition rules (requiring
-uppercase, numbers, special chars) is now considered **harmful** as it leads to predictable patterns like "Password1!".
-
-**Current State:**
-- Password "123456" is accepted (see test: UserServiceTest.java)
-- No minimum length requirement
-- No strength estimation
-- No breach checking
-
-**Modern Approach (NIST 2025 Compliant):**
-
-Instead of regex composition rules, implement:
-
-1. **Length-based validation** (primary security factor)
-2. **Breached password checking** (Have I Been Pwned API)
-3. **User feedback** (coordinated with frontend strength meter)
-
-**Recommended Implementation (Pragmatic Approach):**
-
-**Step 1: Update UserRegistrationRequest**
-
-```java
-@Min(15)
-@NotBlank(message = "Password must be at least 15 characters")
-String password;
-```
-
-**Step 2: Add HIBP Breach Checking Service**
-
-Create: `webapp-api/src/main/java/io/hephaistos/pyro/service/BreachedPasswordService.java`
-
-```java
-@Service
-public class BreachedPasswordService {
-    private static final String HIBP_API = "https://api.pwnedpasswords.com/range/";
-    private final RestClient restClient = RestClient.create();
-
-    /**
-     * Checks if password appears in known data breaches using k-anonymity model.
-     * Only sends first 5 chars of SHA-1 hash to API (privacy-preserving).
-     */
-    public boolean isPasswordBreached(String password) {
-        try {
-            String sha1Hash = DigestUtils.sha1Hex(password).toUpperCase();
-            String prefix = sha1Hash.substring(0, 5);
-            String suffix = sha1Hash.substring(5);
-
-            String response = restClient.get()
-                .uri(HIBP_API + prefix)
-                .retrieve()
-                .body(String.class);
-
-            return response != null && response.contains(suffix);
-        } catch (Exception e) {
-            // Fail open - don't block registration if API is down
-            return false;
-        }
-    }
-}
-```
-
-**Step 3: Integrate in Registration Flow**
-
-Update `DefaultUserService.registerUser()`:
-
-```java
-@Override
-public void registerUser(UserRegistrationRequest request) {
-    // Length check (handled by @Min(15) annotation)
-
-    // Breach check
-    if (breachedPasswordService.isPasswordBreached(request.password())) {
-        throw new IllegalArgumentException(
-            "This password has been found in data breaches. Please choose a different password."
-        );
-    }
-
-    // Existing registration logic...
-}
-```
-
-**Why This Approach:**
-
-- ✅ Simple to implement (1-2 hours)
-- ✅ Gets most security benefit (length + breach checking)
-- ✅ No complex dependencies (uses Spring's RestClient)
-- ✅ Complies with NIST 2025 guidelines
-- ✅ Privacy-preserving (k-anonymity model)
-
-**⚠️ PARADIGM SHIFT - Why This Is Different:**
-
-NIST fundamentally changed password guidance in 2025 based on research showing that:
-
-1. **Composition rules DON'T work** - They make passwords predictable (Password1!)
-2. **Length > Complexity** - "correct horse battery staple" (28 chars) beats "P@ssw0rd!" (9 chars)
-3. **Breaches matter more** - 850M+ passwords already compromised, checking these is critical
-
-**Key Differences from Old Approach:**
-
-- ✅ Minimum 15 characters (vs 8) for single-factor authentication
-- ✅ Checks against 850M+ breached passwords via HIBP
-- ✅ Allows ALL printable characters (spaces, emoji, unicode)
-- ❌ NO composition rules (no "must have uppercase/number/special" etc.)
-- ❌ NO password rotation (unless breach suspected)
-
-**This is NOT "different but equivalent" - it's demonstrably MORE secure.**
-
-**NIST Guidelines Alignment:**
-
-- Minimum length: 8 characters (multi-factor) or 15 (single-factor) ✅
-- Maximum length: At least 64 characters ✅
-- All printable ASCII + Unicode allowed ✅
-- Check against breach database ✅
-- NO composition rules ❌ (explicitly recommended against)
-- NO periodic rotation ❌ (unless compromise suspected)
-
-**Effort:** 1-2 hours (pragmatic approach with length + HIBP)
-**Priority:** HIGH
-
-**Optional Enhancement:** For better UX, consider adding nbvcxz library later for pattern-based strength estimation and
-user feedback. This is not required for security but improves user experience.
-
-**References:**
-
-- [NIST SP 800-63B](https://pages.nist.gov/800-63-4/sp800-63b.html)
-- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
-- [Have I Been Pwned API](https://haveibeenpwned.com/API/v3#PwnedPasswords)
-
----
-
 ### 7. Add Comprehensive Test Coverage
 
 **Current State:**
@@ -965,7 +829,7 @@ correctly, needs password validation)
 4. ✅ Add email validation - COMPLETED
 5. ✅ Fix race condition in registration - COMPLETED
 6. ✅ Fix test dependencies - COMPLETED (already configured correctly)
-7. Implement password strength requirements (Item #5)
+7. ✅ Implement password strength requirements - COMPLETED
 8. Start adding controller tests (Item #7)
 
 ### Week 3: Dependencies & Configuration
@@ -986,7 +850,7 @@ correctly, needs password validation)
 ---
 
 **Total Issues Identified:** 20
-**Critical:** 0 | **High:** 2 | **Medium:** 8 | **Low:** 10
+**Critical:** 0 | **High:** 1 | **Medium:** 8 | **Low:** 10
 
-**Next Steps:** All critical security issues resolved! Email validation, race condition handling, and test dependencies
-complete. Focus on remaining high-priority items: password strength validation and test coverage expansion.
+**Next Steps:** All critical security issues resolved! Email validation, race condition handling, test dependencies, and
+password strength validation complete. Focus on remaining high-priority item: test coverage expansion.

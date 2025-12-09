@@ -23,6 +23,8 @@ export function handleApiError(err: any, context: 'login' | 'registration' = 'lo
         return 'Invalid email or password';
       case 'DUPLICATE_RESOURCE':
         return 'This email is already registered';
+      case 'BREACHED_PASSWORD':
+        return message || 'This password has been found in data breaches. Please choose a different password.';
       case 'VALIDATION_ERROR':
         return message;
       case 'INTERNAL_ERROR':
