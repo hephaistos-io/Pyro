@@ -1,14 +1,16 @@
-import {Component, inject} from '@angular/core';
+import {ChangeDetectorRef, Component, inject} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import {Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
 import {register} from '../../api/generated/functions';
 import {UserRegistrationRequest} from '../../api/generated/models';
 import zxcvbn from 'zxcvbn';
+import {handleApiError} from '../../utils/error-handler.util';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
@@ -22,6 +24,8 @@ export class RegisterComponent {
   error = '';
   isLoading = false;
   private api = inject(Api);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   get passwordStrength(): { score: number; label: string; feedback: string } {
     if (!this.password) {
@@ -54,7 +58,6 @@ export class RegisterComponent {
     // Set loading state
     this.isLoading = true;
     this.error = '';
-
     try {
       // Call API
       const registrationRequest: UserRegistrationRequest = {
@@ -69,10 +72,14 @@ export class RegisterComponent {
       // Handle success
       this.submitted = true;
       this.isLoading = false;
+      await this.router.navigate(['/login']);
     } catch (err: any) {
       // Handle error
+      this.submitted = false;
       this.isLoading = false;
-      this.error = this.getErrorMessage(err);
+      this.error = handleApiError(err, 'registration');
+      //required, as otherwise it doesn't see the change to the message and it wont be displayed.
+      this.cdr.detectChanges();
     }
   }
 
@@ -131,38 +138,5 @@ export class RegisterComponent {
     }
 
     return {valid: true};
-  }
-
-  private getErrorMessage(err: any): string {
-    // Parse backend error response
-    if (err.error && err.error.code) {
-      const code = err.error.code;
-      const message = err.error.message;
-
-      switch (code) {
-        case 'DUPLICATE_RESOURCE':
-          return 'This email is already registered';
-        case 'VALIDATION_ERROR':
-          return message;
-        case 'INTERNAL_ERROR':
-          return 'Server error. Please try again later';
-        default:
-          return message || 'An error occurred';
-      }
-    }
-
-    // Fallback to HTTP status codes for unexpected responses
-    switch (err.status) {
-      case 0:
-        return 'Cannot connect to server. Please check your connection';
-      case 400:
-        return 'Invalid registration data. Please check your inputs';
-      case 409:
-        return 'This email is already registered';
-      case 500:
-        return 'Server error. Please try again later';
-      default:
-        return 'Registration failed. Please try again';
-    }
   }
 }

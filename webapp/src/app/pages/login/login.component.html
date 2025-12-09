@@ -1,0 +1,57 @@
+<section class="login">
+  <div class="login-content">
+    <h1>Welcome back</h1>
+    <p class="login-text">
+      Log in to your account
+    </p>
+
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      <!-- Email field -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          [(ngModel)]="email"
+          [disabled]="isLoading"
+          id="email"
+          name="email"
+          placeholder="john@company.com"
+          type="email"
+        />
+      </div>
+
+      <!-- Password field -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          [(ngModel)]="password"
+          [disabled]="isLoading"
+          id="password"
+          name="password"
+          placeholder="••••••••"
+          type="password"
+        />
+      </div>
+
+      @if (error) {
+        <div class="error-message">{{ error }}</div>
+      }
+
+      <button
+        [disabled]="isLoading"
+        class="btn btn-primary btn-submit"
+        type="submit"
+      >
+        @if (isLoading) {
+          <span class="spinner"></span>
+          <span>Logging in...</span>
+        } @else {
+          <span>Log In</span>
+        }
+      </button>
+    </form>
+
+    <p class="auth-link">
+      Don't have an account? <a routerLink="/register">Sign up</a>
+    </p>
+  </div>
+</section>
