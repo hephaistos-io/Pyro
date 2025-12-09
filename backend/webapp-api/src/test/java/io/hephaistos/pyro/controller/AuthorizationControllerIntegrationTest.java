@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.controller;
 
+import io.hephaistos.pyro.MockPasswordCheck;
 import io.hephaistos.pyro.controller.dto.UserRegistrationRequest;
 import io.hephaistos.pyro.data.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Tag("integration")
-class AuthorizationControllerIntegrationTest {
+class AuthorizationControllerIntegrationTest extends MockPasswordCheck {
 
     @LocalServerPort
     private int port;
@@ -30,9 +31,10 @@ class AuthorizationControllerIntegrationTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    void setUp() {
+    void beforeEach() {
         restTemplate = new TestRestTemplate();
         userRepository.deleteAll();
+        mockPasswordBreachCheckWithResponse(false);
     }
 
     private String getBaseUrl() {
