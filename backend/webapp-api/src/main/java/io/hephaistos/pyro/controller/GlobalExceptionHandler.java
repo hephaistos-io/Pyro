@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.controller;
 
+import io.hephaistos.pyro.exception.BreachedPasswordException;
 import io.hephaistos.pyro.exception.DuplicateResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,13 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Duplicate resource: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("DUPLICATE_RESOURCE", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BreachedPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleBreachedPassword(BreachedPasswordException ex) {
+        LOGGER.warn("Breached password attempt: {}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("BREACHED_PASSWORD", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.service;
 
+import io.hephaistos.pyro.MockPasswordCheck;
 import io.hephaistos.pyro.controller.dto.UserRegistrationRequest;
 import io.hephaistos.pyro.data.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class UserServiceTest {
+public class UserServiceTest extends MockPasswordCheck {
 
     @Autowired
     private UserService userService;
@@ -23,17 +25,16 @@ public class UserServiceTest {
     @BeforeEach
     void beforeEach() {
         userRepository.deleteAll();
+        mockPasswordBreachCheckWithResponse(false);
     }
 
     @Test
-    @Tag("integration")
     void newUsersArePersisted() {
         userService.registerUser(newUserRegistrationRequest());
         assertThat(userRepository.findAll()).hasSize(1);
     }
 
     @Test
-    @Tag("integration")
     void multipleUsersArePersistedIfEmailIsDifferent() {
         userService.registerUser(newUserRegistrationRequest());
         userService.registerUser(newUserRegistrationRequest("different@mail.com"));
@@ -42,7 +43,6 @@ public class UserServiceTest {
     }
 
     @Test
-    @Tag("integration")
     void newUserWithExistingEmailThrowsException() {
         userService.registerUser(newUserRegistrationRequest());
         assertThatThrownBy(() -> userService.registerUser(newUserRegistrationRequest()),
