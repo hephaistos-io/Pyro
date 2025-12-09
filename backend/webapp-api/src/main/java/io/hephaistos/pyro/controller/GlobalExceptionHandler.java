@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.controller;
 
+import io.hephaistos.pyro.exception.DuplicateResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,13 @@ public class GlobalExceptionHandler {
         LOGGER.warn("User not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse("INVALID_CREDENTIALS", "Invalid email or password"));
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
+        LOGGER.warn("Duplicate resource: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("DUPLICATE_RESOURCE", ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
