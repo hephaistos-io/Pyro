@@ -1,0 +1,318 @@
+@use '../../../styles/index' as *;
+
+.register {
+  min-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8rem 4rem;
+  text-align: center;
+
+  &-content {
+    max-width: 480px;
+    width: 100%;
+    animation: fadeUp 0.8s ease-out both;
+  }
+
+  &-text {
+    font-size: 1.2rem;
+    color: $charcoal-light;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Registration Form
+.register-form {
+  margin-bottom: 1rem;
+}
+
+.name-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: $charcoal;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text;
+    }
+  }
+
+  input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border: 2px solid $warm-gray;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: $font-sans;
+    transition: border-color 0.2s, background 0.4s;
+    outline: none;
+
+    &:focus {
+      border-color: $pyro-red;
+    }
+
+    &::placeholder {
+      color: $charcoal-light;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    :host-context(.dark-mode) & {
+      background: $dark-card;
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+
+      &:focus {
+        border-color: $pyro-red;
+      }
+    }
+  }
+}
+
+// Password Strength Indicator
+.password-strength {
+  margin-top: 0.75rem;
+}
+
+.strength-bar {
+  height: 6px;
+  background: $warm-gray;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+
+  :host-context(.dark-mode) & {
+    background: $dark-border;
+  }
+}
+
+.strength-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 3px;
+
+  &[data-score="0"] {
+    width: 20%;
+    background: $pyro-red;
+  }
+
+  &[data-score="1"] {
+    width: 40%;
+    background: $pyro-red;
+  }
+
+  &[data-score="2"] {
+    width: 60%;
+    background: #E8A832;
+  }
+
+  &[data-score="3"] {
+    width: 80%;
+    background: #6BB85C;
+  }
+
+  &[data-score="4"] {
+    width: 100%;
+    background: #4A9E3C;
+  }
+}
+
+.strength-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.strength-label {
+  font-weight: 500;
+  transition: color 0.3s ease;
+
+  &[data-score="0"],
+  &[data-score="1"] {
+    color: $pyro-red;
+  }
+
+  &[data-score="2"] {
+    color: #E8A832;
+  }
+
+  &[data-score="3"] {
+    color: #6BB85C;
+  }
+
+  &[data-score="4"] {
+    color: #4A9E3C;
+  }
+}
+
+.strength-feedback {
+  color: $charcoal-light;
+  font-size: 0.75rem;
+  text-align: right;
+  flex: 1;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text-muted;
+  }
+}
+
+.error-message {
+  display: block;
+  color: $pyro-red;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.btn-submit {
+  width: 100%;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Auth Link
+.auth-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: $charcoal-light;
+
+  :host-context(.dark-mode) & {
+    color: $dark-text-muted;
+  }
+
+  a {
+    color: $pyro-red;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $pyro-red-deep;
+    }
+
+    :host-context(.dark-mode) &:hover {
+      color: $pyro-red-light;
+    }
+  }
+}
+
+// Success State
+.success-message {
+  background: $pyro-red-pale;
+  padding: 2.5rem;
+  border-radius: 16px;
+  animation: fadeUp 0.5s ease-out both;
+  text-align: center;
+
+  :host-context(.dark-mode) & {
+    background: rgba($pyro-red, 0.15);
+  }
+
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    background: $pyro-red;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 1.25rem;
+  }
+
+  h3 {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    color: $charcoal;
+    margin-bottom: 0.5rem;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text;
+    }
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+
+    :host-context(.dark-mode) & {
+      color: $dark-text-muted;
+    }
+
+    strong {
+      color: $charcoal;
+
+      :host-context(.dark-mode) & {
+        color: $dark-text;
+      }
+    }
+  }
+
+  .next-steps {
+    margin-top: 1rem;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .register {
+    padding: 6rem 1.5rem 4rem;
+  }
+
+  .name-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

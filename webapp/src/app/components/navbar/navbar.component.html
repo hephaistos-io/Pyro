@@ -7,11 +7,18 @@
     </div>
     Pyro
   </a>
-  <div class="nav-links">
+  <div class="nav-center">
     <a href="#features">Features</a>
     <a href="#how-it-works">How It Works</a>
     <a routerLink="/pricing">Docs</a>
     <a routerLink="/pricing">Pricing</a>
-      <a class="btn btn-primary" routerLink="/pricing">Get Started</a>
+    <a routerLink="/dashboard">Dashboard</a>
+  </div>
+  <div class="nav-actions">
+    @if (authService.isAuthenticated()) {
+      <button class="btn btn-primary" (click)="onLogout()">Logout</button>
+    } @else {
+      <a class="btn btn-primary" routerLink="/register">Get Started</a>
+    }
   </div>
 </nav>

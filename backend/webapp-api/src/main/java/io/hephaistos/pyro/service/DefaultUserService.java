@@ -3,6 +3,7 @@ package io.hephaistos.pyro.service;
 import io.hephaistos.pyro.controller.dto.UserRegistrationRequest;
 import io.hephaistos.pyro.data.UserEntity;
 import io.hephaistos.pyro.data.repository.UserRepository;
+import io.hephaistos.pyro.exception.DuplicateResourceException;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.User;
@@ -28,7 +29,7 @@ public class DefaultUserService implements UserService, UserDetailsService {
     @Override
     public void registerUser(UserRegistrationRequest userRegistrationRequest) {
         if (getUserByEmail(userRegistrationRequest.email()).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
 
         var userEntity = new UserEntity();
@@ -42,7 +43,7 @@ public class DefaultUserService implements UserService, UserDetailsService {
         }
         catch (DataIntegrityViolationException ex) {
             // Handle race condition: another thread saved the same email between our check and save
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateResourceException("Email already exists", ex);
         }
     }
 

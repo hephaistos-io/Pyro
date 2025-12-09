@@ -30,6 +30,10 @@ spring:
     locations: classpath:db/migration
     validate-on-migrate: true
 
+springdoc:
+  api-docs:
+    version: openapi_3_0  # Use OpenAPI 3.0.3 for ng-openapi-gen compatibility
+
 logging:
   file:
     name: build/logs/pyro.log

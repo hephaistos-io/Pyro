@@ -1,0 +1,122 @@
+<section class="register">
+  <div class="register-content">
+    <h1>Create your account</h1>
+    <p class="register-text">
+      Start managing feature flags at super granular level
+    </p>
+
+    @if (!submitted) {
+      <form class="register-form" (ngSubmit)="onSubmit()">
+        <!-- Name fields in a row -->
+        <div class="name-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input
+              id="firstName"
+              type="text"
+              [(ngModel)]="firstName"
+              name="firstName"
+              placeholder="John"
+              [disabled]="isLoading"
+            />
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              [(ngModel)]="lastName"
+              name="lastName"
+              placeholder="Doe"
+              [disabled]="isLoading"
+            />
+          </div>
+        </div>
+
+        <!-- Email field -->
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            placeholder="john@company.com"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        <!-- Password fields -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="••••••••"
+            [disabled]="isLoading"
+          />
+          @if (password) {
+            <div class="password-strength">
+              <div class="strength-bar">
+                <div
+                  class="strength-fill"
+                  [attr.data-score]="passwordStrength.score"
+                ></div>
+              </div>
+              <div class="strength-info">
+                <span class="strength-label" [attr.data-score]="passwordStrength.score">
+                  {{ passwordStrength.label }}
+                </span>
+                @if (passwordStrength.feedback) {
+                  <span class="strength-feedback">{{ passwordStrength.feedback }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            placeholder="••••••••"
+            [disabled]="isLoading"
+          />
+        </div>
+
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-submit"
+          [disabled]="isLoading"
+        >
+          @if (isLoading) {
+            <span class="spinner"></span>
+            <span>Creating account...</span>
+          } @else {
+            <span>Create Account</span>
+          }
+        </button>
+      </form>
+
+      <p class="auth-link">
+        Already have an account? <a routerLink="/login">Log in</a>
+      </p>
+    } @else {
+      <div class="success-message">
+        <div class="success-icon">✓</div>
+        <h3>Account created!</h3>
+        <p>Welcome to Pyro, <strong>{{ firstName }}</strong>!</p>
+        <p class="next-steps">Check your email at <strong>{{ email }}</strong> to verify your account.</p>
+      </div>
+    }
+  </div>
+</section>
