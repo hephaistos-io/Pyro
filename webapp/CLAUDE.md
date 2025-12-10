@@ -108,6 +108,82 @@ export class ExampleComponent {
 - Class: `{ComponentName}Component` (PascalCase)
 - Files: `{component-name}.component.{ts,html,scss}` (kebab-case)
 
+### Creating Reusable Components
+
+When building UI elements that will be used in multiple places or have distinct visual patterns, **create them as reusable components from the start**. Don't inline styles in page components and refactor later.
+
+**When to create a reusable component:**
+
+- UI element appears (or will appear) more than once
+- Element has its own distinct styling and behavior (cards, buttons, badges, etc.)
+- Element could logically be used elsewhere in the app
+
+**Example - Reusable Card Component:**
+
+```typescript
+// app-card.component.ts
+import { Component, input, output } from '@angular/core';
+
+@Component({
+  selector: 'app-card',
+  standalone: true,
+  templateUrl: './app-card.component.html',
+  styleUrl: './app-card.component.scss'
+})
+export class AppCardComponent {
+  name = input<string>();           // Signal-based input
+  isAddCard = input(false);         // Input with default value
+  cardClick = output<void>();       // Output event
+
+  onClick(): void {
+    this.cardClick.emit();
+  }
+}
+```
+
+```html
+<!-- app-card.component.html -->
+<button class="app-card" [class.app-card--add]="isAddCard()" (click)="onClick()">
+  @if (isAddCard()) {
+    <span class="app-card__icon">+</span>
+    <span class="app-card__label">New Item</span>
+  } @else {
+    <span class="app-card__name">{{ name() }}</span>
+  }
+</button>
+```
+
+```scss
+// app-card.component.scss - uses BEM naming
+@use '../../../styles/index' as *;
+
+.app-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: $white;
+  border: 1px solid $dark-border;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  @include dark-mode {
+    background: $dark-card;
+  }
+
+  &__name { /* element */ }
+  &__icon { /* element */ }
+  &--add { /* modifier */ }
+}
+```
+
+**Usage in parent component:**
+
+```html
+<app-card name="My Item" (cardClick)="onItemClick()" />
+<app-card [isAddCard]="true" (cardClick)="onAddClick()" />
+```
+
 ---
 
 ## Angular Patterns
@@ -186,19 +262,21 @@ All components should import from the centralized barrel file:
 
 ### Dark Mode Pattern
 
-Use `:host-context(.dark-mode)` for component-scoped dark mode styles:
+Use the `dark-mode` mixin for component-scoped dark mode styles:
 
 ```scss
 .element {
-  background: white;
+  background: $white;
   color: $charcoal;
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     background: $dark-card;
     color: $dark-text;
   }
 }
 ```
+
+**Important:** Always use `@include dark-mode` instead of writing `:host-context(.dark-mode) &` directly. The mixin is defined in `_mixins.scss` and ensures consistency.
 
 ### Responsive Breakpoints
 
@@ -229,10 +307,44 @@ Use consistent breakpoints across the project:
 
 **SCSS Conventions:**
 
-- Use BEM-like naming: `.component`, `.component-element`, `.component-element-modifier`
+- Use BEM naming for component styles: `.component`, `.component__element`, `.component--modifier`
 - All colors, fonts, and spacing should use variables from `_variables.scss`
 - Component styles are scoped (no global classes except from `src/styles/`)
 - Keep nesting shallow (max 3 levels)
+
+### Using Style Variables
+
+Always use defined variables instead of hardcoded values:
+
+```scss
+// ✅ Good - uses variables
+.card {
+  background: $white;
+  border: 1px solid $dark-border;
+  color: $charcoal;
+  font-family: $font-sans;
+
+  @include dark-mode {
+    background: $dark-card;
+    color: $dark-text;
+  }
+}
+
+// ❌ Bad - hardcoded values
+.card {
+  background: white;
+  border: 1px solid rgba(white, 0.1);
+  color: #2D2D2D;
+  font-family: 'DM Sans', sans-serif;
+}
+```
+
+**Available variables to use:**
+
+- Colors: `$white`, `$black`, `$charcoal`, `$charcoal-light`, `$off-white`, `$warm-gray`
+- Brand: `$pyro-red`, `$pyro-red-light`, `$pyro-red-pale`, `$pyro-red-deep`
+- Dark mode: `$dark-bg`, `$dark-card`, `$dark-border`, `$dark-text`, `$dark-text-muted`
+- Fonts: `$font-serif` (headings), `$font-sans` (body/UI)
 
 ---
 

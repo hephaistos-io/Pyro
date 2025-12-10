@@ -1,0 +1,8 @@
+<button (click)="onClick()" [class.app-card--add]="isAddCard()" class="app-card">
+  @if (isAddCard()) {
+    <span class="app-card__icon">+</span>
+    <span class="app-card__label">New Application</span>
+  } @else {
+    <span class="app-card__name">{{ name() }}</span>
+  }
+</button>

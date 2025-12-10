@@ -1,7 +1,7 @@
 /**
  * Parse and handle API errors, returning user-friendly error messages
  */
-export function handleApiError(err: any, context: 'login' | 'registration' = 'login'): string {
+export function handleApiError(err: any, context: 'login' | 'registration' | 'company' | 'profile' = 'login'): string {
   // Parse backend error response
   // Check if err.error is a string and parse it
   let errorObj = err.error;
@@ -41,19 +41,22 @@ export function handleApiError(err: any, context: 'login' | 'registration' = 'lo
     case 0:
       return 'Cannot connect to server. Please check your connection';
     case 400:
-      return context === 'registration'
-        ? 'Invalid registration data. Please check your inputs'
-        : 'Invalid login credentials';
+      if (context === 'registration') return 'Invalid registration data. Please check your inputs';
+      if (context === 'company') return 'Invalid company data. Please check your inputs';
+      return 'Invalid login credentials';
     case 401:
     case 403:
+      if (context === 'profile' || context === 'company') return 'Session expired. Please log in again';
       return 'Invalid email or password';
     case 409:
+      if (context === 'company') return 'A company with this name already exists';
       return 'This email is already registered';
     case 500:
       return 'Server error. Please try again later';
     default:
-      return context === 'registration'
-        ? 'Registration failed. Please try again'
-        : 'Login failed. Please try again';
+      if (context === 'registration') return 'Registration failed. Please try again';
+      if (context === 'company') return 'Failed to create company. Please try again';
+      if (context === 'profile') return 'Failed to load profile. Please try again';
+      return 'Login failed. Please try again';
   }
 }

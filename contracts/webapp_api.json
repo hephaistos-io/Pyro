@@ -11,6 +11,58 @@
     }
   ],
   "paths": {
+    "/v1/company": {
+      "get": {
+        "tags": [
+          "company",
+          "v1"
+        ],
+        "summary": "Retrieve company for current user",
+        "operationId": "getCompanyForCurrentUser",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "company",
+          "v1"
+        ],
+        "summary": "Retrieve company for current user",
+        "operationId": "createCompanyForCurrentUser",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompanyCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/register": {
       "post": {
         "tags": [
@@ -89,10 +141,67 @@
           }
         }
       }
+    },
+    "/v1/company/{companyId}": {
+      "get": {
+        "tags": [
+          "company",
+          "v1"
+        ],
+        "summary": "Retrieve company for current user",
+        "operationId": "getCompanyById",
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "CompanyCreationRequest": {
+        "required": [
+          "companyName"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "minLength": 2,
+            "type": "string"
+          }
+        }
+      },
+      "CompanyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "UserRegistrationRequest": {
         "required": [
           "email",
@@ -117,7 +226,8 @@
             "example": "your@email.com"
           },
           "password": {
-            "minLength": 1,
+            "maxLength": 2147483647,
+            "minLength": 8,
             "type": "string"
           }
         }
@@ -163,6 +273,10 @@
           },
           "email": {
             "type": "string"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       }

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, inject} from '@angular/core';
+import {ChangeDetectorRef, Component, inject, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
@@ -6,6 +6,7 @@ import {register} from '../../api/generated/functions';
 import {UserRegistrationRequest} from '../../api/generated/models';
 import zxcvbn from 'zxcvbn';
 import {handleApiError} from '../../utils/error-handler.util';
+import {AuthService} from '../../services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -14,7 +15,7 @@ import {handleApiError} from '../../utils/error-handler.util';
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   email = '';
   firstName = '';
   lastName = '';
@@ -26,6 +27,14 @@ export class RegisterComponent {
   private api = inject(Api);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private authService = inject(AuthService);
+
+  ngOnInit(): void {
+    // Redirect to dashboard if already authenticated
+    if (this.authService.isAuthenticated()) {
+      this.router.navigateByUrl('/dashboard');
+    }
+  }
 
   get passwordStrength(): { score: number; label: string; feedback: string } {
     if (!this.password) {

@@ -4,25 +4,81 @@
   min-height: calc(100vh - 128px);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 8rem 4rem;
-  text-align: center;
+  padding: 8rem 4rem 4rem;
 
   &-content {
-    max-width: 800px;
+    flex: 1;
     width: 100%;
     animation: fadeUp 0.8s ease-out both;
   }
+}
 
-  h1 {
+.greeting {
+  font-family: $font-serif;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 500;
+  color: $charcoal;
+  margin: 0 0 2.5rem;
+  animation: fadeUp 0.6s ease-out both;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.section-title {
+  font-family: $font-serif;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: $charcoal-light;
+  margin: 0 0 1rem;
+  animation: fadeUp 0.6s ease-out 0.1s both;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.app-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease-out 0.2s both;
+}
+
+.success-message {
+  text-align: center;
+  animation: fadeIn 0.3s ease-out;
+
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    background: $pyro-red;
+    color: $white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 1.5rem;
+  }
+
+  h2 {
     font-family: $font-serif;
-    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-size: 1.5rem;
     color: $charcoal;
-    margin: 0;
+    margin-bottom: 0.5rem;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text;
+    }
+  }
+
+  p {
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
     }
   }
 }

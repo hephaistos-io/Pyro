@@ -1,7 +1,10 @@
 package io.hephaistos.pyro.controller;
 
 import io.hephaistos.pyro.exception.BreachedPasswordException;
+import io.hephaistos.pyro.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.pyro.exception.DuplicateResourceException;
+import io.hephaistos.pyro.exception.NoCompanyAssignedException;
+import io.hephaistos.pyro.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -73,6 +76,31 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Validation failed: {}", errorMessage);
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("VALIDATION_ERROR", errorMessage));
+    }
+
+    @ExceptionHandler(NoCompanyAssignedException.class)
+    public ResponseEntity<ErrorResponse> handleNoCompanyAssigned(NoCompanyAssignedException ex) {
+        LOGGER.info("User has no company assigned! {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("MISSING_COMPANY_ASSIGNMENT",
+                        "The user has no company assigned."));
+
+    }
+
+    @ExceptionHandler(CompanyAlreadyAssignedException.class)
+    public ResponseEntity<ErrorResponse> handleCompanyAlreadyAssigned(
+            CompanyAlreadyAssignedException ex) {
+        LOGGER.info("User has a company already assigned! {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("EXISTING_COMPANY_ASSIGNMENT",
+                        "The user has a company assigned."));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException ex) {
+        LOGGER.info("Operation didn't find required resource {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("NOT_FOUND", "Requested resource was not found."));
     }
 
     @ExceptionHandler(Exception.class)

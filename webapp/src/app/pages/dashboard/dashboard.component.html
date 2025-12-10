@@ -1,5 +1,28 @@
 <section class="dashboard">
+  @if (greeting()) {
+    <h1 class="greeting">{{ greeting() }}</h1>
+  }
   <div class="dashboard-content">
-    <h1>Dashboard</h1>
+    @if (companyName()) {
+      <h2 class="section-title">Applications of {{ companyName() }}:</h2>
+      <div class="app-cards">
+        <app-card name="Placeholder"/>
+        <app-card [isAddCard]="true"/>
+      </div>
+    }
   </div>
 </section>
+
+@if (showCompanyOnboarding()) {
+  <app-onboarding-overlay>
+    @if (showSuccessMessage()) {
+      <div class="success-message">
+        <div class="success-icon">&#10003;</div>
+        <h2>Company Created!</h2>
+        <p>Setting up your workspace...</p>
+      </div>
+    } @else {
+      <app-company-creation-form (companyCreated)="onCompanyCreated($event)"/>
+    }
+  </app-onboarding-overlay>
+}
