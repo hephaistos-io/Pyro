@@ -4,6 +4,7 @@ import {PricingComponent} from './pages/pricing/pricing.component';
 import {RegisterComponent} from './pages/register/register.component';
 import {LoginComponent} from './pages/login/login.component';
 import {DashboardComponent} from './pages/dashboard/dashboard.component';
+import {DashboardLayoutComponent} from './layouts/dashboard-layout/dashboard-layout.component';
 import {authGuard} from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -11,6 +12,14 @@ export const routes: Routes = [
   {path: 'pricing', component: PricingComponent},
   {path: 'register', component: RegisterComponent},
   {path: 'login', component: LoginComponent},
-  {path: 'dashboard', component: DashboardComponent, canActivate: [authGuard]},
+  {
+    path: 'dashboard',
+    component: DashboardLayoutComponent,
+    canActivate: [authGuard],
+    data: {isDashboard: true},
+    children: [
+      {path: '', component: DashboardComponent}
+    ]
+  },
   {path: '**', redirectTo: ''}
 ];

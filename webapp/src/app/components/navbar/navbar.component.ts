@@ -1,7 +1,7 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import {Router, RouterLink} from '@angular/router';
-import {toSignal} from '@angular/core/rxjs-interop';
-import {map} from 'rxjs';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import {fromEvent, map} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
 
 @Component({
@@ -15,12 +15,22 @@ export class NavbarComponent {
   authService = inject(AuthService);
   private router = inject(Router);
 
+  isMobile = signal(window.innerWidth <= 768);
+
   isDashboard = toSignal(
     this.router.events.pipe(
-      map(() => this.router.url === '/dashboard')
+      map(() => this.router.url.startsWith('/dashboard'))
     ),
-    {initialValue: this.router.url === '/dashboard'}
+    {initialValue: this.router.url.startsWith('/dashboard')}
   );
+
+  constructor() {
+    fromEvent(window, 'resize')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        this.isMobile.set(window.innerWidth <= 768);
+      });
+  }
 
   onLogout(): void {
     this.authService.logout();

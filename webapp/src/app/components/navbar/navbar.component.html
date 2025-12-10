@@ -7,9 +7,9 @@
     </div>
     Pyro
   </a>
-    @if (isDashboard()) {
+    @if (isDashboard() && !isMobile()) {
         <h1 class="page-title">Dashboard</h1>
-    } @else {
+    } @else if (!isDashboard()) {
         <div class="nav-center">
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>

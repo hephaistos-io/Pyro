@@ -1,0 +1,34 @@
+@use '../../../styles/index' as *;
+
+.mobile-unsupported {
+  min-height: calc(100vh - 128px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+
+  h1 {
+    font-family: $font-serif;
+    font-size: 2rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0 0 1rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  p {
+    color: $charcoal-light;
+    max-width: 300px;
+    margin: 0 0 2rem;
+    line-height: 1.5;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
