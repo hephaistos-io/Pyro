@@ -1,4 +1,5 @@
-import {Injectable, signal} from '@angular/core';
+import {inject, Injectable, signal} from '@angular/core';
+import {UserService} from './user.service';
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
@@ -6,6 +7,8 @@ export class AuthService {
   userEmail = signal<string | null>(null);
   private readonly TOKEN_KEY = 'auth_token';
   private readonly EMAIL_KEY = 'user_email';
+
+  private userService = inject(UserService);
 
   constructor() {
     this.initializeAuth();
@@ -27,6 +30,7 @@ export class AuthService {
     localStorage.removeItem(this.EMAIL_KEY);
     this.isAuthenticated.set(false);
     this.userEmail.set(null);
+    this.userService.clearProfile();
   }
 
   private initializeAuth(): void {

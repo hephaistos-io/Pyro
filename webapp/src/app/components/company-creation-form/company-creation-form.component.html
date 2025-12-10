@@ -1,0 +1,35 @@
+<div class="company-form-container">
+  <h2>Create Your Company</h2>
+  <p class="form-description">
+    Before you can start using Pyro, we need to set up your company workspace.
+    This will be where you manage your feature flags and team.
+  </p>
+
+  <form (ngSubmit)="onSubmit()" class="company-form">
+    <div class="form-group">
+      <label for="companyName">Company Name</label>
+      <input
+        [(ngModel)]="companyName"
+        [disabled]="isLoading"
+        autocomplete="organization"
+        id="companyName"
+        name="companyName"
+        placeholder="Acme Inc."
+        type="text"
+      />
+    </div>
+
+    @if (error) {
+      <div class="error-message">{{ error }}</div>
+    }
+
+    <button [disabled]="isLoading" class="btn btn-primary btn-submit" type="submit">
+      @if (isLoading) {
+        <span class="spinner"></span>
+        <span>Creating...</span>
+      } @else {
+        <span>Create Company</span>
+      }
+    </button>
+  </form>
+</div>

@@ -1,0 +1,76 @@
+@use '../../../styles/index' as *;
+
+.app-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+  font-family: $font-sans;
+
+  &:hover {
+    border-color: $pyro-red;
+    box-shadow: 0 4px 12px rgba($pyro-red, 0.1);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      border-color: $pyro-red;
+      box-shadow: 0 4px 12px rgba($pyro-red, 0.15);
+    }
+  }
+
+  &__name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &--add {
+    border-style: dashed;
+    background: transparent;
+
+    &:hover {
+      background: rgba($pyro-red, 0.02);
+
+      @include dark-mode {
+        background: rgba($pyro-red, 0.05);
+      }
+    }
+  }
+
+  &__icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($pyro-red, 0.1);
+    color: $pyro-red;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    font-weight: 300;
+  }
+
+  &__label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}

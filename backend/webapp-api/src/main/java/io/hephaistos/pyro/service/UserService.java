@@ -10,4 +10,7 @@ public interface UserService {
     void registerUser(UserRegistrationRequest userRegistrationRequest);
 
     Optional<UserEntity> getUserByEmail(String email);
+
+    UserEntity getUserByEmailOrThrow(String email);
+
 }

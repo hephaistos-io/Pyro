@@ -7,13 +7,17 @@
     </div>
     Pyro
   </a>
-  <div class="nav-center">
-    <a href="#features">Features</a>
-    <a href="#how-it-works">How It Works</a>
-    <a routerLink="/pricing">Docs</a>
-    <a routerLink="/pricing">Pricing</a>
-    <a routerLink="/dashboard">Dashboard</a>
-  </div>
+    @if (isDashboard()) {
+        <h1 class="page-title">Dashboard</h1>
+    } @else {
+        <div class="nav-center">
+            <a href="#features">Features</a>
+            <a href="#how-it-works">How It Works</a>
+            <a routerLink="/pricing">Docs</a>
+            <a routerLink="/pricing">Pricing</a>
+            <a routerLink="/dashboard">Dashboard</a>
+        </div>
+    }
   <div class="nav-actions">
     @if (authService.isAuthenticated()) {
       <button class="btn btn-primary" (click)="onLogout()">Logout</button>

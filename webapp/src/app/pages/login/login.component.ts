@@ -28,6 +28,12 @@ export class LoginComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+    // Redirect to dashboard if already authenticated
+    if (this.authService.isAuthenticated()) {
+      this.router.navigateByUrl('/dashboard');
+      return;
+    }
+
     // Get return URL from route parameters or default to dashboard
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
   }
