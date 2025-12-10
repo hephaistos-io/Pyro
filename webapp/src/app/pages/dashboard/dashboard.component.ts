@@ -13,8 +13,10 @@ import {CompanyResponse} from '../../api/generated/models';
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
-  showSuccessMessage = signal(false);
   private userService = inject(UserService);
+
+  showSuccessMessage = signal(false);
+
   showCompanyOnboarding = computed(() =>
     !this.userService.isProfileLoading() && !this.userService.hasCompany()
   );
