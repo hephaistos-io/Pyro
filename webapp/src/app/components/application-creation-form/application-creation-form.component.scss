@@ -1,0 +1,115 @@
+@use '../../../styles/index' as *;
+
+.application-form-container {
+  text-align: center;
+
+  h2 {
+    font-family: $font-serif;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 0.75rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  .form-description {
+    color: $charcoal-light;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.application-form {
+  text-align: left;
+
+  .form-group {
+    margin-bottom: 1.5rem;
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: $charcoal;
+
+      @include dark-mode {
+        color: $dark-text;
+      }
+    }
+
+    input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      border: 1px solid $warm-gray;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: $font-sans;
+      transition: border-color 0.2s ease;
+      box-sizing: border-box;
+
+      &:focus {
+        outline: none;
+        border-color: $pyro-red;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      @include dark-mode {
+        background: $dark-bg;
+        border-color: $dark-border;
+        color: $dark-text;
+
+        &::placeholder {
+          color: $dark-text-muted;
+        }
+      }
+    }
+  }
+
+  .error-message {
+    background: $pyro-red-pale;
+    color: $pyro-red-deep;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.15);
+      color: $pyro-red-light;
+    }
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

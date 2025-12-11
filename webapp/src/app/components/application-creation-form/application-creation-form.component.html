@@ -1,0 +1,35 @@
+<div class="application-form-container">
+  <h2>Create New Application</h2>
+  <p class="form-description">
+    Applications represent different projects or services within your company.
+    Each application has its own set of feature flags.
+  </p>
+
+  <form (ngSubmit)="onSubmit()" class="application-form">
+    <div class="form-group">
+      <label for="applicationName">Application Name</label>
+      <input
+        [(ngModel)]="applicationName"
+        [disabled]="isLoading"
+        autocomplete="off"
+        id="applicationName"
+        name="applicationName"
+        placeholder="My App"
+        type="text"
+      />
+    </div>
+
+    @if (error) {
+      <div class="error-message">{{ error }}</div>
+    }
+
+    <button [disabled]="isLoading" class="btn btn-primary btn-submit" type="submit">
+      @if (isLoading) {
+        <span class="spinner"></span>
+        <span>Creating...</span>
+      } @else {
+        <span>Create Application</span>
+      }
+    </button>
+  </form>
+</div>

@@ -1,5 +1,6 @@
 package io.hephaistos.pyro.controller.security;
 
+import io.hephaistos.pyro.data.repository.UserRepository;
 import io.hephaistos.pyro.security.PyroSecurityContext;
 import io.hephaistos.pyro.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -29,10 +30,13 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
-    public JwtOncePerRequestFilter(JwtService jwtService, UserDetailsService userDetailsService) {
+    public JwtOncePerRequestFilter(JwtService jwtService, UserDetailsService userDetailsService,
+            UserRepository userRepository) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -71,6 +75,13 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
             var securityContext = new PyroSecurityContext();
             securityContext.setAuthentication(newAuthorization);
             securityContext.setUserName(email);
+
+            userRepository.findByEmail(email).ifPresent(user -> {
+                securityContext.setUserId(user.getId().toString());
+                user.getCompanyId()
+                        .ifPresent(companyId -> securityContext.setCompanyId(companyId.toString()));
+            });
+
             SecurityContextHolder.setContext(securityContext);
         }
         else {

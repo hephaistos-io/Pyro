@@ -6,8 +6,10 @@
     @if (companyName()) {
       <h2 class="section-title">Applications of {{ companyName() }}:</h2>
       <div class="app-cards">
-        <app-card name="Placeholder"/>
-        <app-card [isAddCard]="true"/>
+        <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
+        @for (app of applications(); track app.id) {
+          <app-card [name]="app.name"/>
+        }
       </div>
     }
   </div>
@@ -24,5 +26,11 @@
     } @else {
       <app-company-creation-form (companyCreated)="onCompanyCreated($event)"/>
     }
+  </app-onboarding-overlay>
+}
+
+@if (showApplicationCreation()) {
+  <app-onboarding-overlay [closable]="true" (closeOverlay)="onCloseApplicationCreation()">
+    <app-application-creation-form (applicationCreated)="onApplicationCreated($event)"/>
   </app-onboarding-overlay>
 }

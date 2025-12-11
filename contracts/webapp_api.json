@@ -37,7 +37,7 @@
           "company",
           "v1"
         ],
-        "summary": "Retrieve company for current user",
+        "summary": "Create company for current user",
         "operationId": "createCompanyForCurrentUser",
         "requestBody": {
           "content": {
@@ -120,6 +120,61 @@
         }
       }
     },
+    "/v1/applications": {
+      "get": {
+        "tags": [
+          "application",
+          "v1"
+        ],
+        "summary": "Get all applications for current user\u0027s company",
+        "operationId": "getApplications",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "application",
+          "v1"
+        ],
+        "summary": "Create application for current user\u0027s company",
+        "operationId": "createApplication",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/user/profile": {
       "get": {
         "tags": [
@@ -148,7 +203,7 @@
           "company",
           "v1"
         ],
-        "summary": "Retrieve company for current user",
+        "summary": "Retrieve company with id",
         "operationId": "getCompanyById",
         "parameters": [
           {
@@ -259,6 +314,35 @@
           },
           "token": {
             "type": "string"
+          }
+        }
+      },
+      "ApplicationCreationRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 2147483647,
+            "minLength": 2,
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

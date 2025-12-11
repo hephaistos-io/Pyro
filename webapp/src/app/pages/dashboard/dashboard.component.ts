@@ -1,21 +1,29 @@
 import {Component, computed, inject, OnInit, signal} from '@angular/core';
 import {OnboardingOverlayComponent} from '../../components/onboarding-overlay/onboarding-overlay.component';
 import {CompanyCreationFormComponent} from '../../components/company-creation-form/company-creation-form.component';
+import {
+  ApplicationCreationFormComponent
+} from '../../components/application-creation-form/application-creation-form.component';
 import {AppCardComponent} from '../../components/app-card/app-card.component';
 import {UserService} from '../../services/user.service';
-import {CompanyResponse} from '../../api/generated/models';
+import {Api} from '../../api/generated/api';
+import {getApplications} from '../../api/generated/functions';
+import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [OnboardingOverlayComponent, CompanyCreationFormComponent, AppCardComponent],
+  imports: [OnboardingOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, AppCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   private userService = inject(UserService);
+  showApplicationCreation = signal(false);
 
   showSuccessMessage = signal(false);
+  applications = signal<ApplicationResponse[]>([]);
+  private api = inject(Api);
 
   showCompanyOnboarding = computed(() =>
     !this.userService.isProfileLoading() && !this.userService.hasCompany()
@@ -44,6 +52,9 @@ export class DashboardComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.userService.fetchProfile();
+    if (this.userService.hasCompany()) {
+      await this.fetchApplications();
+    }
   }
 
   async onCompanyCreated(company: CompanyResponse): Promise<void> {
@@ -53,5 +64,27 @@ export class DashboardComponent implements OnInit {
     await new Promise(resolve => setTimeout(resolve, 2000));
     await this.userService.fetchProfile();
     this.showSuccessMessage.set(false);
+  }
+
+  onAddApplicationClick(): void {
+    this.showApplicationCreation.set(true);
+  }
+
+  onCloseApplicationCreation(): void {
+    this.showApplicationCreation.set(false);
+  }
+
+  async onApplicationCreated(application: ApplicationResponse): Promise<void> {
+    this.showApplicationCreation.set(false);
+    await this.fetchApplications();
+  }
+
+  private async fetchApplications(): Promise<void> {
+    try {
+      const response = await this.api.invoke(getApplications, {});
+      this.applications.set(response);
+    } catch {
+      this.applications.set([]);
+    }
   }
 }
