@@ -1,18 +1,21 @@
 <nav>
   <a class="logo" routerLink="/">
     <div class="logo-icon">
-      <svg stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24">
-        <path d="M12 2L12 22M12 2L8 6M12 2L16 6"/>
+      <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+           viewBox="0 0 24 24">
+        <path d="M4 3L4 21"/>
+        <rect height="8" rx="4" width="14" x="7" y="5"/>
+        <circle cx="17" cy="9" fill="currentColor" r="2.5"/>
       </svg>
     </div>
-    Pyro
+    Flagforge
   </a>
     @if (isDashboard() && !isMobile()) {
         <h1 class="page-title">Dashboard</h1>
     } @else if (!isDashboard()) {
         <div class="nav-center">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
+          <a routerLink="/" fragment="features">Features</a>
+          <a routerLink="/" fragment="how-it-works">How It Works</a>
             <a routerLink="/pricing">Docs</a>
             <a routerLink="/pricing">Pricing</a>
             <a routerLink="/dashboard">Dashboard</a>

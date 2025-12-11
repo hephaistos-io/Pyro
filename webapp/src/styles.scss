@@ -28,16 +28,18 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
   transition: background 0.4s ease, color 0.4s ease;
+}
 
-  &.dark-mode {
-    background: $dark-bg;
-    color: $dark-text;
+// Dark mode styles - supports class on html (early load) or body (Angular)
+html.dark-mode body,
+body.dark-mode {
+  background: $dark-bg;
+  color: $dark-text;
 
-    // Override CSS variables for dark mode
-    --off-white: #{$dark-bg};
-    --warm-gray: #{$dark-border};
-    --charcoal: #{$dark-text};
-    --charcoal-light: #{$dark-text-muted};
-    --pyro-red-pale: #{rgba($pyro-red, 0.15)};
-  }
+  // Override CSS variables for dark mode
+  --off-white: #{$dark-bg};
+  --warm-gray: #{$dark-border};
+  --charcoal: #{$dark-text};
+  --charcoal-light: #{$dark-text-muted};
+  --pyro-red-pale: #{rgba($pyro-red, 0.15)};
 }
