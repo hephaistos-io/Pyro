@@ -3,7 +3,6 @@ package io.hephaistos.pyro.service;
 import io.hephaistos.pyro.controller.dto.CompanyCreationRequest;
 import io.hephaistos.pyro.controller.dto.CompanyResponse;
 import io.hephaistos.pyro.data.CompanyEntity;
-import io.hephaistos.pyro.data.UserEntity;
 import io.hephaistos.pyro.data.repository.CompanyRepository;
 import io.hephaistos.pyro.data.repository.UserRepository;
 import io.hephaistos.pyro.exception.CompanyAlreadyAssignedException;
@@ -32,8 +31,7 @@ public class DefaultCompanyService implements CompanyService {
     @Override
     public Optional<CompanyEntity> getCompanyForCurrentUser() {
         var pyroSecurityContext = (PyroSecurityContext) SecurityContextHolder.getContext();
-        return userRepository.findByEmail(pyroSecurityContext.getUserName())
-                .flatMap(UserEntity::getCompanyId)
+        return pyroSecurityContext.getCompanyId()
                 .flatMap(companyRepository::findById);
     }
 
@@ -46,17 +44,20 @@ public class DefaultCompanyService implements CompanyService {
     public CompanyResponse createCompanyForCurrentUser(
             CompanyCreationRequest companyCreationRequest) {
         var pyroSecurityContext = (PyroSecurityContext) SecurityContextHolder.getContext();
-        var user = userRepository.findByEmail(pyroSecurityContext.getUserName())
-                .orElseThrow(() -> new UsernameNotFoundException("Couldnt find user!"));
-        if (user.getCompanyId().isEmpty()) {
-            var company = new CompanyEntity();
-            company.setName(companyCreationRequest.companyName());
-            companyRepository.save(company);
-            user.setCompanyId(company.getId());
-            return CompanyResponse.fromEntity(company);
+
+        // Check security context first to avoid unnecessary user lookup
+        if (pyroSecurityContext.getCompanyId().isPresent()) {
+            throw new CompanyAlreadyAssignedException(
+                    "Can't create company, the user already has one assigned!");
         }
 
-        throw new CompanyAlreadyAssignedException(
-                "Can't create company, the user already has one assigned!");
+        var user = userRepository.findByEmail(pyroSecurityContext.getUserName())
+                .orElseThrow(() -> new UsernameNotFoundException("Couldnt find user!"));
+
+        var company = new CompanyEntity();
+        company.setName(companyCreationRequest.companyName());
+        companyRepository.save(company);
+        user.setCompanyId(company.getId());
+        return CompanyResponse.fromEntity(company);
     }
 }

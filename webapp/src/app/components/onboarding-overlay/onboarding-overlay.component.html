@@ -1,5 +1,10 @@
-<div class="onboarding-overlay">
+<div (click)="onBackdropClick($event)" class="onboarding-overlay">
   <div class="onboarding-content">
+    @if (closable()) {
+      <button class="onboarding-close" (click)="onClose()" aria-label="Close">
+        &times;
+      </button>
+    }
     <ng-content></ng-content>
   </div>
 </div>

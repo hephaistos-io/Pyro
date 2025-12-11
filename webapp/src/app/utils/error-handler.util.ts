@@ -1,7 +1,7 @@
 /**
  * Parse and handle API errors, returning user-friendly error messages
  */
-export function handleApiError(err: any, context: 'login' | 'registration' | 'company' | 'profile' = 'login'): string {
+export function handleApiError(err: any, context: 'login' | 'registration' | 'company' | 'profile' | 'application' = 'login'): string {
   // Parse backend error response
   // Check if err.error is a string and parse it
   let errorObj = err.error;
@@ -22,6 +22,7 @@ export function handleApiError(err: any, context: 'login' | 'registration' | 'co
       case 'INVALID_CREDENTIALS':
         return 'Invalid email or password';
       case 'DUPLICATE_RESOURCE':
+        if (context === 'application') return 'An application with this name already exists';
         return 'This email is already registered';
       case 'BREACHED_PASSWORD':
         return message || 'This password has been found in data breaches. Please choose a different password.';
@@ -43,13 +44,15 @@ export function handleApiError(err: any, context: 'login' | 'registration' | 'co
     case 400:
       if (context === 'registration') return 'Invalid registration data. Please check your inputs';
       if (context === 'company') return 'Invalid company data. Please check your inputs';
+      if (context === 'application') return 'Invalid application data. Please check your inputs';
       return 'Invalid login credentials';
     case 401:
     case 403:
-      if (context === 'profile' || context === 'company') return 'Session expired. Please log in again';
+      if (context === 'profile' || context === 'company' || context === 'application') return 'Session expired. Please log in again';
       return 'Invalid email or password';
     case 409:
       if (context === 'company') return 'A company with this name already exists';
+      if (context === 'application') return 'An application with this name already exists';
       return 'This email is already registered';
     case 500:
       return 'Server error. Please try again later';
@@ -57,6 +60,7 @@ export function handleApiError(err: any, context: 'login' | 'registration' | 'co
       if (context === 'registration') return 'Registration failed. Please try again';
       if (context === 'company') return 'Failed to create company. Please try again';
       if (context === 'profile') return 'Failed to load profile. Please try again';
+      if (context === 'application') return 'Failed to create application. Please try again';
       return 'Login failed. Please try again';
   }
 }
