@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Pyro — Granular Feature Configuration</title>
+  <title>Flagforge — Granular Feature Configuration</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="favicon.png" rel="icon" type="image/x-icon">
@@ -11,6 +11,18 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap"
     rel="stylesheet">
+  <script>
+    // Apply theme immediately to prevent flash
+    (function () {
+      var stored = localStorage.getItem('theme_preference');
+      var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) {
+        document.documentElement.classList.add('dark-mode');
+      } else {
+        document.documentElement.classList.remove('dark-mode');
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

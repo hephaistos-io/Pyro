@@ -8,24 +8,30 @@ export class ThemeService {
   private readonly STORAGE_KEY = 'theme_preference';
 
   constructor() {
-    if (this.isDarkMode()) {
-      document.body.classList.add('dark-mode');
-    }
+    this.applyTheme(this.isDarkMode());
   }
 
   toggleTheme(isDark: boolean): void {
     this.isDarkMode.set(isDark);
     localStorage.setItem(this.STORAGE_KEY, isDark ? 'dark' : 'light');
+    this.applyTheme(isDark);
+  }
 
-    if (isDark) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
+  private applyTheme(isDark: boolean): void {
+    // Apply to both html (for early load script) and body (for Angular)
+    const elements = [document.documentElement, document.body];
+    elements.forEach(el => {
+      if (isDark) {
+        el.classList.add('dark-mode');
+      } else {
+        el.classList.remove('dark-mode');
+      }
+    });
   }
 
   private getInitialTheme(): boolean {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
+    // Use hardcoded key since this is called during signal init (before STORAGE_KEY is defined)
+    const stored = localStorage.getItem('theme_preference');
     if (stored) {
       return stored === 'dark';
     }
