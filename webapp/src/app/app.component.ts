@@ -1,7 +1,8 @@
-import {Component} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {NavbarComponent} from './components/navbar/navbar.component';
 import {FooterComponent} from './components/footer/footer.component';
+import {ThemeService} from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -15,4 +16,6 @@ import {FooterComponent} from './components/footer/footer.component';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
+  // Inject ThemeService to ensure it initializes on app startup
+  private themeService = inject(ThemeService);
 }

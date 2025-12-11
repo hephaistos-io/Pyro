@@ -11,11 +11,11 @@ import {ThemeService} from '../../services/theme.service';
 })
 export class HeroComponent {
   // Feature states
-  quality: 'FHD' | '4K' = '4K';
-  devices = 3;
-  offlinePlay = true;
-  design: 'light' | 'dark' = 'light';
+  quality: 'FHD' | '4K' = 'FHD';
+  devices = 4;
+  offlinePlay = false;
   private themeService = inject(ThemeService);
+  design: 'light' | 'dark' = this.themeService.isDarkMode() ? 'dark' : 'light';
 
   setQuality(value: 'FHD' | '4K'): void {
     this.quality = value;
