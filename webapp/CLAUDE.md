@@ -25,9 +25,30 @@ The codebase follows a clean, organized structure that separates concerns:
 
 ```
 src/app/
-├── components/        # Reusable UI components (navbar, hero, features, etc.)
-├── pages/             # Route-level page components (home, pricing)
+├── api/generated/     # Auto-generated API client (ng-openapi-gen)
+├── components/        # Reusable UI components
+│   ├── navbar/
+│   ├── footer/
+│   ├── hero/
+│   ├── features/
+│   ├── how-it-works/
+│   ├── cta/
+│   ├── app-card/                    # Signal-based card component
+│   ├── onboarding-overlay/          # First-time user onboarding
+│   ├── company-creation-form/       # Company creation form
+│   └── application-creation-form/   # Application creation form
+├── guards/            # Route guards (authGuard)
+├── interceptors/      # HTTP interceptors (authInterceptor)
+├── layouts/           # Page layout wrappers
+│   └── dashboard-layout/
+├── pages/             # Route-level page components
+│   ├── home/
+│   ├── pricing/
+│   ├── login/         # Authentication page
+│   ├── register/      # Registration with password strength
+│   └── dashboard/     # Protected dashboard (requires auth)
 ├── services/          # Singleton services (providedIn: 'root')
+├── utils/             # Utility functions (error-handler)
 ├── app.component.ts   # Root component
 ├── app.routes.ts      # Route definitions
 └── app.config.ts      # Application configuration
@@ -367,6 +388,7 @@ $warm-gray: #F5F3F1;
 
 // Dark Mode
 $dark-bg: #1a1a1a;
+$dark-bg-deeper: #141414;  // For footer/deeper backgrounds
 $dark-card: #252525;
 $dark-border: #3a3a3a;
 $dark-text: #f5f5f5;
@@ -490,21 +512,29 @@ Keep bundle sizes reasonable, especially for component styles.
 Routes are defined in `app.routes.ts`:
 
 ```typescript
-import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
-import { PricingComponent } from './pages/pricing/pricing.component';
-
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'pricing', component: PricingComponent },
-  { path: '**', redirectTo: '' }  // Wildcard redirects to home
+  { path: 'register', component: RegisterComponent },
+  { path: 'login', component: LoginComponent },
+  {
+    path: 'dashboard',
+    component: DashboardLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      { path: '', component: DashboardComponent }
+    ]
+  },
+  { path: '**', redirectTo: '' }
 ];
 ```
 
-**Routing Patterns:**
+**Routing Features:**
 
-- Page components map directly to routes
-- Keep route configuration simple
+- **Anchor scrolling enabled** - `anchorScrolling: 'enabled'` for same-page navigation
+- **Scroll restoration** - `scrollPositionRestoration: 'enabled'`
+- **Auth guard** - Protects `/dashboard` route, redirects to `/login?returnUrl=...`
+- **Child routes** - Dashboard uses `DashboardLayoutComponent` as wrapper
 
 ### Navigation Patterns
 
@@ -533,6 +563,206 @@ Use standard HTML anchor links for scrolling to sections on the current page:
 - `routerLink` provides Angular's routing features for page navigation
 - Both are standards-compliant and appropriate for their use cases
 - More performant (no router overhead for simple same-page scrolling)
+
+---
+
+## API Client (Generated)
+
+### Overview
+
+The API client is auto-generated from the backend OpenAPI spec using `ng-openapi-gen`.
+
+**Location:** `src/app/api/generated/`
+
+### Regenerating the Client
+
+```bash
+# 1. Start the backend and generate OpenAPI spec
+./gradlew backend:webapp-api:generateOpenApiDocs
+
+# 2. Generate TypeScript client from the spec
+npx ng-openapi-gen
+```
+
+### Using the API
+
+The generated `Api` service provides a **promise-based interface** (not RxJS):
+
+```typescript
+import { Api } from '../api/generated/api';
+
+@Component({ ... })
+export class MyComponent {
+  private api = inject(Api);
+
+  async loadData(): Promise<void> {
+    const response = await this.api.getApplications();
+    // response is typed based on OpenAPI spec
+  }
+}
+```
+
+### Available Endpoints
+
+| Method                          | Endpoint                   | Description        |
+|---------------------------------|----------------------------|--------------------|
+| `register()`                    | POST /v1/auth/register     | User registration  |
+| `authenticate()`                | POST /v1/auth/authenticate | User login         |
+| `profile()`                     | GET /v1/user/profile       | Get current user   |
+| `getCompanyForCurrentUser()`    | GET /v1/company            | Get user's company |
+| `createCompanyForCurrentUser()` | POST /v1/company           | Create company     |
+| `getApplications()`             | GET /v1/applications       | List applications  |
+| `createApplication()`           | POST /v1/applications      | Create application |
+
+---
+
+## Authentication & Guards
+
+### AuthService
+
+Manages authentication state using signals:
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  isAuthenticated = signal(false);
+  userEmail = signal<string | null>(null);
+
+  login(token: string, email: string): void { ... }
+  logout(): void { ... }
+}
+```
+
+### AuthGuard
+
+Protects routes requiring authentication:
+
+```typescript
+// guards/auth.guard.ts
+export const authGuard: CanActivateFn = (route, state) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (authService.isAuthenticated()) {
+    return true;
+  }
+
+  // Redirect to login with return URL
+  return router.createUrlTree(['/login'], {
+    queryParams: { returnUrl: state.url }
+  });
+};
+```
+
+### AuthInterceptor
+
+Automatically adds Bearer token to API requests:
+
+```typescript
+// interceptors/auth.interceptor.ts
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    req = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+  }
+  return next(req);
+};
+```
+
+---
+
+## Services Reference
+
+### ThemeService
+
+Manages dark/light mode with localStorage persistence.
+
+### AuthService
+
+Manages authentication state (isAuthenticated, userEmail, token storage).
+
+### UserService
+
+Manages user profile and company data with computed signals:
+
+```typescript
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  user = signal<UserResponse | null>(null);
+  company = signal<CompanyResponse | null>(null);
+
+  // Computed signals for derived state
+  hasCompany = computed(() => this.company() !== null);
+  companyName = computed(() => this.company()?.name ?? '');
+  greeting = computed(() => {
+    const user = this.user();
+    return user ? `Welcome, ${user.firstName}` : 'Welcome';
+  });
+}
+```
+
+---
+
+## Modern Angular Patterns
+
+### Converting Observables to Signals
+
+Use `toSignal()` from `@angular/core/rxjs-interop`:
+
+```typescript
+import { toSignal } from '@angular/core/rxjs-interop';
+
+@Component({ ... })
+export class MyComponent {
+  private route = inject(ActivatedRoute);
+
+  // Convert observable to signal
+  queryParams = toSignal(this.route.queryParams);
+}
+```
+
+### Automatic Subscription Cleanup
+
+Use `takeUntilDestroyed()` for RxJS subscriptions:
+
+```typescript
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+@Component({ ... })
+export class MyComponent {
+  constructor() {
+    someObservable$
+      .pipe(takeUntilDestroyed())
+      .subscribe(value => { ... });
+  }
+}
+```
+
+### Password Strength Validation
+
+The register page uses `zxcvbn` for password strength:
+
+```typescript
+import zxcvbn from 'zxcvbn';
+
+checkPasswordStrength(password: string): void {
+  const result = zxcvbn(password);
+  this.passwordStrength = result.score; // 0-4
+  this.passwordFeedback = result.feedback.suggestions;
+}
+```
+
+### Error Handling Utility
+
+Centralized error handling in `utils/error-handler.util.ts`:
+
+```typescript
+export function handleApiError(error: unknown): string {
+  // Extract user-friendly message from API errors
+}
+```
 
 ---
 

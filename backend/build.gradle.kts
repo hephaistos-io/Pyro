@@ -14,7 +14,7 @@ subprojects {
         }
     }
 
-    group = "io.hephaistos.pyro"
+    group = "io.hephaistos.flagforge"
 
     repositories {
         mavenCentral()
