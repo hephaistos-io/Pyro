@@ -1,0 +1,1886 @@
+@use '../../../styles/index' as *;
+
+.application-overview {
+  min-height: calc(100vh - 128px);
+  padding: 8rem 4rem 4rem;
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.header {
+  margin-bottom: 3rem;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 8px;
+  color: $charcoal-light;
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 2rem;
+
+  svg {
+    transition: transform 0.3s ease;
+  }
+
+  &:hover {
+    border-color: $pyro-red;
+    color: $pyro-red;
+
+    svg {
+      transform: translateX(-2px);
+    }
+  }
+
+  @include dark-mode {
+    border-color: $dark-border;
+    color: $dark-text-muted;
+
+    &:hover {
+      border-color: $pyro-red;
+      color: $pyro-red;
+    }
+  }
+}
+
+.title {
+  font-family: $font-serif;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 500;
+  color: $charcoal;
+  margin: 0;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+// ===== Application Summary Section =====
+.app-summary {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.6s ease-out 0.1s both;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+.summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba($charcoal, 0.08);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($black, 0.3);
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    color: $pyro-red;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  &__value {
+    font-family: $font-sans;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $charcoal;
+    line-height: 1.2;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// ===== Pricing Breakdown Section =====
+.pricing-breakdown {
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba($charcoal, 0.08);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($black, 0.3);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba($charcoal, 0.08);
+
+    @include dark-mode {
+      border-bottom-color: rgba($white, 0.08);
+    }
+  }
+
+  &__title {
+    font-family: $font-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__total {
+    font-family: $font-sans;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $pyro-red;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+
+  &__period {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.pricing-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 140px 1fr 60px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba($charcoal, 0.03);
+
+      @include dark-mode {
+        background: rgba($white, 0.03);
+      }
+    }
+
+    &--active {
+      background: rgba($pyro-red, 0.06);
+
+      &:hover {
+        background: rgba($pyro-red, 0.08);
+      }
+
+      @include dark-mode {
+        background: rgba($pyro-red, 0.1);
+
+        &:hover {
+          background: rgba($pyro-red, 0.12);
+        }
+      }
+
+      .pricing-chart__name {
+        color: $pyro-red-deep;
+
+        @include dark-mode {
+          color: $pyro-red-light;
+        }
+      }
+    }
+
+    @media (max-width: 500px) {
+      grid-template-columns: 100px 1fr 50px;
+      gap: 0.5rem;
+    }
+  }
+
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  &__name {
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__detail {
+    font-family: $font-sans;
+    font-size: 0.7rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+
+    &--free {
+      color: #22c55e;
+
+      @include dark-mode {
+        color: #4ade80;
+      }
+    }
+  }
+
+  &__bar-wrapper {
+    display: flex;
+    height: 20px;
+    background: rgba($charcoal, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+
+    @include dark-mode {
+      background: rgba($white, 0.08);
+    }
+  }
+
+  &__bar {
+    height: 100%;
+    transition: width 0.3s ease;
+
+    &--fee {
+      background: linear-gradient(90deg, #64748b 0%, #94a3b8 100%);
+    }
+
+    &--requests {
+      background: linear-gradient(90deg, $pyro-red 0%, rgba($pyro-red, 0.8) 100%);
+    }
+
+    &--users {
+      background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+    }
+  }
+
+  &__amount {
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $charcoal;
+    text-align: right;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.pricing-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-top-color: rgba($white, 0.08);
+  }
+
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+
+    &--fee {
+      background: #64748b;
+    }
+
+    &--requests {
+      background: $pyro-red;
+    }
+
+    &--users {
+      background: #3b82f6;
+    }
+  }
+
+  &__text {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.content {
+  animation: fadeUp 0.6s ease-out 0.1s both;
+}
+
+.overview-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.overview-card {
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba($charcoal, 0.08);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($black, 0.3);
+    }
+  }
+
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba($charcoal, 0.1);
+
+    @include dark-mode {
+      border-bottom-color: $dark-border;
+    }
+  }
+
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__period {
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    background: rgba($charcoal, 0.06);
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+      background: rgba($white, 0.08);
+    }
+  }
+
+  &__content {
+    padding: 1.5rem;
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba($charcoal, 0.05);
+
+    @include dark-mode {
+      border-bottom-color: rgba($white, 0.05);
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__value {
+    font-family: $font-sans;
+    font-size: 0.95rem;
+    color: $charcoal;
+    word-break: break-all;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__code {
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    font-size: 0.875rem;
+    color: $charcoal;
+    background: rgba($charcoal, 0.06);
+    padding: 0.375rem 0.625rem;
+    border-radius: 6px;
+    border: 1px solid rgba($charcoal, 0.1);
+
+    @include dark-mode {
+      color: $dark-text;
+      background: rgba($white, 0.06);
+      border-color: rgba($white, 0.1);
+    }
+
+    &--key {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__key-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__key-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__key-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba($charcoal, 0.1);
+    border-radius: 6px;
+    color: $charcoal-light;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba($charcoal, 0.05);
+      border-color: rgba($charcoal, 0.2);
+      color: $charcoal;
+    }
+
+    @include dark-mode {
+      border-color: $dark-border;
+      color: $dark-text-muted;
+
+      &:hover {
+        background: rgba($white, 0.05);
+        border-color: rgba($white, 0.2);
+        color: $dark-text;
+      }
+    }
+
+    &--refresh {
+      &:hover {
+        border-color: $pyro-red;
+        color: $pyro-red;
+
+        @include dark-mode {
+          border-color: $pyro-red;
+          color: $pyro-red-light;
+        }
+      }
+    }
+  }
+}
+
+// API Tier Section
+.tier-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-top-color: rgba($white, 0.08);
+  }
+
+  &__label {
+    display: block;
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.tier-sliders {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
+.tier-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__title {
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $charcoal;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.tier-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  &__track {
+    position: relative;
+    padding-bottom: 2rem;
+  }
+
+  &__input {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba($charcoal, 0.1);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+
+    @include dark-mode {
+      background: rgba($white, 0.15);
+    }
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: $pyro-red;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba($pyro-red, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba($pyro-red, 0.4);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: $pyro-red;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba($pyro-red, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+      &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 3px 10px rgba($pyro-red, 0.4);
+      }
+    }
+  }
+
+  &__labels {
+    position: absolute;
+    top: 1.25rem;
+    left: 0;
+    right: 0;
+  }
+
+  &__tick {
+    position: absolute;
+    background: none;
+    border: none;
+    padding: 0.25rem 0;
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+
+    // Position each tick at the correct slider step
+    &:nth-child(1) {
+      left: 0;
+    }
+
+    &:nth-child(2) {
+      left: 33.33%;
+      transform: translateX(-50%);
+    }
+
+    &:nth-child(3) {
+      left: 66.66%;
+      transform: translateX(-50%);
+    }
+
+    &:nth-child(4) {
+      right: 0;
+    }
+
+    &:hover {
+      color: $charcoal;
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        color: $dark-text;
+      }
+    }
+
+    &--active {
+      color: $pyro-red;
+      font-weight: 600;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+  }
+}
+
+.tier-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba($pyro-red, 0.06) 0%, rgba($pyro-red, 0.02) 100%);
+  border: 1px solid rgba($pyro-red, 0.15);
+  border-radius: 10px;
+
+  @include dark-mode {
+    background: linear-gradient(135deg, rgba($pyro-red, 0.12) 0%, rgba($pyro-red, 0.04) 100%);
+    border-color: rgba($pyro-red, 0.25);
+  }
+
+  &__limit-value {
+    font-family: $font-sans;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $pyro-red;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+
+  &__limit-label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &--compact {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+}
+
+.tier-price-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba($pyro-red, 0.06) 0%, rgba($pyro-red, 0.02) 100%);
+  border: 1px solid rgba($pyro-red, 0.15);
+  border-radius: 10px;
+
+  @include dark-mode {
+    background: linear-gradient(135deg, rgba($pyro-red, 0.12) 0%, rgba($pyro-red, 0.04) 100%);
+    border-color: rgba($pyro-red, 0.25);
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__value {
+    font-family: $font-sans;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $pyro-red;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+
+  &__period {
+    font-size: 1rem;
+    font-weight: 500;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.placeholder-text {
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  color: $charcoal-light;
+  margin: 0;
+  font-style: italic;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+// Usage Chart Styles
+.usage-chart {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-bottom-color: rgba($white, 0.08);
+  }
+
+  &__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex: 1;
+    height: 120px;
+    position: relative;
+  }
+
+  &__limit-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba($charcoal, 0.2);
+    border-top: 1px dashed rgba($charcoal, 0.3);
+
+    @include dark-mode {
+      background: rgba($white, 0.15);
+      border-top-color: rgba($white, 0.25);
+    }
+  }
+
+  &__limit-label {
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-family: $font-sans;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+  }
+
+  &__bar {
+    width: 100%;
+    max-width: 40px;
+    background: linear-gradient(180deg, $pyro-red 0%, rgba($pyro-red, 0.6) 100%);
+    border-radius: 4px 4px 0 0;
+    margin-top: auto;
+    transition: height 0.3s ease;
+    min-height: 4px;
+
+    &--high {
+      background: linear-gradient(180deg, $pyro-red-deep 0%, $pyro-red 100%);
+    }
+
+    @include dark-mode {
+      background: linear-gradient(180deg, $pyro-red-light 0%, rgba($pyro-red, 0.6) 100%);
+
+      &--high {
+        background: linear-gradient(180deg, $pyro-red 0%, $pyro-red-light 100%);
+      }
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+    margin-top: 0.5rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: $font-sans;
+    font-size: 0.7rem;
+    color: $charcoal-light;
+    padding-bottom: 1.5rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Usage Stats Grid
+.usage-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.usage-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__value {
+    font-family: $font-sans;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__unit {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    margin-left: 0.125rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__sublabel {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__progress {
+    height: 6px;
+    background: rgba($charcoal, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.375rem;
+
+    @include dark-mode {
+      background: rgba($white, 0.1);
+    }
+  }
+
+  &__progress-bar {
+    height: 100%;
+    background: $pyro-red;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+
+    &--warning {
+      background: linear-gradient(90deg, $pyro-red 0%, $pyro-red-deep 100%);
+    }
+
+    @include dark-mode {
+      background: $pyro-red-light;
+
+      &--warning {
+        background: linear-gradient(90deg, $pyro-red-light 0%, $pyro-red 100%);
+      }
+    }
+  }
+}
+
+// Usage Recommendation
+.usage-recommendation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba($charcoal, 0.04);
+  border: 1px solid rgba($charcoal, 0.08);
+  border-radius: 10px;
+  border-left: 3px solid $charcoal-light;
+
+  @include dark-mode {
+    background: rgba($white, 0.04);
+    border-color: rgba($white, 0.08);
+    border-left-color: $dark-text-muted;
+  }
+
+  &--info {
+    $info-blue: #3b82f6;
+    $info-blue-deep: #1d4ed8;
+    $info-blue-light: #60a5fa;
+
+    background: rgba($info-blue, 0.06);
+    border-color: rgba($info-blue, 0.15);
+    border-left-color: $info-blue;
+
+    @include dark-mode {
+      background: rgba($info-blue, 0.1);
+      border-color: rgba($info-blue, 0.2);
+      border-left-color: $info-blue-light;
+    }
+
+    .usage-recommendation__icon {
+      color: $info-blue;
+
+      @include dark-mode {
+        color: $info-blue-light;
+      }
+    }
+
+    .usage-recommendation__label {
+      color: $info-blue-deep;
+
+      @include dark-mode {
+        color: $info-blue-light;
+      }
+    }
+  }
+
+  &--danger {
+    background: rgba($pyro-red, 0.06);
+    border-color: rgba($pyro-red, 0.15);
+    border-left-color: $pyro-red;
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.1);
+      border-color: rgba($pyro-red, 0.2);
+      border-left-color: $pyro-red-light;
+    }
+
+    .usage-recommendation__icon {
+      color: $pyro-red;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+
+    .usage-recommendation__label {
+      color: $pyro-red-deep;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__message {
+    font-family: $font-sans;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.environments-section {
+  margin: 3rem 0;
+  animation: fadeUp 0.6s ease-out 0.15s both;
+  position: relative;
+  z-index: 10;
+}
+
+.environment-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.selector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selector-description {
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  color: $charcoal-light;
+  margin: 0;
+  margin-top: -0.25rem;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.delete-env-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 2px solid rgba($charcoal, 0.1);
+  border-radius: 8px;
+  color: $charcoal-light;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $pyro-red;
+    color: $pyro-red;
+    background: rgba($pyro-red, 0.05);
+  }
+
+  @include dark-mode {
+    border-color: $dark-border;
+    color: $dark-text-muted;
+
+    &:hover {
+      border-color: $pyro-red;
+      color: $pyro-red-light;
+      background: rgba($pyro-red, 0.1);
+    }
+  }
+}
+
+.selector-label {
+  font-family: $font-sans;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $charcoal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.selector-wrapper {
+  position: relative;
+  z-index: 100;
+  width: 100%;
+  max-width: 350px;
+}
+
+.selector-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: $white;
+  border: 2px solid rgba($charcoal, 0.1);
+  border-radius: 8px;
+  font-family: $font-sans;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: $pyro-red;
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      border-color: $pyro-red;
+    }
+  }
+
+  &__text {
+    font-size: 1rem;
+    font-weight: 500;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__icon {
+    color: $charcoal-light;
+    transition: transform 0.3s ease;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba($black, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+  max-height: 400px;
+  display: flex;
+  flex-direction: column;
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+    box-shadow: 0 10px 40px rgba($black, 0.5);
+  }
+}
+
+.dropdown-search {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba($charcoal, 0.1);
+  flex-shrink: 0;
+
+  @include dark-mode {
+    border-bottom-color: $dark-border;
+  }
+
+  &__icon {
+    color: $charcoal-light;
+    flex-shrink: 0;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: $font-sans;
+    font-size: 0.95rem;
+    color: $charcoal;
+    background: transparent;
+
+    &::placeholder {
+      color: $charcoal-light;
+    }
+
+    @include dark-mode {
+      color: $dark-text;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+    }
+  }
+}
+
+.dropdown-section {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba($charcoal, 0.1);
+
+    @include dark-mode {
+      border-bottom-color: $dark-border;
+    }
+  }
+
+  &__header {
+    padding: 0.75rem 1rem 0.5rem;
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  font-family: $font-sans;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba($charcoal, 0.05);
+
+    @include dark-mode {
+      background: rgba($white, 0.05);
+    }
+  }
+
+  &--active {
+    background: $pyro-red-pale;
+
+    &:hover {
+      background: $pyro-red-pale;
+    }
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.15);
+
+      &:hover {
+        background: rgba($pyro-red, 0.15);
+      }
+    }
+
+    .dropdown-item__name {
+      color: $pyro-red-deep;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+
+    .dropdown-item__description {
+      color: $pyro-red;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__description {
+    font-size: 0.8rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.dropdown-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  color: $charcoal-light;
+  font-style: italic;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.dropdown-footer {
+  flex-shrink: 0;
+  border-top: 1px solid rgba($charcoal, 0.1);
+
+  @include dark-mode {
+    border-top-color: $dark-border;
+  }
+}
+
+.dropdown-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $pyro-red;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  svg {
+    transition: transform 0.2s ease;
+  }
+
+  &:hover {
+    background: $pyro-red-pale;
+
+    svg {
+      transform: scale(1.1);
+    }
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.1);
+    }
+  }
+
+  @include dark-mode {
+    color: $pyro-red-light;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($black, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+  backdrop-filter: blur(4px);
+
+  @include dark-mode {
+    background: rgba($black, 0.7);
+  }
+}
+
+.modal-content {
+  background: $white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 20px 60px rgba($black, 0.2);
+
+  @include dark-mode {
+    background: $dark-card;
+    box-shadow: 0 20px 60px rgba($black, 0.5);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: $charcoal-light;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba($charcoal, 0.1);
+    color: $charcoal;
+
+    @include dark-mode {
+      background: rgba($white, 0.1);
+      color: $dark-text;
+    }
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.modal-title {
+  font-family: $font-serif;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: $charcoal;
+  margin: 0 0 2rem 0;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $charcoal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.form-input {
+  padding: 0.875rem 1rem;
+  border: 2px solid rgba($charcoal, 0.1);
+  border-radius: 8px;
+  font-family: $font-sans;
+  font-size: 1rem;
+  color: $charcoal;
+  background: $white;
+  transition: all 0.3s ease;
+
+  &::placeholder {
+    color: $charcoal-light;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $pyro-red;
+    box-shadow: 0 0 0 3px rgba($pyro-red, 0.1);
+  }
+
+  @include dark-mode {
+    background: $dark-bg;
+    border-color: $dark-border;
+    color: $dark-text;
+
+    &::placeholder {
+      color: $dark-text-muted;
+    }
+
+    &:focus {
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.2);
+    }
+  }
+}
+
+.modal-submit {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: $pyro-red;
+  border: none;
+  border-radius: 8px;
+  font-family: $font-sans;
+  font-size: 1rem;
+  font-weight: 600;
+  color: $white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+
+  &:hover {
+    background: $pyro-red-deep;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba($pyro-red, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  @include dark-mode {
+    background: $pyro-red;
+
+    &:hover {
+      background: $pyro-red-light;
+      box-shadow: 0 4px 12px rgba($pyro-red, 0.4);
+    }
+  }
+}
+
+.modal-content--warning {
+  text-align: center;
+  max-width: 420px;
+}
+
+.modal-title--warning {
+  margin-top: 0.5rem;
+}
+
+.warning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  background: rgba($pyro-red, 0.1);
+  border-radius: 50%;
+  color: $pyro-red;
+
+  @include dark-mode {
+    background: rgba($pyro-red, 0.15);
+    color: $pyro-red-light;
+  }
+}
+
+.warning-text {
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  color: $charcoal-light;
+  line-height: 1.6;
+  margin: 0 0 1.5rem 0;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &--cancel {
+    background: transparent;
+    border: 1px solid rgba($charcoal, 0.2);
+    color: $charcoal;
+
+    &:hover {
+      background: rgba($charcoal, 0.05);
+      border-color: rgba($charcoal, 0.3);
+    }
+
+    @include dark-mode {
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &:hover {
+        background: rgba($white, 0.05);
+        border-color: rgba($white, 0.2);
+      }
+    }
+  }
+
+  &--danger {
+    background: $pyro-red;
+    border: none;
+    color: $white;
+
+    &:hover {
+      background: $pyro-red-deep;
+      box-shadow: 0 2px 8px rgba($pyro-red, 0.3);
+    }
+
+    @include dark-mode {
+      &:hover {
+        background: $pyro-red-light;
+        box-shadow: 0 2px 8px rgba($pyro-red, 0.4);
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .application-overview {
+    padding: 6rem 1.5rem 4rem;
+  }
+
+  .overview-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .modal-content {
+    padding: 2rem;
+    width: 95%;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+  }
+}

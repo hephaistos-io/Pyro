@@ -1,0 +1,612 @@
+<section class="application-overview">
+    <div class="header">
+        <button (click)="goBack()" class="back-button">
+            <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2"/>
+            </svg>
+            <span>Back to Dashboard</span>
+        </button>
+        <h1 class="title">{{ applicationName() }}</h1>
+    </div>
+
+    <!-- Application Summary -->
+    <div class="app-summary">
+        <div class="app-summary__stats">
+            <div class="summary-stat">
+                <svg class="summary-stat__icon" fill="none" height="24" viewBox="0 0 24 24" width="24"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-linecap="round"
+                          stroke-linejoin="round" stroke-width="2"/>
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                            stroke-width="2"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-linecap="round"
+                          stroke-linejoin="round" stroke-width="2"/>
+                </svg>
+                <div class="summary-stat__content">
+                    <span class="summary-stat__value">{{ formatNumber(totalUsers()) }}</span>
+                    <span class="summary-stat__label">Total Users</span>
+                </div>
+            </div>
+            <div class="summary-stat">
+                <svg class="summary-stat__icon" fill="none" height="24" viewBox="0 0 24 24" width="24"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                          stroke-width="2"/>
+                </svg>
+                <div class="summary-stat__content">
+                    <span class="summary-stat__value">{{ formatNumber(totalHitsThisMonth()) }}</span>
+                    <span class="summary-stat__label">Hits This Month</span>
+                </div>
+            </div>
+            <div class="summary-stat">
+                <svg class="summary-stat__icon" fill="none" height="24" viewBox="0 0 24 24" width="24"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <rect height="14" rx="2" ry="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="20"
+                          x="2" y="3"/>
+                    <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                          stroke-width="2"/>
+                </svg>
+                <div class="summary-stat__content">
+                    <span class="summary-stat__value">{{ environmentCount() }}</span>
+                    <span class="summary-stat__label">Environments</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Breakdown -->
+        <div class="pricing-breakdown">
+            <div class="pricing-breakdown__header">
+                <h3 class="pricing-breakdown__title">Monthly Price Breakdown</h3>
+                <span class="pricing-breakdown__total">
+          ${{ applicationTotalMonthlyPrice() }}<span class="pricing-breakdown__period">/mo</span>
+        </span>
+            </div>
+
+            <div class="pricing-chart">
+                <!-- Environment fees row -->
+                @if (additionalEnvironmentFees() > 0) {
+                    <div class="pricing-chart__row">
+                        <div class="pricing-chart__label">
+                            <span class="pricing-chart__name">Environment Fees</span>
+                            <span class="pricing-chart__detail">{{ environmentCount() - 1 }}
+                                additional × ${{ environmentFee }}</span>
+                        </div>
+                        <div class="pricing-chart__bar-wrapper">
+                            <div
+                                    class="pricing-chart__bar pricing-chart__bar--fee"
+                                    [style.width.%]="(additionalEnvironmentFees() / applicationTotalMonthlyPrice()) * 100">
+                            </div>
+                        </div>
+                        <span class="pricing-chart__amount">${{ additionalEnvironmentFees() }}</span>
+                    </div>
+                }
+
+                <!-- Environment rows -->
+                @for (env of pricingBreakdown(); track env.id) {
+                    <div class="pricing-chart__row"
+                         [class.pricing-chart__row--active]="selectedEnvironment()?.id === env.id">
+                        <div class="pricing-chart__label">
+                            <span class="pricing-chart__name">{{ env.name }}</span>
+                            @if (env.total > 0) {
+                                <span class="pricing-chart__detail">Requests + Users</span>
+                            } @else {
+                                <span class="pricing-chart__detail pricing-chart__detail--free">Free tier</span>
+                            }
+                        </div>
+                        <div class="pricing-chart__bar-wrapper">
+                            @if (env.total > 0) {
+                                <div
+                                        class="pricing-chart__bar pricing-chart__bar--requests"
+                                        [style.width.%]="(env.requestTierPrice / applicationTotalMonthlyPrice()) * 100">
+                                </div>
+                                <div
+                                        class="pricing-chart__bar pricing-chart__bar--users"
+                                        [style.width.%]="(env.userTierPrice / applicationTotalMonthlyPrice()) * 100">
+                                </div>
+                            }
+                        </div>
+                        <span class="pricing-chart__amount">
+              @if (env.total === 0) {
+                  Free
+              } @else {
+                  ${{ env.total }}
+              }
+            </span>
+                    </div>
+                }
+            </div>
+
+            <!-- Legend -->
+            <div class="pricing-legend">
+                <div class="pricing-legend__item">
+                    <span class="pricing-legend__dot pricing-legend__dot--fee"></span>
+                    <span class="pricing-legend__text">Environment fees</span>
+                </div>
+                <div class="pricing-legend__item">
+                    <span class="pricing-legend__dot pricing-legend__dot--requests"></span>
+                    <span class="pricing-legend__text">Request limits</span>
+                </div>
+                <div class="pricing-legend__item">
+                    <span class="pricing-legend__dot pricing-legend__dot--users"></span>
+                    <span class="pricing-legend__text">User limits</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environment Selection -->
+    <div class="environments-section">
+        <div class="environment-selector">
+            <label class="selector-label">Environment</label>
+            <div class="selector-row">
+                <div class="selector-wrapper">
+                    <button (click)="toggleEnvironmentDropdown()" class="selector-button">
+          <span class="selector-button__text">
+            {{ selectedEnvironment()?.name || 'Select environment' }}
+          </span>
+                        <svg
+                                [class.selector-button__icon--open]="showEnvironmentDropdown()"
+                                class="selector-button__icon"
+                                fill="none"
+                                height="20"
+                                viewBox="0 0 20 20"
+                                width="20"
+                                xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-linecap="round"
+                                  stroke-linejoin="round" stroke-width="2"/>
+                        </svg>
+                    </button>
+
+                    @if (showEnvironmentDropdown()) {
+                        <div class="dropdown-overlay" (click)="closeEnvironmentDropdown()"></div>
+                        <div class="dropdown-menu" (click)="$event.stopPropagation()">
+                            <!-- Search Input -->
+                            <div class="dropdown-search">
+                                <svg class="dropdown-search__icon" width="18" height="18" viewBox="0 0 18 18"
+                                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 14C11.3137 14 14 11.3137 14 8C14 4.68629 11.3137 2 8 2C4.68629 2 2 4.68629 2 8C2 11.3137 4.68629 14 8 14Z"
+                                          stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                    <path d="M16 16L12.65 12.65" stroke="currentColor" stroke-width="2"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <input
+                                    #searchInput
+                                    type="text"
+                                    class="dropdown-search__input"
+                                    placeholder="Search environments..."
+                                    [value]="environmentSearchQuery()"
+                                    (input)="onSearchQueryChange(searchInput.value)"
+                                    autocomplete="off">
+                            </div>
+
+                            <!-- All Environments -->
+                            <div class="dropdown-section">
+                                @for (env of filteredEnvironments(); track env.id) {
+                                    <button
+                                            class="dropdown-item"
+                                            [class.dropdown-item--active]="selectedEnvironment()?.id === env.id"
+                                            (click)="selectEnvironment(env)">
+                                        <span class="dropdown-item__name">{{ env.name }}</span>
+                                        @if (env.description) {
+                                            <span class="dropdown-item__description">{{ env.description }}</span>
+                                        }
+                                    </button>
+                                }
+                                @if (filteredEnvironments().length === 0) {
+                                    <div class="dropdown-empty">
+                                        <span>No environments found</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Create Environment -->
+                            <div class="dropdown-footer">
+                                <button class="dropdown-create" (click)="onAddEnvironmentClick()">
+                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 3.75V14.25M3.75 9H14.25" stroke="currentColor" stroke-width="2"
+                                              stroke-linecap="round"/>
+                                    </svg>
+                                    <span>Create Environment</span>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (selectedEnvironment()) {
+                    <button class="delete-env-btn" (click)="requestEnvironmentDeletion()"
+                            aria-label="Delete environment">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+                                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                            <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                }
+            </div>
+            @if (selectedEnvironment()?.description) {
+                <p class="selector-description">{{ selectedEnvironment()!.description }}</p>
+            }
+        </div>
+    </div>
+
+    <!-- Environment Details -->
+    @if (selectedEnvironment()) {
+        <div class="content">
+            <div class="overview-cards">
+                <div class="overview-card">
+                    <div class="overview-card__header">
+                        <h3 class="overview-card__title">API Attributes</h3>
+                    </div>
+                    <div class="overview-card__content">
+                        <div class="stat">
+                            <span class="stat__label">Identifier</span>
+                            <code class="stat__code">{{ environmentIdentifier() }}</code>
+                        </div>
+                        <div class="stat">
+                            <span class="stat__label">Read-Key</span>
+                            <div class="stat__key-row">
+                                <code class="stat__code stat__code--key">{{ showReadKey() ? readKey() : maskApiKey(readKey()) }}</code>
+                                <div class="stat__key-actions">
+                                    <button class="stat__key-btn" (click)="toggleReadKeyVisibility()"
+                                            [attr.aria-label]="showReadKey() ? 'Hide key' : 'Show key'">
+                                        @if (showReadKey()) {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                      stroke-linejoin="round"/>
+                                                <path d="M1 1l22 22" stroke="currentColor" stroke-width="2"
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        } @else {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                      stroke-linejoin="round"/>
+                                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        }
+                                    </button>
+                                    <button class="stat__key-btn stat__key-btn--refresh"
+                                            (click)="requestKeyRefresh('read')" aria-label="Refresh key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2"
+                                                  stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+                                                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                  stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat">
+                            <span class="stat__label">Write-Key</span>
+                            <div class="stat__key-row">
+                                <code class="stat__code stat__code--key">{{ showWriteKey() ? writeKey() : maskApiKey(writeKey()) }}</code>
+                                <div class="stat__key-actions">
+                                    <button class="stat__key-btn" (click)="toggleWriteKeyVisibility()"
+                                            [attr.aria-label]="showWriteKey() ? 'Hide key' : 'Show key'">
+                                        @if (showWriteKey()) {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                      stroke-linejoin="round"/>
+                                                <path d="M1 1l22 22" stroke="currentColor" stroke-width="2"
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        } @else {
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                                                      stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                      stroke-linejoin="round"/>
+                                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                                        stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        }
+                                    </button>
+                                    <button class="stat__key-btn stat__key-btn--refresh"
+                                            (click)="requestKeyRefresh('write')" aria-label="Refresh key">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2"
+                                                  stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"
+                                                  stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                  stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- API Tiers -->
+                        <div class="tier-section">
+                            <span class="tier-section__label">Pricing</span>
+                            <div class="tier-sliders">
+                                <!-- Max Requests per Day -->
+                                <div class="tier-slider-wrapper">
+                                    <span class="tier-slider-wrapper__title">Max. Requests per day</span>
+                                    <div class="tier-slider">
+                                        <div class="tier-slider__track">
+                                            <input
+                                                    type="range"
+                                                    min="0"
+                                                    [max]="requestTiers().length - 1"
+                                                    [value]="selectedRequestTierIndex()"
+                                                    (input)="onRequestTierSliderChange($event)"
+                                                    class="tier-slider__input"
+                                                    aria-label="Select request tier">
+                                            <div class="tier-slider__labels">
+                                                @for (tier of requestTiers(); track tier.id; let i = $index) {
+                                                    <button
+                                                            class="tier-slider__tick"
+                                                            [class.tier-slider__tick--active]="i === selectedRequestTierIndex()"
+                                                            (click)="selectedRequestTierIndex.set(i)">
+                                                        {{ tier.name }}
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="tier-display tier-display--compact">
+                                            <span class="tier-display__limit-value">{{ formatLimit(currentRequestTier().dailyLimit) }}</span>
+                                            <span class="tier-display__limit-label">requests/day</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Max Users -->
+                                <div class="tier-slider-wrapper">
+                                    <span class="tier-slider-wrapper__title">Max. Users</span>
+                                    <div class="tier-slider">
+                                        <div class="tier-slider__track">
+                                            <input
+                                                    type="range"
+                                                    min="0"
+                                                    [max]="userTiers().length - 1"
+                                                    [value]="selectedUserTierIndex()"
+                                                    (input)="onUserTierSliderChange($event)"
+                                                    class="tier-slider__input"
+                                                    aria-label="Select user tier">
+                                            <div class="tier-slider__labels">
+                                                @for (tier of userTiers(); track tier.id; let i = $index) {
+                                                    <button
+                                                            class="tier-slider__tick"
+                                                            [class.tier-slider__tick--active]="i === selectedUserTierIndex()"
+                                                            (click)="selectedUserTierIndex.set(i)">
+                                                        {{ tier.name }}
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="tier-display tier-display--compact">
+                                            <span class="tier-display__limit-value">{{ formatLimit(currentUserTier().maxUsers) }}</span>
+                                            <span class="tier-display__limit-label">users</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Combined Price -->
+                            <div class="tier-price-summary">
+                                <span class="tier-price-summary__label">Total</span>
+                                <span class="tier-price-summary__value">
+                  @if (totalMonthlyPrice() === 0) {
+                      Free
+                  } @else {
+                      ${{ totalMonthlyPrice() }}<span class="tier-price-summary__period">/mo</span>
+                  }
+                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overview-card">
+                    <div class="overview-card__header">
+                        <h3 class="overview-card__title">Usage Overview</h3>
+                        <span class="overview-card__period">Last 7 days</span>
+                    </div>
+                    <div class="overview-card__content">
+                        <!-- Usage Chart -->
+                        <div class="usage-chart">
+                            <div class="usage-chart__bars">
+                                <div class="usage-chart__limit-line">
+                                    <span class="usage-chart__limit-label">Limit</span>
+                                </div>
+                                @for (day of weeklyFetches(); track day.day) {
+                                    <div class="usage-chart__bar-container">
+                                        <div
+                                                class="usage-chart__bar"
+                                                [style.height.%]="(day.fetches / day.limit) * 100"
+                                                [class.usage-chart__bar--high]="day.fetches / day.limit > 0.8">
+                                        </div>
+                                        <span class="usage-chart__label">{{ day.day }}</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="usage-chart__axis">
+                                <span>50k</span>
+                                <span>25k</span>
+                                <span>0</span>
+                            </div>
+                        </div>
+
+                        <!-- Stats Grid -->
+                        <div class="usage-stats">
+                            <div class="usage-stat">
+                                <span class="usage-stat__value">{{ formatNumber(usageStats().fetchesToday) }}</span>
+                                <span class="usage-stat__label">Fetches today</span>
+                                <div class="usage-stat__progress">
+                                    <div
+                                            class="usage-stat__progress-bar"
+                                            [style.width.%]="usagePercentage()"
+                                            [class.usage-stat__progress-bar--warning]="usagePercentage() > 80">
+                                    </div>
+                                </div>
+                                <span class="usage-stat__sublabel">{{ usagePercentage() }}
+                                    % of {{ formatNumber(usageStats().dailyLimit) }} limit</span>
+                            </div>
+
+                            <div class="usage-stat">
+                                <span class="usage-stat__value">{{ formatNumber(usageStats().users) }}</span>
+                                <span class="usage-stat__label">Users</span>
+                            </div>
+
+                            <div class="usage-stat">
+                                <span class="usage-stat__value">{{ formatNumber(usageStats().totalThisMonth) }}</span>
+                                <span class="usage-stat__label">Total this month</span>
+                            </div>
+
+                            <div class="usage-stat">
+                                <span class="usage-stat__value">{{ usageStats().avgResponseTime }}<span
+                                        class="usage-stat__unit">ms</span></span>
+                                <span class="usage-stat__label">Avg. response time</span>
+                            </div>
+                        </div>
+
+                        <!-- Recommendation -->
+                        @if (usageRecommendation()) {
+                            <div class="usage-recommendation usage-recommendation--info">
+                                <svg class="usage-recommendation__icon" width="18" height="18" viewBox="0 0 24 24"
+                                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-width="2"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <div class="usage-recommendation__content">
+                                    <span class="usage-recommendation__label">Recommendation</span>
+                                    <span class="usage-recommendation__message">{{ usageRecommendation()!.message }}</span>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- High Risk Alert -->
+                        @if (highRiskAlert()) {
+                            <div class="usage-recommendation usage-recommendation--danger">
+                                <svg class="usage-recommendation__icon" width="18" height="18" viewBox="0 0 24 24"
+                                     fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="2"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                                          stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                          stroke-linejoin="round"/>
+                                </svg>
+                                <div class="usage-recommendation__content">
+                                    <span class="usage-recommendation__label">High Risk</span>
+                                    <span class="usage-recommendation__message">{{ highRiskAlert()!.message }}</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</section>
+
+<!-- Environment Creation Modal -->
+@if (showEnvironmentCreation()) {
+    <div class="modal-overlay" (click)="onCloseEnvironmentCreation()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <button class="modal-close" (click)="onCloseEnvironmentCreation()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <h2 class="modal-title">Add New Environment</h2>
+            <form class="modal-form"
+                  (submit)="$event.preventDefault(); envNameInput.value && onEnvironmentCreated(envNameInput.value, envDescInput.value)">
+                <div class="form-group">
+                    <label for="envName" class="form-label">Environment Name</label>
+                    <input
+                        #envNameInput
+                        id="envName"
+                        type="text"
+                        class="form-input"
+                        placeholder="e.g., Production, Staging, or Germany"
+                        required
+                        autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="envDesc" class="form-label">Description</label>
+                    <input
+                        #envDescInput
+                        id="envDesc"
+                        type="text"
+                        class="form-input"
+                        placeholder="e.g., Live production environment"
+                        autocomplete="off">
+                </div>
+                <button type="submit" class="modal-submit">Create Environment</button>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Environment Deletion Confirmation Modal -->
+@if (showEnvironmentDeletion()) {
+    <div class="modal-overlay" (click)="cancelEnvironmentDeletion()">
+        <div class="modal-content modal-content--warning" (click)="$event.stopPropagation()">
+            <button class="modal-close" (click)="cancelEnvironmentDeletion()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <div class="warning-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="modal-title modal-title--warning">Delete "{{ selectedEnvironment()?.name }}"?</h2>
+            <p class="warning-text">This action will permanently delete this environment and all associated data. This
+                cannot be undone.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn--cancel" (click)="cancelEnvironmentDeletion()">Cancel</button>
+                <button class="modal-btn modal-btn--danger" (click)="confirmEnvironmentDeletion()">Delete Environment
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Key Refresh Confirmation Modal -->
+@if (showKeyRefreshConfirmation()) {
+    <div class="modal-overlay" (click)="cancelKeyRefresh()">
+        <div class="modal-content modal-content--warning" (click)="$event.stopPropagation()">
+            <button class="modal-close" (click)="cancelKeyRefresh()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+            <div class="warning-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                          stroke-linejoin="round"/>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h2 class="modal-title modal-title--warning">Refresh {{ keyToRefresh() === 'read' ? 'Read' : 'Write' }}
+                -Key?</h2>
+            <p class="warning-text">This action will immediately invalidate the current key. Any applications or
+                services using this key will lose access.</p>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn--cancel" (click)="cancelKeyRefresh()">Cancel</button>
+                <button class="modal-btn modal-btn--danger" (click)="confirmKeyRefresh()">I understand</button>
+            </div>
+        </div>
+    </div>
+}

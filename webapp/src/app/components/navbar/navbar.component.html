@@ -11,7 +11,7 @@
     Flagforge
   </a>
     @if (isDashboard() && !isMobile()) {
-        <h1 class="page-title">Dashboard</h1>
+      <h1 class="page-title">{{ pageTitle() }}</h1>
     } @else if (!isDashboard()) {
         <div class="nav-center">
           <a routerLink="/" fragment="features">Features</a>

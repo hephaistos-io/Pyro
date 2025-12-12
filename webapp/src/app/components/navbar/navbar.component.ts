@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, computed, inject, signal} from '@angular/core';
 import {Router, RouterLink} from '@angular/router';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {fromEvent, map} from 'rxjs';
@@ -17,11 +17,21 @@ export class NavbarComponent {
 
   isMobile = signal(window.innerWidth <= 768);
 
-  isDashboard = toSignal(
+  pageTitle = computed(() => {
+    if (this.isApplicationPage()) {
+      return 'Application';
+    }
+    return 'Dashboard';
+  });
+  private currentUrl = toSignal(
     this.router.events.pipe(
-      map(() => this.router.url.startsWith('/dashboard'))
+      map(() => this.router.url)
     ),
-    {initialValue: this.router.url.startsWith('/dashboard')}
+    {initialValue: this.router.url}
+  );
+  isDashboard = computed(() => this.currentUrl()?.startsWith('/dashboard') ?? false);
+  isApplicationPage = computed(() =>
+    this.currentUrl()?.includes('/dashboard/application/') ?? false
   );
 
   constructor() {
