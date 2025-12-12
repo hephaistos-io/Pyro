@@ -1,0 +1,61 @@
+package io.hephaistos.flagforge.service;
+
+import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
+import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
+import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.exception.DuplicateResourceException;
+import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
+import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@Transactional
+public class DefaultApplicationService implements ApplicationService {
+
+    private final ApplicationRepository applicationRepository;
+
+    public DefaultApplicationService(ApplicationRepository applicationRepository) {
+        this.applicationRepository = applicationRepository;
+    }
+
+    @Override
+    public ApplicationResponse createApplication(ApplicationCreationRequest request) {
+        UUID companyId = getCompanyIdFromSecurityContext();
+
+        if (applicationRepository.existsByNameAndCompanyId(request.name(), companyId)) {
+            throw new DuplicateResourceException(
+                    "Application with name '%s' already exists for this company".formatted(
+                            request.name()));
+        }
+
+        var application = new ApplicationEntity();
+        application.setName(request.name());
+        application.setCompanyId(companyId);
+        applicationRepository.save(application);
+
+        return ApplicationResponse.fromEntity(application);
+    }
+
+    @Override
+    public List<ApplicationResponse> getApplicationsForCurrentUserCompany() {
+        UUID companyId = getCompanyIdFromSecurityContext();
+
+        return applicationRepository.findByCompanyId(companyId)
+                .stream()
+                .map(ApplicationResponse::fromEntity)
+                .toList();
+    }
+
+    private UUID getCompanyIdFromSecurityContext() {
+        var pyroSecurityContext = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
+        return pyroSecurityContext.getCompanyId()
+                .orElseThrow(() -> new NoCompanyAssignedException(
+                        "User has no company assigned. Cannot perform application operations."));
+    }
+}
