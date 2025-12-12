@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, inject, output} from '@angular/core';
+import {Component, inject, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Api} from '../../api/generated/api';
 import {createApplication} from '../../api/generated/functions';
@@ -14,23 +14,22 @@ import {handleApiError} from '../../utils/error-handler.util';
 })
 export class ApplicationCreationFormComponent {
   applicationName = '';
-  error = '';
-  isLoading = false;
+  error = signal('');
+  isLoading = signal(false);
 
   applicationCreated = output<ApplicationResponse>();
 
   private api = inject(Api);
-  private cdr = inject(ChangeDetectorRef);
 
   async onSubmit(): Promise<void> {
     const validationError = this.validateForm();
     if (validationError) {
-      this.error = validationError;
+      this.error.set(validationError);
       return;
     }
 
-    this.isLoading = true;
-    this.error = '';
+    this.isLoading.set(true);
+    this.error.set('');
 
     try {
       const response = await this.api.invoke(createApplication, {
@@ -38,10 +37,9 @@ export class ApplicationCreationFormComponent {
       });
 
       this.applicationCreated.emit(response);
-    } catch (err: any) {
-      this.isLoading = false;
-      this.error = handleApiError(err, 'application');
-      this.cdr.detectChanges();
+    } catch (err: unknown) {
+      this.isLoading.set(false);
+      this.error.set(handleApiError(err, 'application'));
     }
   }
 

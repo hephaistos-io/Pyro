@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {NgFor} from '@angular/common';
 
 interface Step {
   number: number;
@@ -10,7 +9,6 @@ interface Step {
 @Component({
   selector: 'app-how-it-works',
   standalone: true,
-  imports: [NgFor],
   templateUrl: './how-it-works.component.html',
   styleUrl: './how-it-works.component.scss'
 })

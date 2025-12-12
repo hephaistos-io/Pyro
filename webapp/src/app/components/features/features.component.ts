@@ -1,5 +1,4 @@
 import {Component, inject} from '@angular/core';
-import {NgFor} from '@angular/common';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
 interface Feature {
@@ -11,7 +10,6 @@ interface Feature {
 @Component({
   selector: 'app-features',
   standalone: true,
-  imports: [NgFor],
   templateUrl: './features.component.html',
   styleUrl: './features.component.scss'
 })

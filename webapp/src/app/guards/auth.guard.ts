@@ -6,8 +6,10 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  // Check if user is authenticated (signal value)
-  if (authService.isAuthenticated()) {
+  // Check token directly for reliable auth check on direct navigation
+  const hasToken = authService.getToken() !== null;
+
+  if (hasToken) {
     return true;
   }
 

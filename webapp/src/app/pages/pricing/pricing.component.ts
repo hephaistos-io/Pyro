@@ -1,5 +1,6 @@
-import {Component} from '@angular/core';
+import {Component, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import {isValidEmail} from '../../utils/validators.util';
 
 @Component({
   selector: 'app-pricing',
@@ -9,29 +10,23 @@ import {FormsModule} from '@angular/forms';
   styleUrl: './pricing.component.scss'
 })
 export class PricingComponent {
-  email = '';
-  submitted = false;
-  error = '';
+  email = signal('');
+  submitted = signal(false);
+  error = signal('');
 
   onSubmit(): void {
-    if (!this.email) {
-      this.error = 'Please enter your email address';
+    if (!this.email()) {
+      this.error.set('Please enter your email address');
       return;
     }
 
-    if (!this.isValidEmail(this.email)) {
-      this.error = 'Please enter a valid email address';
+    if (!isValidEmail(this.email())) {
+      this.error.set('Please enter a valid email address');
       return;
     }
 
     // TODO: Integrate with actual email service
-    console.log('Email submitted:', this.email);
-    this.submitted = true;
-    this.error = '';
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    this.submitted.set(true);
+    this.error.set('');
   }
 }

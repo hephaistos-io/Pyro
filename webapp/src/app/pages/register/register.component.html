@@ -5,7 +5,7 @@
       Start managing feature flags at super granular level
     </p>
 
-    @if (!submitted) {
+    @if (!submitted()) {
       <form class="register-form" (ngSubmit)="onSubmit()">
         <!-- Name fields in a row -->
         <div class="name-row">
@@ -17,7 +17,7 @@
               [(ngModel)]="firstName"
               name="firstName"
               placeholder="John"
-              [disabled]="isLoading"
+              [disabled]="isLoading()"
             />
           </div>
           <div class="form-group">
@@ -28,7 +28,7 @@
               [(ngModel)]="lastName"
               name="lastName"
               placeholder="Doe"
-              [disabled]="isLoading"
+              [disabled]="isLoading()"
             />
           </div>
         </div>
@@ -42,7 +42,7 @@
             [(ngModel)]="email"
             name="email"
             placeholder="john@company.com"
-            [disabled]="isLoading"
+            [disabled]="isLoading()"
           />
         </div>
 
@@ -55,7 +55,7 @@
             [(ngModel)]="password"
             name="password"
             placeholder="••••••••"
-            [disabled]="isLoading"
+            [disabled]="isLoading()"
           />
           @if (password) {
             <div class="password-strength">
@@ -85,20 +85,20 @@
             [(ngModel)]="confirmPassword"
             name="confirmPassword"
             placeholder="••••••••"
-            [disabled]="isLoading"
+            [disabled]="isLoading()"
           />
         </div>
 
-        @if (error) {
-          <div class="error-message">{{ error }}</div>
+        @if (error()) {
+          <div class="error-message">{{ error() }}</div>
         }
 
         <button
           type="submit"
           class="btn btn-primary btn-submit"
-          [disabled]="isLoading"
+          [disabled]="isLoading()"
         >
-          @if (isLoading) {
+          @if (isLoading()) {
             <span class="spinner"></span>
             <span>Creating account...</span>
           } @else {

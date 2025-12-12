@@ -5,7 +5,7 @@
   background: white;
   transition: background 0.4s ease;
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     background: $dark-bg;
   }
 }
@@ -31,7 +31,7 @@
     box-shadow: 0 20px 40px rgba($pyro-red, 0.08);
   }
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     background: $dark-card;
     border-color: rgba($white, 0.08);
 
@@ -50,7 +50,7 @@
     justify-content: center;
     margin-bottom: 1.5rem;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       background: rgba($pyro-red, 0.15);
     }
 
@@ -71,7 +71,7 @@
     font-size: 0.95rem;
     line-height: 1.6;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text-muted;
     }
   }

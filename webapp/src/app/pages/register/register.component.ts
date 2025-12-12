@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
@@ -6,6 +6,7 @@ import {register} from '../../api/generated/functions';
 import {UserRegistrationRequest} from '../../api/generated/models';
 import zxcvbn from 'zxcvbn';
 import {handleApiError} from '../../utils/error-handler.util';
+import {isValidEmail} from '../../utils/validators.util';
 import {AuthService} from '../../services/auth.service';
 
 @Component({
@@ -21,12 +22,11 @@ export class RegisterComponent implements OnInit {
   lastName = '';
   password = '';
   confirmPassword = '';
-  submitted = false;
-  error = '';
-  isLoading = false;
+  submitted = signal(false);
+  error = signal('');
+  isLoading = signal(false);
   private api = inject(Api);
   private router = inject(Router);
-  private cdr = inject(ChangeDetectorRef);
   private authService = inject(AuthService);
 
   ngOnInit(): void {
@@ -60,13 +60,13 @@ export class RegisterComponent implements OnInit {
     // Validate form
     const validationError = this.validateForm();
     if (validationError) {
-      this.error = validationError;
+      this.error.set(validationError);
       return;
     }
 
     // Set loading state
-    this.isLoading = true;
-    this.error = '';
+    this.isLoading.set(true);
+    this.error.set('');
     try {
       // Call API
       const registrationRequest: UserRegistrationRequest = {
@@ -79,16 +79,14 @@ export class RegisterComponent implements OnInit {
       await this.api.invoke(register, {body: registrationRequest});
 
       // Handle success
-      this.submitted = true;
-      this.isLoading = false;
+      this.submitted.set(true);
+      this.isLoading.set(false);
       await this.router.navigate(['/login']);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle error
-      this.submitted = false;
-      this.isLoading = false;
-      this.error = handleApiError(err, 'registration');
-      //required, as otherwise it doesn't see the change to the message and it wont be displayed.
-      this.cdr.detectChanges();
+      this.submitted.set(false);
+      this.isLoading.set(false);
+      this.error.set(handleApiError(err, 'registration'));
     }
   }
 
@@ -105,7 +103,7 @@ export class RegisterComponent implements OnInit {
       return 'Last name must be 2-50 characters and contain only letters';
     }
 
-    if (!this.isValidEmail(this.email)) {
+    if (!isValidEmail(this.email)) {
       return 'Please enter a valid email address';
     }
 
@@ -119,11 +117,6 @@ export class RegisterComponent implements OnInit {
     }
 
     return null;
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 
   private isValidName(name: string): boolean {
