@@ -13,6 +13,7 @@ the backend Spring Boot API that serves the frontend application.
 - PostgreSQL (requires running instance for bootRun)
 - Flyway 10.20.1 for database migrations
 - Testcontainers for integration tests (requires Docker)
+- Docker Compose for local development environment
 
 **Philosophy:** When working on this project, we prefer **readability and simplicity over cleverness**. Always ask for
 input before proceeding with big, impactful changes.
@@ -27,7 +28,28 @@ input before proceeding with big, impactful changes.
 - Backend services are in `backend/` subdirectory
 - You MUST execute gradlew commands in the root of the project, as the wrapper is located there.
 
-**Running the application:**
+**Running with Docker (Recommended):**
+
+```bash
+# Start the full development environment (from project root)
+docker compose up -d
+
+# Access the app at http://localhost
+# - Frontend: http://localhost/
+# - Backend API: http://localhost/api/
+# - Swagger UI: http://localhost/api/swagger-ui.html
+
+# Stop the environment
+docker compose down
+
+# Rebuild backend after code changes
+docker compose build backend && docker compose up -d backend
+
+# View logs
+docker compose logs -f backend
+```
+
+**Running locally (without Docker):**
 
 ```bash
 # From the project root (requires PostgreSQL running on localhost:5432)
