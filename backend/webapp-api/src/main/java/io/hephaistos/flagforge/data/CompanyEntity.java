@@ -26,7 +26,7 @@ public class CompanyEntity {
 
     @OneToMany
     @JoinColumn(name = "company_id")
-    private List<CustomerEntity> users = new ArrayList<>();
+    private List<CustomerEntity> customer = new ArrayList<>();
 
     public UUID getId() {
         return id;
@@ -44,11 +44,11 @@ public class CompanyEntity {
         this.name = name;
     }
 
-    public List<CustomerEntity> getUsers() {
-        return users;
+    public List<CustomerEntity> getCustomer() {
+        return customer;
     }
 
-    public void setUsers(List<CustomerEntity> users) {
-        this.users = users;
+    public void setCustomer(List<CustomerEntity> customers) {
+        this.customer = customers;
     }
 }

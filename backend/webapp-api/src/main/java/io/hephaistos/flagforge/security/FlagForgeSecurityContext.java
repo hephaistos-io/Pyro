@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -13,8 +14,19 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 public class FlagForgeSecurityContext implements SecurityContext {
 
+    private String customerName;
+
     private Authentication authentication;
-    private String userName;
+
+    /**
+     * Returns the current FlagForgeSecurityContext from the SecurityContextHolder. This is a
+     * convenience method to avoid casting in multiple places.
+     *
+     * @return the current FlagForgeSecurityContext
+     */
+    public static FlagForgeSecurityContext getCurrent() {
+        return (FlagForgeSecurityContext) SecurityContextHolder.getContext();
+    }
     private UUID userId;
     private UUID companyId;
 
@@ -28,12 +40,12 @@ public class FlagForgeSecurityContext implements SecurityContext {
         this.authentication = authentication;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getCustomerName() {
+        return customerName;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public Optional<UUID> getCompanyId() {
@@ -46,11 +58,11 @@ public class FlagForgeSecurityContext implements SecurityContext {
         }
     }
 
-    public UUID getUserId() {
+    public UUID getCustomerId() {
         return userId;
     }
 
-    public void setUserId(@NotNull @NotEmpty String userId) {
+    public void setCustomerId(@NotNull @NotEmpty String userId) {
         this.userId = UUID.fromString(userId);
     }
 }

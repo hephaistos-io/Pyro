@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.controller.security;
 
-import io.hephaistos.flagforge.data.repository.UserRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import io.hephaistos.flagforge.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -30,13 +30,13 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
 
     public JwtOncePerRequestFilter(JwtService jwtService, UserDetailsService userDetailsService,
-            UserRepository userRepository) {
+            CustomerRepository customerRepository) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
-        this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Override
@@ -74,11 +74,11 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
 
             var securityContext = new FlagForgeSecurityContext();
             securityContext.setAuthentication(newAuthorization);
-            securityContext.setUserName(email);
+            securityContext.setCustomerName(email);
 
-            userRepository.findByEmail(email).ifPresent(user -> {
-                securityContext.setUserId(user.getId().toString());
-                user.getCompanyId()
+            customerRepository.findByEmail(email).ifPresent(customer -> {
+                securityContext.setCustomerId(customer.getId().toString());
+                customer.getCompanyId()
                         .ifPresent(companyId -> securityContext.setCompanyId(companyId.toString()));
             });
 

@@ -7,7 +7,6 @@ import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +42,7 @@ public class DefaultApplicationService implements ApplicationService {
     }
 
     @Override
-    public List<ApplicationResponse> getApplicationsForCurrentUserCompany() {
+    public List<ApplicationResponse> getApplicationsForCurrentCustomerCompany() {
         UUID companyId = getCompanyIdFromSecurityContext();
 
         return applicationRepository.findByCompanyId(companyId)
@@ -53,9 +52,9 @@ public class DefaultApplicationService implements ApplicationService {
     }
 
     private UUID getCompanyIdFromSecurityContext() {
-        var pyroSecurityContext = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
-        return pyroSecurityContext.getCompanyId()
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        return securityContext.getCompanyId()
                 .orElseThrow(() -> new NoCompanyAssignedException(
-                        "User has no company assigned. Cannot perform application operations."));
+                        "Customer has no company assigned. Cannot perform application operations."));
     }
 }

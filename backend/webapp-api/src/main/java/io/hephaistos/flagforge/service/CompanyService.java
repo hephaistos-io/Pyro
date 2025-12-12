@@ -9,9 +9,9 @@ import java.util.UUID;
 
 public interface CompanyService {
 
-    Optional<CompanyEntity> getCompanyForCurrentUser();
+    Optional<CompanyEntity> getCompanyForCurrentCustomer();
 
     Optional<CompanyEntity> getCompany(UUID companyId);
 
-    CompanyResponse createCompanyForCurrentUser(CompanyCreationRequest companyCreationRequest);
+    CompanyResponse createCompanyForCurrentCustomer(CompanyCreationRequest companyCreationRequest);
 }

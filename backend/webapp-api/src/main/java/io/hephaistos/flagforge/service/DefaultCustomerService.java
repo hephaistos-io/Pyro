@@ -1,8 +1,8 @@
 package io.hephaistos.flagforge.service;
 
-import io.hephaistos.flagforge.controller.dto.UserRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import io.hephaistos.flagforge.data.CustomerEntity;
-import io.hephaistos.flagforge.data.repository.UserRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import org.jspecify.annotations.NullMarked;
@@ -19,39 +19,40 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class DefaultUserService implements UserService, UserDetailsService {
+public class DefaultCustomerService implements CustomerService, UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
-    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final BreachedPasswordService breachedPasswordService;
 
-    public DefaultUserService(PasswordEncoder passwordEncoder, UserRepository userRepository,
+    public DefaultCustomerService(PasswordEncoder passwordEncoder,
+            CustomerRepository customerRepository,
             BreachedPasswordService breachedPasswordService) {
         this.passwordEncoder = passwordEncoder;
-        this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
         this.breachedPasswordService = breachedPasswordService;
     }
 
     @Override
-    public void registerUser(UserRegistrationRequest userRegistrationRequest) {
-        if (getUserByEmail(userRegistrationRequest.email()).isPresent()) {
+    public void registerCustomer(CustomerRegistrationRequest customerRegistrationRequest) {
+        if (getCustomerByEmail(customerRegistrationRequest.email()).isPresent()) {
             throw new DuplicateResourceException("Email already exists");
         }
 
         // Check if password has been breached
-        if (breachedPasswordService.isPasswordBreached(userRegistrationRequest.password())) {
+        if (breachedPasswordService.isPasswordBreached(customerRegistrationRequest.password())) {
             throw new BreachedPasswordException(
                     "This password has been found in data breaches. Please choose a different password.");
         }
 
-        var userEntity = new CustomerEntity();
-        userEntity.setEmail(userRegistrationRequest.email());
-        userEntity.setFirstName(userRegistrationRequest.firstName());
-        userEntity.setLastName(userRegistrationRequest.lastName());
-        userEntity.setPassword(passwordEncoder.encode(userRegistrationRequest.password()));
+        var customer = new CustomerEntity();
+        customer.setEmail(customerRegistrationRequest.email());
+        customer.setFirstName(customerRegistrationRequest.firstName());
+        customer.setLastName(customerRegistrationRequest.lastName());
+        customer.setPassword(passwordEncoder.encode(customerRegistrationRequest.password()));
 
         try {
-            userRepository.save(userEntity);
+            customerRepository.save(customer);
         }
         catch (DataIntegrityViolationException ex) {
             // Handle race condition: another thread saved the same email between our check and save
@@ -60,23 +61,23 @@ public class DefaultUserService implements UserService, UserDetailsService {
     }
 
     @Override
-    public Optional<CustomerEntity> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+    public Optional<CustomerEntity> getCustomerByEmail(String email) {
+        return customerRepository.findByEmail(email);
     }
 
     @Override
-    public CustomerEntity getUserByEmailOrThrow(String email) {
-        return getUserByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
+    public CustomerEntity getCustomerByEmailOrThrow(String email) {
+        return getCustomerByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
     }
 
     @Override
     @NullMarked
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return getUserByEmail(username).map(user -> User.builder()
-                        .username(user.getEmail())
-                        .password(user.getPassword())
+        return getCustomerByEmail(username).map(customer -> User.builder()
+                        .username(customer.getEmail())
+                        .password(customer.getPassword())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "User not found with username: " + username));
+                        "Customer not found with email: " + username));
     }
 }

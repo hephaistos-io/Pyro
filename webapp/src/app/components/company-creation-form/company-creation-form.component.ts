@@ -1,7 +1,7 @@
 import {Component, inject, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Api} from '../../api/generated/api';
-import {createCompanyForCurrentUser} from '../../api/generated/functions';
+import {createCompanyForCurrentCustomer} from '../../api/generated/fn/company/create-company-for-current-customer';
 import {CompanyResponse} from '../../api/generated/models';
 import {handleApiError} from '../../utils/error-handler.util';
 
@@ -32,7 +32,7 @@ export class CompanyCreationFormComponent {
     this.error.set('');
 
     try {
-      const response = await this.api.invoke(createCompanyForCurrentUser, {
+      const response = await this.api.invoke(createCompanyForCurrentCustomer, {
         body: {companyName: this.companyName.trim()}
       });
 

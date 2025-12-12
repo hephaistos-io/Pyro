@@ -30,7 +30,7 @@ public class ApplicationController {
         this.applicationService = applicationService;
     }
 
-    @Operation(summary = "Create application for current user's company")
+    @Operation(summary = "Create application for current customers's company")
     @PostMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ApplicationResponse createApplication(
@@ -38,10 +38,10 @@ public class ApplicationController {
         return applicationService.createApplication(request);
     }
 
-    @Operation(summary = "Get all applications for current user's company")
+    @Operation(summary = "Get all applications for current customers's company")
     @GetMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public List<ApplicationResponse> getApplications() {
-        return applicationService.getApplicationsForCurrentUserCompany();
+        return applicationService.getApplicationsForCurrentCustomerCompany();
     }
 }

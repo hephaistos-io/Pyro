@@ -5,7 +5,7 @@ import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
-import io.hephaistos.flagforge.data.repository.UserRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
-    private UserRepository userRepository;
+    private CustomerRepository customerRepository;
 
     @Autowired
     private CompanyRepository companyRepository;
@@ -33,7 +33,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         initializeTestSupport();
         applicationRepository.deleteAll();
         companyRepository.deleteAll();
-        userRepository.deleteAll();
+        customerRepository.deleteAll();
     }
 
     @Test

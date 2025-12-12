@@ -1,0 +1,7 @@
+# Profile for OpenAPI documentation generation
+# Uses Docker Compose PostgreSQL on localhost:5432
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/flagforge
+    username: webapp-flagforge
+    password: webapp-flagforge

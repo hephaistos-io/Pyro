@@ -87,7 +87,7 @@ class DefaultApplicationServiceTest {
         var app2 = createApplicationEntity("App 2", testCompanyId);
         when(applicationRepository.findByCompanyId(testCompanyId)).thenReturn(List.of(app1, app2));
 
-        var result = applicationService.getApplicationsForCurrentUserCompany();
+        var result = applicationService.getApplicationsForCurrentCustomerCompany();
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting("name").containsExactly("App 1", "App 2");
@@ -97,7 +97,7 @@ class DefaultApplicationServiceTest {
     void getApplicationsReturnsEmptyListWhenNone() {
         when(applicationRepository.findByCompanyId(testCompanyId)).thenReturn(List.of());
 
-        var result = applicationService.getApplicationsForCurrentUserCompany();
+        var result = applicationService.getApplicationsForCurrentCustomerCompany();
 
         assertThat(result).isEmpty();
     }
@@ -107,22 +107,22 @@ class DefaultApplicationServiceTest {
         setupSecurityContextWithoutCompany();
 
         assertThatThrownBy(
-                () -> applicationService.getApplicationsForCurrentUserCompany()).isInstanceOf(
+                () -> applicationService.getApplicationsForCurrentCustomerCompany()).isInstanceOf(
                 NoCompanyAssignedException.class);
     }
 
     private void setupSecurityContext(UUID companyId) {
         var context = new FlagForgeSecurityContext();
-        context.setUserName("test@example.com");
-        context.setUserId(UUID.randomUUID().toString());
+        context.setCustomerName("test@example.com");
+        context.setCustomerId(UUID.randomUUID().toString());
         context.setCompanyId(companyId.toString());
         SecurityContextHolder.setContext(context);
     }
 
     private void setupSecurityContextWithoutCompany() {
         var context = new FlagForgeSecurityContext();
-        context.setUserName("test@example.com");
-        context.setUserId(UUID.randomUUID().toString());
+        context.setCustomerName("test@example.com");
+        context.setCustomerId(UUID.randomUUID().toString());
         SecurityContextHolder.setContext(context);
     }
 

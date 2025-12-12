@@ -33,21 +33,22 @@ public class CompanyController {
         this.companyService = companyService;
     }
 
-    @Operation(summary = "Retrieve company for current user")
+    @Operation(summary = "Retrieve company for current customer")
     @GetMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public CompanyResponse getCompanyForCurrentUser() {
-        return companyService.getCompanyForCurrentUser()
+    public CompanyResponse getCompanyForCurrentCustomer() {
+        return companyService.getCompanyForCurrentCustomer()
                 .map(CompanyResponse::fromEntity)
-                .orElseThrow(() -> new NoCompanyAssignedException("User has no company assigned!"));
+                .orElseThrow(
+                        () -> new NoCompanyAssignedException("Customer has no company assigned!"));
     }
 
-    @Operation(summary = "Create company for current user")
+    @Operation(summary = "Create company for current customer")
     @PostMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public CompanyResponse createCompanyForCurrentUser(
+    public CompanyResponse createCompanyForCurrentCustomer(
             @Valid @RequestBody CompanyCreationRequest companyCreationRequest) {
-        return companyService.createCompanyForCurrentUser(companyCreationRequest);
+        return companyService.createCompanyForCurrentCustomer(companyCreationRequest);
     }
 
     @Operation(summary = "Retrieve company with id")

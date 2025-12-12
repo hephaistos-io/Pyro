@@ -15,7 +15,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("unit")
-class UserRegistrationRequestValidationTest {
+class CustomerRegistrationRequestValidationTest {
 
     private static Validator validator;
 
@@ -31,10 +31,11 @@ class UserRegistrationRequestValidationTest {
                     "user@localhost.localdomain", "test_user@example.co.uk",
                     "user.name+tag@example.com", "john@example"})
     void validEmailPassesValidation(String email) {
-        UserRegistrationRequest request =
-                new UserRegistrationRequest("John", "Doe", email, "password123");
+        CustomerRegistrationRequest request =
+                new CustomerRegistrationRequest("John", "Doe", email, "password123");
 
-        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+        Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
+                validator.validate(request);
 
         assertThat(violations).isEmpty();
     }
@@ -43,10 +44,11 @@ class UserRegistrationRequestValidationTest {
     @ValueSource(strings = {"not-an-email", "john@", "@example.com", "john doe@example.com",
             "john@@example.com", "john@.com"})
     void invalidEmailFormatFailsValidation(String email) {
-        UserRegistrationRequest request =
-                new UserRegistrationRequest("John", "Doe", email, "password123");
+        CustomerRegistrationRequest request =
+                new CustomerRegistrationRequest("John", "Doe", email, "password123");
 
-        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+        Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
+                validator.validate(request);
 
         assertThat(violations).isNotEmpty();
         assertThat(violations).allMatch(v -> v.getPropertyPath().toString().equals("email"));
@@ -56,10 +58,11 @@ class UserRegistrationRequestValidationTest {
     @ValueSource(strings = {"", "   "})
     @NullSource
     void blankOrNullEmailFailsValidation(String email) {
-        UserRegistrationRequest request =
-                new UserRegistrationRequest("John", "Doe", email, "password123");
+        CustomerRegistrationRequest request =
+                new CustomerRegistrationRequest("John", "Doe", email, "password123");
 
-        Set<ConstraintViolation<UserRegistrationRequest>> violations = validator.validate(request);
+        Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
+                validator.validate(request);
 
         assertThat(violations).isNotEmpty();
         assertThat(violations).allMatch(v -> v.getPropertyPath().toString().equals("email"));

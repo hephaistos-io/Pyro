@@ -28,5 +28,9 @@ openApi {
     apiDocsUrl.set("http://localhost:8080/api/v3/api-docs")
     outputDir.set(file("$projectDir/../../contracts"))
     outputFileName.set("webapp_api.json")
-    waitTimeInSeconds.set(30)
+    waitTimeInSeconds.set(60)
+    customBootRun {
+        // Use testcontainers for database when generating OpenAPI docs
+        args.set(listOf("--spring.profiles.active=openapi"))
+    }
 }

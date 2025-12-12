@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.configuration.JwtConfiguration;
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +40,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void generatesValidToken() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
 
         String token = jwtService.generateToken(request);
 
@@ -51,7 +52,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void generatedTokenContainsCorrectSubject() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
 
         String token = jwtService.generateToken(request);
 
@@ -67,7 +69,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void generatedTokenHasCorrectExpiration() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         Instant beforeGeneration = Instant.now();
 
         String token = jwtService.generateToken(request);
@@ -93,7 +96,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void validTokenPassesValidation() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String token = jwtService.generateToken(request);
 
         boolean isValid = jwtService.validateToken(token);
@@ -109,7 +113,8 @@ class DefaultJwtServiceTest {
         expiredConfig.setExpirationDurationSeconds(-1); // Already expired
 
         DefaultJwtService expiredJwtService = new DefaultJwtService(expiredConfig);
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String expiredToken = expiredJwtService.generateToken(request);
 
         boolean isValid = jwtService.validateToken(expiredToken);
@@ -141,7 +146,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void tamperedTokenFailsValidation() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String validToken = jwtService.generateToken(request);
 
         // Tamper with the token by modifying the signature
@@ -162,7 +168,8 @@ class DefaultJwtServiceTest {
         differentConfig.setExpirationDurationSeconds(TEST_EXPIRATION_SECONDS);
 
         DefaultJwtService differentSecretService = new DefaultJwtService(differentConfig);
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String tokenWithDifferentSecret = differentSecretService.generateToken(request);
 
         boolean isValid = jwtService.validateToken(tokenWithDifferentSecret);
@@ -172,7 +179,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void decomposeTokenExtractsCorrectEmail() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String token = jwtService.generateToken(request);
 
         String extractedEmail = jwtService.decomposeToken(token);
@@ -184,7 +192,8 @@ class DefaultJwtServiceTest {
     @ValueSource(strings = {"test@example.com", "user.name+tag@example.co.uk",
             "john.doe@subdomain.example.com", "admin@localhost"})
     void decomposeTokenExtractsVariousEmailFormats(String email) {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(email, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(email, "password");
         String token = jwtService.generateToken(request);
 
         String extractedEmail = jwtService.decomposeToken(token);
@@ -202,7 +211,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void decomposeTamperedTokenThrowsException() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String validToken = jwtService.generateToken(request);
 
         // Tamper with the token
@@ -221,7 +231,8 @@ class DefaultJwtServiceTest {
         expiredConfig.setExpirationDurationSeconds(-1);
 
         DefaultJwtService expiredJwtService = new DefaultJwtService(expiredConfig);
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
         String expiredToken = expiredJwtService.generateToken(request);
 
         assertThatThrownBy(() -> jwtService.decomposeToken(expiredToken)).isInstanceOf(
@@ -230,7 +241,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void generatedTokenIsImmediatelyValidAndDecomposable() {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
 
         String token = jwtService.generateToken(request);
 
@@ -244,7 +256,8 @@ class DefaultJwtServiceTest {
 
     @Test
     void multipleTokensForSameUserAreDifferent() throws InterruptedException {
-        UserAuthenticationRequest request = new UserAuthenticationRequest(TEST_EMAIL, "password");
+        CustomerAuthenticationRequest request =
+                new CustomerAuthenticationRequest(TEST_EMAIL, "password");
 
         String token1 = jwtService.generateToken(request);
 

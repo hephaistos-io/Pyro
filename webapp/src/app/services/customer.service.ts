@@ -1,28 +1,29 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {Api} from '../api/generated/api';
-import {getCompanyForCurrentUser, profile} from '../api/generated/functions';
-import {CompanyResponse, UserResponse} from '../api/generated/models';
+import {getCompanyForCurrentCustomer} from '../api/generated/fn/company/get-company-for-current-customer';
+import {profile} from '../api/generated/fn/v-1/profile';
+import {CompanyResponse, CustomerResponse} from '../api/generated/models';
 
 @Injectable({providedIn: 'root'})
-export class UserService {
-  userProfile = signal<UserResponse | null>(null);
-  userCompany = signal<CompanyResponse | null>(null);
+export class CustomerService {
+  customerProfile = signal<CustomerResponse | null>(null);
+  customerCompany = signal<CompanyResponse | null>(null);
   isProfileLoading = signal(false);
   profileError = signal<string | null>(null);
 
-  hasCompany = computed(() => !!this.userProfile()?.companyId);
+  hasCompany = computed(() => !!this.customerProfile()?.companyId);
 
   private api = inject(Api);
 
-  async fetchProfile(): Promise<UserResponse | null> {
+  async fetchProfile(): Promise<CustomerResponse | null> {
     this.isProfileLoading.set(true);
     this.profileError.set(null);
 
     try {
       const response = await this.api.invoke(profile);
-      this.userProfile.set(response);
+      this.customerProfile.set(response);
 
-      // Fetch company if user has one
+      // Fetch company if customer has one
       if (response.companyId) {
         await this.fetchCompany();
       }
@@ -38,8 +39,8 @@ export class UserService {
 
   async fetchCompany(): Promise<CompanyResponse | null> {
     try {
-      const response = await this.api.invoke(getCompanyForCurrentUser);
-      this.userCompany.set(response);
+      const response = await this.api.invoke(getCompanyForCurrentCustomer);
+      this.customerCompany.set(response);
       return response;
     } catch {
       return null;
@@ -47,8 +48,8 @@ export class UserService {
   }
 
   clearProfile(): void {
-    this.userProfile.set(null);
-    this.userCompany.set(null);
+    this.customerProfile.set(null);
+    this.customerCompany.set(null);
     this.profileError.set(null);
   }
 }

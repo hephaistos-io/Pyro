@@ -1,8 +1,8 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.AuthenticationResponse;
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
-import io.hephaistos.flagforge.controller.dto.UserRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,29 +17,30 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final UserService userService;
+    private final CustomerService customerService;
 
     public DefaultAuthenticationService(AuthenticationManager authenticationManager,
-            JwtService jwtService, UserService userService) {
+            JwtService jwtService, CustomerService customerService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.userService = userService;
+        this.customerService = customerService;
     }
 
     @Override
-    public void register(UserRegistrationRequest userRegistrationRequest) {
-        LOGGER.info("Registering user: {}", userRegistrationRequest);
-        userService.registerUser(userRegistrationRequest);
+    public void register(CustomerRegistrationRequest customerRegistrationRequest) {
+        LOGGER.info("Registering customer: {}", customerRegistrationRequest);
+        customerService.registerCustomer(customerRegistrationRequest);
     }
 
     @Override
-    public AuthenticationResponse login(UserAuthenticationRequest userAuthenticationRequest) {
-        LOGGER.info("User logging in: {}", userAuthenticationRequest.email());
+    public AuthenticationResponse login(
+            CustomerAuthenticationRequest customerAuthenticationRequest) {
+        LOGGER.info("Customer logging in: {}", customerAuthenticationRequest.email());
         var authorization = authenticationManager.authenticate(
-                userAuthenticationRequest.toUsernamePasswordAuthenticationToken());
+                customerAuthenticationRequest.toUsernamePasswordAuthenticationToken());
         SecurityContextHolder.getContext().setAuthentication(authorization);
 
-        return new AuthenticationResponse(userAuthenticationRequest.email(),
-                jwtService.generateToken(userAuthenticationRequest));
+        return new AuthenticationResponse(customerAuthenticationRequest.email(),
+                jwtService.generateToken(customerAuthenticationRequest));
     }
 }

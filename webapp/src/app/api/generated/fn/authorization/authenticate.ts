@@ -8,10 +8,10 @@ import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
 import {AuthenticationResponse} from '../../models/authentication-response';
-import {UserAuthenticationRequest} from '../../models/user-authentication-request';
+import {CustomerAuthenticationRequest} from '../../models/customer-authentication-request';
 
 export interface Authenticate$Params {
-  body: UserAuthenticationRequest
+  body: CustomerAuthenticationRequest
 }
 
 export function authenticate(http: HttpClient, rootUrl: string, params: Authenticate$Params, context?: HttpContext): Observable<StrictHttpResponse<AuthenticationResponse>> {

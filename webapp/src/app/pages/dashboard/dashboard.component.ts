@@ -6,9 +6,9 @@ import {
   ApplicationCreationFormComponent
 } from '../../components/application-creation-form/application-creation-form.component';
 import {AppCardComponent} from '../../components/app-card/app-card.component';
-import {UserService} from '../../services/user.service';
+import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
-import {getApplications} from '../../api/generated/functions';
+import {getApplications} from '../../api/generated/fn/application/get-applications';
 import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
@@ -21,7 +21,7 @@ const SUCCESS_MESSAGE_DURATION_MS = 2000;
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
-  private userService = inject(UserService);
+  private customerService = inject(CustomerService);
   private router = inject(Router);
   showApplicationCreation = signal(false);
 
@@ -30,11 +30,11 @@ export class DashboardComponent implements OnInit {
   private api = inject(Api);
 
   showCompanyOnboarding = computed(() =>
-    !this.userService.isProfileLoading() && !this.userService.hasCompany()
+    !this.customerService.isProfileLoading() && !this.customerService.hasCompany()
   );
 
   greeting = computed(() => {
-    const profile = this.userService.userProfile();
+    const profile = this.customerService.customerProfile();
     if (!profile) return '';
 
     const hour = new Date().getHours();
@@ -52,11 +52,11 @@ export class DashboardComponent implements OnInit {
     return name ? `${timeGreeting}, ${name}.` : timeGreeting;
   });
 
-  companyName = computed(() => this.userService.userCompany()?.name ?? '');
+  companyName = computed(() => this.customerService.customerCompany()?.name ?? '');
 
   async ngOnInit(): Promise<void> {
-    await this.userService.fetchProfile();
-    if (this.userService.hasCompany()) {
+    await this.customerService.fetchProfile();
+    if (this.customerService.hasCompany()) {
       await this.fetchApplications();
     }
   }
@@ -66,7 +66,7 @@ export class DashboardComponent implements OnInit {
 
     // Show success message briefly, then refresh profile
     await new Promise(resolve => setTimeout(resolve, SUCCESS_MESSAGE_DURATION_MS));
-    await this.userService.fetchProfile();
+    await this.customerService.fetchProfile();
     this.showSuccessMessage.set(false);
   }
 
