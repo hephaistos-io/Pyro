@@ -15,8 +15,8 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/flagforge
     driver-class-name: org.postgresql.Driver
-    username: flagforge
-    password: flagforge
+    username: webapp-flagforge
+    password: webapp-flagforge
 
   jpa:
     hibernate:

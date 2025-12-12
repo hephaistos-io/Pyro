@@ -58,3 +58,15 @@ tasks.register<Exec>("dockerPs") {
     environment("PATH", System.getenv("PATH"))
     commandLine("docker", "compose", "ps")
 }
+
+tasks.register<Exec>("dockerResetDb") {
+    description = "Reset the PostgreSQL database volume (stops containers, deletes volume, restarts)"
+    group = "docker"
+    workingDir = projectDir
+    environment("PATH", System.getenv("PATH"))
+    commandLine(
+        "sh",
+        "-c",
+        "docker compose down && docker volume rm flagforge-pgdata 2>/dev/null || true && docker compose up -d"
+    )
+}
