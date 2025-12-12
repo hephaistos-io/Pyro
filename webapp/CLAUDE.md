@@ -11,6 +11,7 @@ built with modern web technologies.
 - SCSS for styling
 - TypeScript with strict mode
 - Vitest for testing
+- Docker for containerized development
 
 **Design Inspiration:** www.enode.com
 
@@ -467,7 +468,23 @@ The project uses Prettier with these settings:
 
 ## Development Workflow
 
-### Common Commands
+### Running with Docker (Recommended)
+
+```bash
+# Start full development environment (from project root)
+docker compose up -d
+
+# Access the app at http://localhost
+# Frontend has hot reload - edit files in webapp/src and changes appear automatically
+
+# View frontend logs
+docker compose logs -f frontend
+
+# Stop the environment
+docker compose down
+```
+
+### Running Locally (without Docker)
 
 ```bash
 # Development Server
