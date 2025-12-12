@@ -55,13 +55,13 @@ tasks.register<Exec>("dockerPs") {
 }
 
 tasks.register<Exec>("dockerResetDb") {
-    description = "Reset the PostgreSQL database volume (stops containers, deletes volume, restarts)"
+    description = "Reset the PostgreSQL database volume (stops containers and deletes volume)"
     group = "docker"
     workingDir = projectDir
     commandLine(
         "sh",
         "-c",
-        "docker compose down && docker volume rm flagforge-pgdata 2>/dev/null || true && docker compose up -d"
+        "docker compose down && docker volume rm flagforge-pgdata 2>/dev/null || true"
     )
 }
 
@@ -75,4 +75,15 @@ tasks.register<Exec>("dockerStartPostgres") {
 // Make generateOpenApiDocs depend on PostgreSQL being available
 gradle.projectsEvaluated {
     tasks.findByPath(":backend:webapp-api:generateOpenApiDocs")?.dependsOn(":dockerStartPostgres")
+}
+
+// System tests (E2E tests with Playwright)
+tasks.register<Exec>("systemTests") {
+    description = "Run Playwright E2E tests (starts Docker before, stops after)"
+    group = "verification"
+    workingDir = file("system-tests")
+    // Wait for services to be fully ready after dockerUp, then run tests
+    commandLine("sh", "-c", "sleep 5 && npm test")
+    dependsOn("dockerUp")
+    finalizedBy("dockerDown")
 }
