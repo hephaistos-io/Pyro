@@ -1,4 +1,5 @@
 @use 'variables' as *;
+@use 'mixins' as *;
 @use 'typography' as *;
 
 .btn {
@@ -33,7 +34,7 @@
       color: white;
     }
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text;
       border-color: $dark-text;
 

@@ -60,7 +60,7 @@ docker compose logs -f backend
 
 - Always run gradle commands from the project root, not from the backend directory.
 - `bootRun` requires a PostgreSQL instance running on `localhost:5432` with database `flagforge` and credentials
-  `flagforge/flagforge`.
+  `webapp-flagforge/webapp-flagforge` (or `flagforge/flagforge` for admin access).
 
 **Running tests:**
 
@@ -122,7 +122,11 @@ Examples:
 
 - **UUID generation:** Use `gen_random_uuid()` (built-in PostgreSQL 13+)
 - **Reserved keywords:** Avoid PostgreSQL reserved keywords (e.g., `user`, `order`) as table names
-- **Default credentials:** username `flagforge`, password `flagforge`, database `flagforge`
+- **Database users:**
+  - `flagforge/flagforge` - Superuser/owner for admin access and debugging
+  - `webapp-flagforge/webapp-flagforge` - Application user for webapp-api service
+  - Future: `customer-flagforge/customer-flagforge` for customer-facing service
+- **Database:** `flagforge`
 
 ---
 

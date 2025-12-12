@@ -5,10 +5,12 @@
   </div>
 
   <div class="steps">
-    <div *ngFor="let step of steps; let last = last" [class.last]="last" class="step">
-      <div class="step-number">{{ step.number }}</div>
-      <h3>{{ step.title }}</h3>
-      <p>{{ step.description }}</p>
-    </div>
+      @for (step of steps; track step.number; let last = $last) {
+          <div class="step" [class.last]="last">
+              <div class="step-number">{{ step.number }}</div>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.description }}</p>
+          </div>
+      }
   </div>
 </section>

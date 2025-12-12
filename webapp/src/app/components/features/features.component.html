@@ -6,10 +6,12 @@
   </div>
 
   <div class="features-grid">
-    <div *ngFor="let feature of features" class="feature-card">
-      <div [innerHTML]="feature.icon" class="feature-card-icon"></div>
-      <h3>{{ feature.title }}</h3>
-      <p>{{ feature.description }}</p>
-    </div>
+      @for (feature of features; track feature.title) {
+          <div class="feature-card">
+              <div [innerHTML]="feature.icon" class="feature-card-icon"></div>
+              <h3>{{ feature.title }}</h3>
+              <p>{{ feature.description }}</p>
+          </div>
+      }
   </div>
 </section>

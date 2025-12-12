@@ -21,7 +21,7 @@
     margin-bottom: 2.5rem;
     line-height: 1.7;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text-muted;
     }
   }
@@ -43,7 +43,7 @@
     font-size: 0.875rem;
     color: $charcoal;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text;
     }
   }
@@ -71,7 +71,7 @@
       cursor: not-allowed;
     }
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       background: $dark-card;
       border-color: $dark-border;
       color: $dark-text;
@@ -131,7 +131,7 @@
   font-size: 0.95rem;
   color: $charcoal-light;
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     color: $dark-text-muted;
   }
 
@@ -145,8 +145,10 @@
       color: $pyro-red-deep;
     }
 
-    :host-context(.dark-mode) &:hover {
-      color: $pyro-red-light;
+    @include dark-mode {
+      &:hover {
+        color: $pyro-red-light;
+      }
     }
   }
 }

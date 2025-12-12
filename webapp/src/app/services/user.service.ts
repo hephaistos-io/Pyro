@@ -28,7 +28,7 @@ export class UserService {
       }
 
       return response;
-    } catch (err: any) {
+    } catch {
       this.profileError.set('Failed to load profile');
       return null;
     } finally {

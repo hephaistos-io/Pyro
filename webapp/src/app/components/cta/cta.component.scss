@@ -6,7 +6,7 @@
   background: linear-gradient(180deg, white 0%, $pyro-red-pale 100%);
   transition: background 0.4s ease;
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     background: linear-gradient(180deg, $dark-bg 0%, rgba($pyro-red, 0.1) 100%);
   }
 
@@ -22,7 +22,7 @@
     margin-left: auto;
     margin-right: auto;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text-muted;
     }
   }

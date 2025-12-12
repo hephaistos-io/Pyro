@@ -21,7 +21,7 @@
   border-radius: 16px;
   transition: background 0.4s ease;
 
-  :host-context(.dark-mode) & {
+  @include dark-mode {
     background: $dark-card;
   }
 
@@ -34,7 +34,7 @@
     color: $pyro-red;
     font-size: 1.5rem;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-border;
     }
   }
@@ -61,7 +61,7 @@
     color: $charcoal-light;
     font-size: 0.95rem;
 
-    :host-context(.dark-mode) & {
+    @include dark-mode {
       color: $dark-text-muted;
     }
   }

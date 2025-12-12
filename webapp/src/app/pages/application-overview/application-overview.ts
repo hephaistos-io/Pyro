@@ -40,9 +40,15 @@ interface UserTier {
 export class ApplicationOverview implements OnInit {
     application = signal<ApplicationResponse | null>(null);
     applicationName = computed(() => this.application()?.name ?? 'Application');
-    // Pricing constants
+
+    // ============================================================================
+    // MOCK DATA - Replace with API calls when backend endpoints are available
+    // ============================================================================
+
+    // Pricing constants (will come from backend pricing service)
     readonly environmentFee = 10; // Additional environments cost $10/mo (first one is free)
-    // Environment management (mocked for now)
+
+    // Mock environments - Replace with: this.api.invoke(getEnvironments, {appId})
     environments = signal<Environment[]>([
         {
             id: '1',
@@ -94,7 +100,8 @@ export class ApplicationOverview implements OnInit {
     // API key visibility
     showReadKey = signal(false);
     showWriteKey = signal(false);
-    // Mock API keys (in real app would come from API)
+
+    // Mock API keys - Replace with: this.api.invoke(getApiKeys, {envId})
     readKey = signal('rk_live_a1b2c3d4e5f6g7h8i9j0');
     writeKey = signal('wk_live_x9y8z7w6v5u4t3s2r1q0');
     // Key refresh confirmation
@@ -102,7 +109,7 @@ export class ApplicationOverview implements OnInit {
     keyToRefresh = signal<'read' | 'write' | null>(null);
     // Environment deletion confirmation
     showEnvironmentDeletion = signal(false);
-    // Request Tier management
+    // Mock request tiers - Replace with: this.api.invoke(getRequestTiers)
     requestTiers = signal<RequestTier[]>([
         {id: 'tier1', name: '1k', dailyLimit: 1000, monthlyPrice: 0},
         {id: 'tier2', name: '10k', dailyLimit: 10000, monthlyPrice: 19},
@@ -111,7 +118,7 @@ export class ApplicationOverview implements OnInit {
     ]);
     selectedRequestTierIndex = signal(2); // Default to 50k (index 2)
     currentRequestTier = computed(() => this.requestTiers()[this.selectedRequestTierIndex()]);
-    // User Tier management
+    // Mock user tiers - Replace with: this.api.invoke(getUserTiers)
     userTiers = signal<UserTier[]>([
         {id: 'tier1', name: '100', maxUsers: 100, monthlyPrice: 0},
         {id: 'tier2', name: '1k', maxUsers: 1000, monthlyPrice: 29},
@@ -171,7 +178,7 @@ export class ApplicationOverview implements OnInit {
         const env = this.selectedEnvironment();
         return env ? env.name.toLowerCase().replace(/\s+/g, '-') : '';
     });
-    // Usage statistics (mocked)
+    // Mock usage statistics - Replace with: this.api.invoke(getUsageStats, {envId})
     usageStats = signal({
         fetchesToday: 12847,
         dailyLimit: 50000,
@@ -179,12 +186,12 @@ export class ApplicationOverview implements OnInit {
         totalThisMonth: 287432,
         avgResponseTime: 42, // ms
     });
-    // Leniency tracking (mocked) - 2 allowed per month
+    // Mock leniency tracking - Replace with: this.api.invoke(getLeniencyStats, {envId})
     leniencyStats = signal({
         used: 2,
         allowed: 2,
     });
-    // Last 7 days fetch data (mocked)
+    // Mock weekly fetch data - Replace with: this.api.invoke(getWeeklyFetches, {envId})
     weeklyFetches = signal([
         {day: 'Mon', fetches: 38420, limit: 50000},
         {day: 'Tue', fetches: 50000, limit: 50000},  // Hit limit

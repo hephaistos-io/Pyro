@@ -11,6 +11,8 @@ import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/functions';
 import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
 
+const SUCCESS_MESSAGE_DURATION_MS = 2000;
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -63,7 +65,7 @@ export class DashboardComponent implements OnInit {
     this.showSuccessMessage.set(true);
 
     // Show success message briefly, then refresh profile
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, SUCCESS_MESSAGE_DURATION_MS));
     await this.userService.fetchProfile();
     this.showSuccessMessage.set(false);
   }

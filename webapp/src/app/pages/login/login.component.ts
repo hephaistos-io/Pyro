@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
@@ -6,6 +6,7 @@ import {authenticate} from '../../api/generated/functions';
 import {UserAuthenticationRequest} from '../../api/generated/models';
 import {AuthService} from '../../services/auth.service';
 import {handleApiError} from '../../utils/error-handler.util';
+import {isValidEmail} from '../../utils/validators.util';
 
 @Component({
   selector: 'app-login',
@@ -17,15 +18,14 @@ import {handleApiError} from '../../utils/error-handler.util';
 export class LoginComponent implements OnInit {
   email = '';
   password = '';
-  error = '';
-  isLoading = false;
+  error = signal('');
+  isLoading = signal(false);
   private returnUrl = '/dashboard';
 
   private api = inject(Api);
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     // Redirect to dashboard if already authenticated
@@ -42,13 +42,13 @@ export class LoginComponent implements OnInit {
     // Validate form
     const validationError = this.validateForm();
     if (validationError) {
-      this.error = validationError;
+      this.error.set(validationError);
       return;
     }
 
     // Set loading state
-    this.isLoading = true;
-    this.error = '';
+    this.isLoading.set(true);
+    this.error.set('');
 
     try {
       // Call API
@@ -64,16 +64,13 @@ export class LoginComponent implements OnInit {
         this.authService.setAuthToken(response.token, response.email);
         await this.router.navigateByUrl(this.returnUrl);
       } else {
-        this.error = 'Login failed. Please try again';
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        this.error.set('Login failed. Please try again');
+        this.isLoading.set(false);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Handle error
-      this.isLoading = false;
-      this.error = handleApiError(err, 'login');
-      //required, as otherwise it doesn't see the change to the message and it wont be displayed.
-      this.cdr.detectChanges();
+      this.isLoading.set(false);
+      this.error.set(handleApiError(err, 'login'));
     }
   }
 
@@ -82,15 +79,10 @@ export class LoginComponent implements OnInit {
       return 'Email and password are required';
     }
 
-    if (!this.isValidEmail(this.email)) {
+    if (!isValidEmail(this.email)) {
       return 'Please enter a valid email address';
     }
 
     return null;
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 }

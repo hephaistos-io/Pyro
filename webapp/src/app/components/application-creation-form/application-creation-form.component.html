@@ -10,7 +10,7 @@
       <label for="applicationName">Application Name</label>
       <input
         [(ngModel)]="applicationName"
-        [disabled]="isLoading"
+        [disabled]="isLoading()"
         autocomplete="off"
         id="applicationName"
         name="applicationName"
@@ -19,12 +19,12 @@
       />
     </div>
 
-    @if (error) {
-      <div class="error-message">{{ error }}</div>
+      @if (error()) {
+          <div class="error-message">{{ error() }}</div>
     }
 
-    <button [disabled]="isLoading" class="btn btn-primary btn-submit" type="submit">
-      @if (isLoading) {
+      <button [disabled]="isLoading()" class="btn btn-primary btn-submit" type="submit">
+          @if (isLoading()) {
         <span class="spinner"></span>
         <span>Creating...</span>
       } @else {
