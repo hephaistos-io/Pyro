@@ -8,7 +8,7 @@
       <div class="app-cards">
         <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
         @for (app of applications(); track app.id) {
-          <app-card [name]="app.name"/>
+          <app-card [name]="app.name" [application]="app" (applicationClick)="onApplicationClick($event)"/>
         }
       </div>
     }

@@ -1,4 +1,5 @@
 import {Component, computed, inject, OnInit, signal} from '@angular/core';
+import {Router} from '@angular/router';
 import {OnboardingOverlayComponent} from '../../components/onboarding-overlay/onboarding-overlay.component';
 import {CompanyCreationFormComponent} from '../../components/company-creation-form/company-creation-form.component';
 import {
@@ -19,6 +20,7 @@ import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
 })
 export class DashboardComponent implements OnInit {
   private userService = inject(UserService);
+  private router = inject(Router);
   showApplicationCreation = signal(false);
 
   showSuccessMessage = signal(false);
@@ -77,6 +79,12 @@ export class DashboardComponent implements OnInit {
   async onApplicationCreated(application: ApplicationResponse): Promise<void> {
     this.showApplicationCreation.set(false);
     await this.fetchApplications();
+  }
+
+  onApplicationClick(application: ApplicationResponse): void {
+    this.router.navigate(['/dashboard/application', application.id], {
+      state: {application}
+    });
   }
 
   private async fetchApplications(): Promise<void> {

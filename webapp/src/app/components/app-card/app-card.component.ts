@@ -1,4 +1,5 @@
 import {Component, input, output} from '@angular/core';
+import {ApplicationResponse} from '../../api/generated/models';
 
 @Component({
   selector: 'app-card',
@@ -9,10 +10,19 @@ import {Component, input, output} from '@angular/core';
 export class AppCardComponent {
   name = input<string>();
   isAddCard = input(false);
+  application = input<ApplicationResponse>();
 
   cardClick = output<void>();
+  applicationClick = output<ApplicationResponse>();
 
   onClick(): void {
-    this.cardClick.emit();
+    if (this.isAddCard()) {
+      this.cardClick.emit();
+    } else {
+      const app = this.application();
+      if (app) {
+        this.applicationClick.emit(app);
+      }
+    }
   }
 }
