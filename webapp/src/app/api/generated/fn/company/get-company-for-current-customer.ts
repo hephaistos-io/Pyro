@@ -9,11 +9,11 @@ import {RequestBuilder} from '../../request-builder';
 
 import {CompanyResponse} from '../../models/company-response';
 
-export interface GetCompanyForCurrentUser$Params {
+export interface GetCompanyForCurrentCustomer$Params {
 }
 
-export function getCompanyForCurrentUser(http: HttpClient, rootUrl: string, params?: GetCompanyForCurrentUser$Params, context?: HttpContext): Observable<StrictHttpResponse<CompanyResponse>> {
-  const rb = new RequestBuilder(rootUrl, getCompanyForCurrentUser.PATH, 'get');
+export function getCompanyForCurrentCustomer(http: HttpClient, rootUrl: string, params?: GetCompanyForCurrentCustomer$Params, context?: HttpContext): Observable<StrictHttpResponse<CompanyResponse>> {
+  const rb = new RequestBuilder(rootUrl, getCompanyForCurrentCustomer.PATH, 'get');
   if (params) {
   }
 
@@ -27,4 +27,4 @@ export function getCompanyForCurrentUser(http: HttpClient, rootUrl: string, para
   );
 }
 
-getCompanyForCurrentUser.PATH = '/v1/company';
+getCompanyForCurrentCustomer.PATH = '/v1/company';

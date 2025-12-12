@@ -7,7 +7,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
-public record UserAuthenticationRequest(
+public record CustomerAuthenticationRequest(
         @Schema(example = "your@email.com", requiredMode = REQUIRED) @NotBlank(
                 message = "E-Mail can't be blank") @Email(
                 message = "E-Mail has to be valid!") String email,

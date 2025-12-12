@@ -2,8 +2,8 @@ package io.hephaistos.flagforge;
 
 import io.hephaistos.flagforge.controller.dto.AuthenticationResponse;
 import io.hephaistos.flagforge.controller.dto.CompanyCreationRequest;
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
-import io.hephaistos.flagforge.controller.dto.UserRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -146,7 +146,7 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
      * Register a user with custom credentials.
      */
     protected void registerUser(String firstName, String lastName, String email, String password) {
-        var registration = new UserRegistrationRequest(firstName, lastName, email, password);
+        var registration = new CustomerRegistrationRequest(firstName, lastName, email, password);
         restTemplate.postForEntity(getBaseUrl() + "/v1/auth/register", registration, Void.class);
     }
 
@@ -161,7 +161,7 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
      * Authenticate with custom credentials and return the token.
      */
     protected String authenticate(String email, String password) {
-        var authRequest = new UserAuthenticationRequest(email, password);
+        var authRequest = new CustomerAuthenticationRequest(email, password);
         var response =
                 restTemplate.postForEntity(getBaseUrl() + "/v1/auth/authenticate", authRequest,
                         AuthenticationResponse.class);

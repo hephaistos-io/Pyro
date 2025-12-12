@@ -2,8 +2,8 @@ import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
-import {register} from '../../api/generated/functions';
-import {UserRegistrationRequest} from '../../api/generated/models';
+import {register} from '../../api/generated/fn/authorization/register';
+import {CustomerRegistrationRequest} from '../../api/generated/models';
 import zxcvbn from 'zxcvbn';
 import {handleApiError} from '../../utils/error-handler.util';
 import {isValidEmail} from '../../utils/validators.util';
@@ -69,7 +69,7 @@ export class RegisterComponent implements OnInit {
     this.error.set('');
     try {
       // Call API
-      const registrationRequest: UserRegistrationRequest = {
+      const registrationRequest: CustomerRegistrationRequest = {
         email: this.email,
         firstName: this.firstName,
         lastName: this.lastName,

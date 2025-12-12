@@ -80,20 +80,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoCompanyAssignedException.class)
     public ResponseEntity<ErrorResponse> handleNoCompanyAssigned(NoCompanyAssignedException ex) {
-        LOGGER.info("User has no company assigned! {}", ex.getMessage());
+        LOGGER.info("Customer has no company assigned! {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("MISSING_COMPANY_ASSIGNMENT",
-                        "The user has no company assigned."));
+                        "The customer has no company assigned."));
 
     }
 
     @ExceptionHandler(CompanyAlreadyAssignedException.class)
     public ResponseEntity<ErrorResponse> handleCompanyAlreadyAssigned(
             CompanyAlreadyAssignedException ex) {
-        LOGGER.info("User has a company already assigned! {}", ex.getMessage());
+        LOGGER.info("Customer has a company already assigned! {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("EXISTING_COMPANY_ASSIGNMENT",
-                        "The user has a company assigned."));
+                        "The customer has a company assigned."));
     }
 
     @ExceptionHandler(NotFoundException.class)

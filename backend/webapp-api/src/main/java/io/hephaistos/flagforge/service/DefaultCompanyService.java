@@ -4,10 +4,9 @@ import io.hephaistos.flagforge.controller.dto.CompanyCreationRequest;
 import io.hephaistos.flagforge.controller.dto.CompanyResponse;
 import io.hephaistos.flagforge.data.CompanyEntity;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
-import io.hephaistos.flagforge.data.repository.UserRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,18 +19,18 @@ import java.util.UUID;
 public class DefaultCompanyService implements CompanyService {
 
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
 
     public DefaultCompanyService(CompanyRepository companyRepository,
-            UserRepository userRepository) {
+            CustomerRepository customerRepository) {
         this.companyRepository = companyRepository;
-        this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Override
-    public Optional<CompanyEntity> getCompanyForCurrentUser() {
-        var pyroSecurityContext = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
-        return pyroSecurityContext.getCompanyId().flatMap(companyRepository::findById);
+    public Optional<CompanyEntity> getCompanyForCurrentCustomer() {
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        return securityContext.getCompanyId().flatMap(companyRepository::findById);
     }
 
     @Override
@@ -40,23 +39,23 @@ public class DefaultCompanyService implements CompanyService {
     }
 
     @Override
-    public CompanyResponse createCompanyForCurrentUser(
+    public CompanyResponse createCompanyForCurrentCustomer(
             CompanyCreationRequest companyCreationRequest) {
-        var pyroSecurityContext = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
+        var securityContext = FlagForgeSecurityContext.getCurrent();
 
-        // Check security context first to avoid unnecessary user lookup
-        if (pyroSecurityContext.getCompanyId().isPresent()) {
+        // Check security context first to avoid unnecessary customer lookup
+        if (securityContext.getCompanyId().isPresent()) {
             throw new CompanyAlreadyAssignedException(
-                    "Can't create company, the user already has one assigned!");
+                    "Can't create company, the customer already has one assigned!");
         }
 
-        var user = userRepository.findByEmail(pyroSecurityContext.getUserName())
-                .orElseThrow(() -> new UsernameNotFoundException("Couldnt find user!"));
+        var customer = customerRepository.findByEmail(securityContext.getCustomerName())
+                .orElseThrow(() -> new UsernameNotFoundException("Couldn't find customer!"));
 
         var company = new CompanyEntity();
         company.setName(companyCreationRequest.companyName());
         companyRepository.save(company);
-        user.setCompanyId(company.getId());
+        customer.setCompanyId(company.getId());
         return CompanyResponse.fromEntity(company);
     }
 }

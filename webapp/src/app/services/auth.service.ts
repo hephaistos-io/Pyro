@@ -1,14 +1,14 @@
 import {inject, Injectable, signal} from '@angular/core';
-import {UserService} from './user.service';
+import {CustomerService} from './customer.service';
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
   isAuthenticated = signal(false);
-  userEmail = signal<string | null>(null);
+  customerEmail = signal<string | null>(null);
   private readonly TOKEN_KEY = 'auth_token';
-  private readonly EMAIL_KEY = 'user_email';
+  private readonly EMAIL_KEY = 'customer_email';
 
-  private userService = inject(UserService);
+  private customerService = inject(CustomerService);
 
   constructor() {
     this.initializeAuth();
@@ -18,7 +18,7 @@ export class AuthService {
     localStorage.setItem(this.TOKEN_KEY, token);
     localStorage.setItem(this.EMAIL_KEY, email);
     this.isAuthenticated.set(true);
-    this.userEmail.set(email);
+    this.customerEmail.set(email);
   }
 
   getToken(): string | null {
@@ -29,8 +29,8 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.EMAIL_KEY);
     this.isAuthenticated.set(false);
-    this.userEmail.set(null);
-    this.userService.clearProfile();
+    this.customerEmail.set(null);
+    this.customerService.clearProfile();
   }
 
   private initializeAuth(): void {
@@ -39,7 +39,7 @@ export class AuthService {
 
     if (token && email) {
       this.isAuthenticated.set(true);
-      this.userEmail.set(email);
+      this.customerEmail.set(email);
     }
   }
 }

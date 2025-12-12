@@ -2,8 +2,8 @@ import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
-import {authenticate} from '../../api/generated/functions';
-import {UserAuthenticationRequest} from '../../api/generated/models';
+import {authenticate} from '../../api/generated/fn/authorization/authenticate';
+import {CustomerAuthenticationRequest} from '../../api/generated/models';
 import {AuthService} from '../../services/auth.service';
 import {handleApiError} from '../../utils/error-handler.util';
 import {isValidEmail} from '../../utils/validators.util';
@@ -52,7 +52,7 @@ export class LoginComponent implements OnInit {
 
     try {
       // Call API
-      const authRequest: UserAuthenticationRequest = {
+      const authRequest: CustomerAuthenticationRequest = {
         email: this.email,
         password: this.password
       };

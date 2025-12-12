@@ -10,12 +10,12 @@ import {RequestBuilder} from '../../request-builder';
 import {CompanyCreationRequest} from '../../models/company-creation-request';
 import {CompanyResponse} from '../../models/company-response';
 
-export interface CreateCompanyForCurrentUser$Params {
+export interface CreateCompanyForCurrentCustomer$Params {
   body: CompanyCreationRequest
 }
 
-export function createCompanyForCurrentUser(http: HttpClient, rootUrl: string, params: CreateCompanyForCurrentUser$Params, context?: HttpContext): Observable<StrictHttpResponse<CompanyResponse>> {
-  const rb = new RequestBuilder(rootUrl, createCompanyForCurrentUser.PATH, 'post');
+export function createCompanyForCurrentCustomer(http: HttpClient, rootUrl: string, params: CreateCompanyForCurrentCustomer$Params, context?: HttpContext): Observable<StrictHttpResponse<CompanyResponse>> {
+  const rb = new RequestBuilder(rootUrl, createCompanyForCurrentCustomer.PATH, 'post');
   if (params) {
     rb.body(params.body, 'application/json');
   }
@@ -30,4 +30,4 @@ export function createCompanyForCurrentUser(http: HttpClient, rootUrl: string, p
   );
 }
 
-createCompanyForCurrentUser.PATH = '/v1/company';
+createCompanyForCurrentCustomer.PATH = '/v1/company';

@@ -1,7 +1,7 @@
 import {Component, inject, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Api} from '../../api/generated/api';
-import {createApplication} from '../../api/generated/functions';
+import {createApplication} from '../../api/generated/fn/application/create-application';
 import {ApplicationResponse} from '../../api/generated/models';
 import {handleApiError} from '../../utils/error-handler.util';
 

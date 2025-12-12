@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.configuration.JwtConfiguration;
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,11 +27,10 @@ public class DefaultJwtService implements JwtService {
     }
 
     @Override
-    public String generateToken(UserAuthenticationRequest userAuthenticationRequest) {
+    public String generateToken(CustomerAuthenticationRequest customerAuthenticationRequest) {
         final var generationTime = Instant.now();
 
-        return Jwts.builder()
-                .subject(userAuthenticationRequest.email())
+        return Jwts.builder().subject(customerAuthenticationRequest.email())
                 .issuedAt(Date.from(generationTime))
                 .expiration(Date.from(generationTime.plusSeconds(
                         jwtConfiguration.getExpirationDurationSeconds())))

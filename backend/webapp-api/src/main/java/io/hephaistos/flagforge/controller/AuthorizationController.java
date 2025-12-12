@@ -1,8 +1,8 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.controller.dto.AuthenticationResponse;
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
-import io.hephaistos.flagforge.controller.dto.UserRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import io.hephaistos.flagforge.service.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,15 +31,16 @@ public class AuthorizationController {
     @Operation(summary = "Send registration request")
     @PostMapping(value = "/register", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public void register(@Valid @RequestBody UserRegistrationRequest userRegistrationRequest) {
-        authenticationService.register(userRegistrationRequest);
+    public void register(
+            @Valid @RequestBody CustomerRegistrationRequest customerRegistrationRequest) {
+        authenticationService.register(customerRegistrationRequest);
     }
 
-    @Operation(summary = "Authenticate user")
+    @Operation(summary = "Authenticate customer")
     @PostMapping(value = "/authenticate", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public AuthenticationResponse authenticate(
-            @Valid @RequestBody UserAuthenticationRequest userAuthenticationRequest) {
-        return authenticationService.login(userAuthenticationRequest);
+            @Valid @RequestBody CustomerAuthenticationRequest customerAuthenticationRequest) {
+        return authenticationService.login(customerAuthenticationRequest);
     }
 }

@@ -7,12 +7,12 @@ import {filter, map} from 'rxjs/operators';
 import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
-import {UserResponse} from '../../models/user-response';
+import {CustomerResponse} from '../../models/customer-response';
 
 export interface Profile$Params {
 }
 
-export function profile(http: HttpClient, rootUrl: string, params?: Profile$Params, context?: HttpContext): Observable<StrictHttpResponse<UserResponse>> {
+export function profile(http: HttpClient, rootUrl: string, params?: Profile$Params, context?: HttpContext): Observable<StrictHttpResponse<CustomerResponse>> {
   const rb = new RequestBuilder(rootUrl, profile.PATH, 'get');
   if (params) {
   }
@@ -22,9 +22,9 @@ export function profile(http: HttpClient, rootUrl: string, params?: Profile$Para
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<UserResponse>;
+      return r as StrictHttpResponse<CustomerResponse>;
     })
   );
 }
 
-profile.PATH = '/v1/user/profile';
+profile.PATH = '/v1/customer/profile';

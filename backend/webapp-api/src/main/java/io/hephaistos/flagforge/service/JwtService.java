@@ -1,10 +1,10 @@
 package io.hephaistos.flagforge.service;
 
-import io.hephaistos.flagforge.controller.dto.UserAuthenticationRequest;
+import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 
 public interface JwtService {
 
-    String generateToken(UserAuthenticationRequest userAuthenticationRequest);
+    String generateToken(CustomerAuthenticationRequest customerAuthenticationRequest);
 
     String decomposeToken(String token);
 
