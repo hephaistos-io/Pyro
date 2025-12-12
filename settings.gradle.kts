@@ -1,4 +1,4 @@
-rootProject.name = "pyro"
+rootProject.name = "flagforge"
 
 include("backend:webapp-api")
 include("webapp")
