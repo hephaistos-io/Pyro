@@ -1,9 +1,9 @@
--- Create user table
+-- Create customer table
 -- This matches the UserEntity JPA entity definition
 
-CREATE TABLE user
+CREATE TABLE customer
 (
-    id         UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     email      VARCHAR(255) NOT NULL UNIQUE,
     first_name VARCHAR(255) NOT NULL,
     last_name  VARCHAR(255) NOT NULL,
@@ -11,4 +11,4 @@ CREATE TABLE user
 );
 
 -- Create index on email for faster lookups
-CREATE INDEX idx_user_email ON user (email);
+CREATE INDEX idx_customer_email ON customer (email);

@@ -31,11 +31,14 @@ subprojects {
             implementation("io.jsonwebtoken:jjwt-impl:0.13.0")
             implementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
-            implementation("org.flywaydb:flyway-core:10.20.1")
-
-            runtimeOnly("org.hsqldb:hsqldb:2.7.4")
+            implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.0")
+            implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
+            runtimeOnly("org.postgresql:postgresql:42.7.4")
 
             testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
+            testImplementation("org.springframework.boot:spring-boot-testcontainers:4.0.0")
+            testImplementation("org.testcontainers:postgresql:1.20.4")
+            testImplementation("org.testcontainers:junit-jupiter:1.20.4")
             testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
             testImplementation("org.springframework.security:spring-security-test:7.0.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")

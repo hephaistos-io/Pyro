@@ -1,13 +1,16 @@
--- Create user table
--- This matches the UserEntity JPA entity definition
+-- Create company table
+-- This matches the CompanyEntity JPA entity definition
 
 CREATE TABLE company
 (
-    id   UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 
--- create link to users, but without making it mandatory
-ALTER TABLE user
+-- add company_id column to customer table and create link to users (optional)
+ALTER TABLE customer
+    ADD COLUMN company_id UUID;
+
+ALTER TABLE customer
     ADD CONSTRAINT cs_company_id FOREIGN KEY (company_id)
         REFERENCES company (id);
