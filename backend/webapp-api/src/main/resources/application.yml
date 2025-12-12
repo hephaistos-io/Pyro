@@ -1,7 +1,7 @@
-pyro:
+flagforge:
   security:
     jwt:
-      secret: ${PYRO_JWT_SECRET:4407a837731d92425e627e49632afbabd538a25e080fafed65a9ff7e71a9f5d1}
+      secret: ${FLAGFORGE_JWT_SECRET:4407a837731d92425e627e49632afbabd538a25e080fafed65a9ff7e71a9f5d1}
       expiration_duration_seconds: 7200
 
 server:
@@ -10,18 +10,20 @@ server:
     context-path: /api
 
 spring:
+  application:
+    name: flagforge
   datasource:
-    url: jdbc:hsqldb:mem:pyro
-    driver-class-name: org.hsqldb.jdbc.JDBCDriver
-    username: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/flagforge
+    driver-class-name: org.postgresql.Driver
+    username: flagforge
+    password: flagforge
 
   jpa:
     hibernate:
-      ddl-auto: validate  # Changed from create-drop - Flyway manages schema now
+      ddl-auto: validate  # Flyway manages schema
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.HSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   flyway:
     enabled: true
@@ -36,6 +38,6 @@ springdoc:
 
 logging:
   file:
-    name: build/logs/pyro.log
+    name: build/logs/flagforge.log
   level:
     root: DEBUG
