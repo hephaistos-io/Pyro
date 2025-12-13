@@ -1,0 +1,26 @@
+# Test configuration
+server:
+  servlet:
+    context-path: /customer-api
+
+spring:
+  application:
+    name: flagforge-customer-api-test
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: false
+
+springdoc:
+  api-docs:
+    version: openapi_3_0
+
+logging:
+  level:
+    root: WARN
+    io.hephaistos.flagforge: DEBUG

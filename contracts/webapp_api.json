@@ -175,6 +175,83 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/api-keys": {
+      "get": {
+        "tags": [
+          "api-keys",
+          "v1"
+        ],
+        "summary": "List all API keys for an application",
+        "operationId": "getApiKeys",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKeyResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "api-keys",
+          "v1"
+        ],
+        "summary": "Create a new API key for an application",
+        "operationId": "createApiKey",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiKeyCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyCreationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/customer/profile": {
       "get": {
         "tags": [
@@ -226,6 +303,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/api-keys/{apiKeyId}": {
+      "delete": {
+        "tags": [
+          "api-keys",
+          "v1"
+        ],
+        "summary": "Revoke an API key",
+        "operationId": "revokeApiKey",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "apiKeyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -346,6 +458,34 @@
           }
         }
       },
+      "ApiKeyCreationRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 2147483647,
+            "minLength": 2,
+            "type": "string"
+          }
+        }
+      },
+      "ApiKeyCreationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "secretKey": {
+            "type": "string"
+          }
+        }
+      },
       "CustomerResponse": {
         "type": "object",
         "properties": {
@@ -361,6 +501,36 @@
           "companyId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "ApiKeyResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "keyPrefix": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "rateLimitRequestsPerMinute": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       }

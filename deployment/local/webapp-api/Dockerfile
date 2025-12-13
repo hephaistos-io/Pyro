@@ -10,10 +10,10 @@ WORKDIR /app
 COPY gradlew gradle.properties ./
 COPY gradle/ gradle/
 
-# Use Docker-specific settings that only includes backend
-COPY deployment/local/backend/settings.docker.gradle.kts settings.gradle.kts
+# Use Docker-specific settings that only includes webapp-api
+COPY deployment/local/webapp-api/settings.docker.gradle.kts settings.gradle.kts
 
-# Copy backend build files
+# Copy webapp-api build files
 COPY backend/build.gradle.kts ./
 COPY backend/webapp-api/build.gradle.kts webapp-api/
 
