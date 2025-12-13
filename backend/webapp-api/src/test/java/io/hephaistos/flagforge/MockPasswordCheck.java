@@ -7,7 +7,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@Import(PostgresTestcontainerConfiguration.class)
+@Import(PostgresTestContainerConfiguration.class)
 public class MockPasswordCheck {
 
     @MockitoBean

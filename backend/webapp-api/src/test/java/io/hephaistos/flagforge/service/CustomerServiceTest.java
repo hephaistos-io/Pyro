@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.MockPasswordCheck;
+import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,12 +9,14 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Tag("integration")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(PostgresTestContainerConfiguration.class)
+@Tag("integration")
 public class CustomerServiceTest extends MockPasswordCheck {
 
     @Autowired

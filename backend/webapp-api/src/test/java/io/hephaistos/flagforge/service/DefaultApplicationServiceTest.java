@@ -21,6 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Tag("unit")
@@ -30,12 +31,16 @@ class DefaultApplicationServiceTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
+    @Mock
+    private EnvironmentService environmentService;
+
     private DefaultApplicationService applicationService;
     private UUID testCompanyId;
 
     @BeforeEach
     void setUp() {
-        applicationService = new DefaultApplicationService(applicationRepository);
+        applicationService =
+                new DefaultApplicationService(applicationRepository, environmentService);
         testCompanyId = UUID.randomUUID();
         setupSecurityContext(testCompanyId);
     }
@@ -60,6 +65,7 @@ class DefaultApplicationServiceTest {
 
         assertThat(response.name()).isEqualTo("Test App");
         assertThat(response.companyId()).isEqualTo(testCompanyId);
+        verify(environmentService).createDefaultEnvironment(response.id());
     }
 
     @Test

@@ -175,6 +175,83 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/environments": {
+      "get": {
+        "tags": [
+          "environments",
+          "v1"
+        ],
+        "summary": "List all environments for an application",
+        "operationId": "getEnvironments",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EnvironmentResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "environments",
+          "v1"
+        ],
+        "summary": "Create a new environment for an application",
+        "operationId": "createEnvironment",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/api-keys": {
       "get": {
         "tags": [
@@ -303,6 +380,41 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/environments/{environmentId}": {
+      "delete": {
+        "tags": [
+          "environments",
+          "v1"
+        ],
+        "summary": "Delete an environment. FREE tier environments cannot be deleted.",
+        "operationId": "deleteEnvironment",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }
@@ -455,6 +567,56 @@
           "companyId": {
             "type": "string",
             "format": "uuid"
+          },
+          "environments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentResponse"
+            }
+          }
+        }
+      },
+      "EnvironmentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "PAID"
+            ]
+          }
+        }
+      },
+      "EnvironmentCreationRequest": {
+        "required": [
+          "description",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 2147483647,
+            "minLength": 2,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "type": "string"
           }
         }
       },

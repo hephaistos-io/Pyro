@@ -18,9 +18,12 @@ import java.util.UUID;
 public class DefaultApplicationService implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
+    private final EnvironmentService environmentService;
 
-    public DefaultApplicationService(ApplicationRepository applicationRepository) {
+    public DefaultApplicationService(ApplicationRepository applicationRepository,
+            EnvironmentService environmentService) {
         this.applicationRepository = applicationRepository;
+        this.environmentService = environmentService;
     }
 
     @Override
@@ -37,6 +40,8 @@ public class DefaultApplicationService implements ApplicationService {
         application.setName(request.name());
         application.setCompanyId(companyId);
         applicationRepository.save(application);
+
+        environmentService.createDefaultEnvironment(application.getId());
 
         return ApplicationResponse.fromEntity(application);
     }

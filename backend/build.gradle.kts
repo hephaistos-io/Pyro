@@ -40,8 +40,9 @@ subprojects {
 
             testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
             testImplementation("org.springframework.boot:spring-boot-testcontainers:4.0.0")
-            testImplementation("org.testcontainers:postgresql:1.20.4")
-            testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+            testImplementation("org.testcontainers:testcontainers:2.0.2")
+            testImplementation("org.testcontainers:testcontainers-postgresql:2.0.2")
+            testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.2")
             testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
             testImplementation("org.springframework.security:spring-security-test:7.0.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")

@@ -88,10 +88,10 @@
                          [class.pricing-chart__row--active]="selectedEnvironment()?.id === env.id">
                         <div class="pricing-chart__label">
                             <span class="pricing-chart__name">{{ env.name }}</span>
-                            @if (env.total > 0) {
-                                <span class="pricing-chart__detail">Requests + Users</span>
-                            } @else {
+                            @if (env.tier === 'FREE') {
                                 <span class="pricing-chart__detail pricing-chart__detail--free">Free tier</span>
+                            } @else if (env.description) {
+                                <span class="pricing-chart__detail">{{ env.description }}</span>
                             }
                         </div>
                         <div class="pricing-chart__bar-wrapper">
@@ -107,8 +107,10 @@
                             }
                         </div>
                         <span class="pricing-chart__amount">
-              @if (env.total === 0) {
+              @if (env.tier === 'FREE') {
                   Free
+              } @else if (env.total === 0) {
+                  $0
               } @else {
                   ${{ env.total }}
               }
@@ -215,7 +217,7 @@
                         </div>
                     }
                 </div>
-                @if (selectedEnvironment()) {
+                @if (selectedEnvironment() && canDeleteEnvironment()) {
                     <button class="delete-env-btn" (click)="requestEnvironmentDeletion()"
                             aria-label="Delete environment">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -520,7 +522,7 @@
 @if (showEnvironmentCreation()) {
     <div class="modal-overlay" (click)="onCloseEnvironmentCreation()">
         <div class="modal-content" (click)="$event.stopPropagation()">
-            <button class="modal-close" (click)="onCloseEnvironmentCreation()">
+            <button class="modal-close" (click)="onCloseEnvironmentCreation()" [disabled]="isCreatingEnvironment()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -537,7 +539,8 @@
                         class="form-input"
                         placeholder="e.g., Production, Staging, or Germany"
                         required
-                        autocomplete="off">
+                        autocomplete="off"
+                        [disabled]="isCreatingEnvironment()">
                 </div>
                 <div class="form-group">
                     <label for="envDesc" class="form-label">Description</label>
@@ -547,9 +550,16 @@
                         type="text"
                         class="form-input"
                         placeholder="e.g., Live production environment"
-                        autocomplete="off">
+                        autocomplete="off"
+                        [disabled]="isCreatingEnvironment()">
                 </div>
-                <button type="submit" class="modal-submit">Create Environment</button>
+                <button type="submit" class="modal-submit" [disabled]="isCreatingEnvironment()">
+                    @if (isCreatingEnvironment()) {
+                        Creating...
+                    } @else {
+                        Create Environment
+                    }
+                </button>
             </form>
         </div>
     </div>
@@ -557,9 +567,9 @@
 
 <!-- Environment Deletion Confirmation Modal -->
 @if (showEnvironmentDeletion()) {
-    <div class="modal-overlay" (click)="cancelEnvironmentDeletion()">
+    <div class="modal-overlay" (click)="isDeletingEnvironment() ? null : cancelEnvironmentDeletion()">
         <div class="modal-content modal-content--warning" (click)="$event.stopPropagation()">
-            <button class="modal-close" (click)="cancelEnvironmentDeletion()">
+            <button class="modal-close" (click)="cancelEnvironmentDeletion()" [disabled]="isDeletingEnvironment()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -574,8 +584,16 @@
             <p class="warning-text">This action will permanently delete this environment and all associated data. This
                 cannot be undone.</p>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn--cancel" (click)="cancelEnvironmentDeletion()">Cancel</button>
-                <button class="modal-btn modal-btn--danger" (click)="confirmEnvironmentDeletion()">Delete Environment
+                <button class="modal-btn modal-btn--cancel" (click)="cancelEnvironmentDeletion()"
+                        [disabled]="isDeletingEnvironment()">Cancel
+                </button>
+                <button class="modal-btn modal-btn--danger" (click)="confirmEnvironmentDeletion()"
+                        [disabled]="isDeletingEnvironment()">
+                    @if (isDeletingEnvironment()) {
+                        Deleting...
+                    } @else {
+                        Delete Environment
+                    }
                 </button>
             </div>
         </div>
