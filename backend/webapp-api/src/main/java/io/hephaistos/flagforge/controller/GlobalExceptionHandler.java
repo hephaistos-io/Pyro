@@ -5,6 +5,7 @@ import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
+import io.hephaistos.flagforge.exception.OperationNotAllowedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -101,6 +102,14 @@ public class GlobalExceptionHandler {
         LOGGER.info("Operation didn't find required resource {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("NOT_FOUND", "Requested resource was not found."));
+    }
+
+    @ExceptionHandler(OperationNotAllowedException.class)
+    public ResponseEntity<ErrorResponse> handleOperationNotAllowed(
+            OperationNotAllowedException ex) {
+        LOGGER.warn("Operation not allowed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("OPERATION_NOT_ALLOWED", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

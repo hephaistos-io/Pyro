@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
+import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
@@ -11,11 +12,13 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(PostgresTestContainerConfiguration.class)
 @Tag("integration")
 class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
 

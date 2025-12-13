@@ -25,6 +25,3 @@ CREATE INDEX idx_api_key_application_id ON api_key (application_id);
 
 -- Index for finding active keys efficiently
 CREATE INDEX idx_api_key_active ON api_key (is_active) WHERE is_active = TRUE;
-
--- Grant UPDATE permission to customer-flagforge for last_used_at tracking
-GRANT UPDATE ON api_key TO "customer-flagforge";
