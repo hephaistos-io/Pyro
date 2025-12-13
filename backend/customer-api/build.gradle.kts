@@ -1,0 +1,36 @@
+plugins {
+    id("org.springframework.boot")
+    id("org.springdoc.openapi-gradle-plugin")
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
+
+    // Rate limiting
+    implementation("com.bucket4j:bucket4j-core")
+
+    // Database
+    runtimeOnly("org.postgresql:postgresql")
+
+    // Testing
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.springframework.boot:spring-boot-resttestclient")
+    testImplementation("org.springframework.security:spring-security-test")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+openApi {
+    apiDocsUrl.set("http://localhost:8081/customer-api/v3/api-docs")
+    outputDir.set(file("$projectDir/../../contracts"))
+    outputFileName.set("customer_api.json")
+    waitTimeInSeconds.set(60)
+    customBootRun {
+        args.set(listOf("--spring.profiles.active=openapi"))
+    }
+}

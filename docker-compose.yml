@@ -25,10 +25,10 @@ services:
       - flagforge-network
 
   # Spring Boot Backend API
-  backend:
+  webapp-api:
     build:
       context: .
-      dockerfile: deployment/local/backend/Dockerfile
+      dockerfile: deployment/local/webapp-api/Dockerfile
       target: production
     container_name: flagforge-backend
     environment:
@@ -41,6 +41,30 @@ services:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v3/api-docs" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - flagforge-network
+
+  # Customer API Service (SDK integration)
+  customer-api:
+    build:
+      context: .
+      dockerfile: deployment/local/customer-api/Dockerfile
+      target: production
+    container_name: flagforge-customer-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flagforge
+      SPRING_DATASOURCE_USERNAME: customer-flagforge
+      SPRING_DATASOURCE_PASSWORD: customer-flagforge
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/customer-api/v3/api-docs" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,7 +99,8 @@ services:
     volumes:
       - ./deployment/local/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      - backend
+      - webapp-api
+      - customer-api
       - frontend
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/" ]

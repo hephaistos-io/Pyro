@@ -75,6 +75,7 @@ tasks.register<Exec>("dockerStartPostgres") {
 // Make generateOpenApiDocs depend on PostgreSQL being available
 gradle.projectsEvaluated {
     tasks.findByPath(":backend:webapp-api:generateOpenApiDocs")?.dependsOn(":dockerStartPostgres")
+    tasks.findByPath(":backend:customer-api:generateOpenApiDocs")?.dependsOn(":dockerStartPostgres")
 }
 
 // System tests (E2E tests with Playwright)

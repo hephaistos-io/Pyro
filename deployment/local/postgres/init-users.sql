@@ -26,8 +26,39 @@ SEQUENCES IN SCHEMA public TO "webapp-flagforge";
 ALTER
 DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO "webapp-flagforge";
 
--- Future: Add customer-flagforge user here when needed
--- CREATE USER "customer-flagforge" WITH PASSWORD 'customer-flagforge';
--- GRANT CONNECT ON DATABASE flagforge TO "customer-flagforge";
--- GRANT USAGE ON SCHEMA public TO "customer-flagforge";
--- GRANT SELECT, INSERT, UPDATE ON specific_tables TO "customer-flagforge";
+-- Create customer-flagforge user for the customer-api service
+CREATE
+USER "customer-flagforge" WITH PASSWORD 'customer-flagforge';
+
+-- Grant connection to the database
+GRANT CONNECT
+ON DATABASE flagforge TO "customer-flagforge";
+
+-- Grant usage on public schema (NO CREATE - webapp-api owns migrations)
+GRANT USAGE ON SCHEMA
+public TO "customer-flagforge";
+
+-- Grant SELECT on tables needed for reading flags and validating keys
+-- Note: This grants on existing tables; new tables need DEFAULT PRIVILEGES
+GRANT
+SELECT
+ON ALL TABLES IN SCHEMA public TO "customer-flagforge";
+
+-- Grant SELECT on sequences (needed for JPA/Hibernate operations)
+GRANT
+SELECT
+ON ALL SEQUENCES IN SCHEMA public TO "customer-flagforge";
+
+-- Grant privileges on future tables/sequences created by webapp-flagforge
+ALTER
+DEFAULT PRIVILEGES FOR USER "webapp-flagforge" IN SCHEMA public
+    GRANT
+SELECT
+ON TABLES TO "customer-flagforge";
+ALTER
+DEFAULT PRIVILEGES FOR USER "webapp-flagforge" IN SCHEMA public
+    GRANT
+SELECT
+ON SEQUENCES TO "customer-flagforge";
+
+-- Note: UPDATE on api_key is granted in Flyway migration V1.0.4

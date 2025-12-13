@@ -31,6 +31,9 @@ subprojects {
             implementation("io.jsonwebtoken:jjwt-impl:0.13.0")
             implementation("io.jsonwebtoken:jjwt-jackson:0.13.0")
 
+            // Rate limiting for customer-api
+            implementation("com.bucket4j:bucket4j-core:8.10.1")
+
             implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.0")
             implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
             runtimeOnly("org.postgresql:postgresql:42.7.4")
