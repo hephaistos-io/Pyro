@@ -17,6 +17,7 @@ import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
 import {User} from '../../services/users.service';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
+const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
 
 @Component({
   selector: 'app-dashboard',
@@ -36,6 +37,26 @@ export class DashboardComponent implements OnInit {
   applications = signal<ApplicationResponse[]>([]);
   private api = inject(Api);
   activeTab = signal<'applications' | 'users'>('applications');
+
+  // Cost overview computed values
+  applicationCosts = computed(() => {
+    return this.applications().map((app, index) => ({
+      id: app.id,
+      name: app.name,
+      cost: index === 0 ? 0 : COST_PER_ADDITIONAL_APP,
+      isFree: index === 0
+    }));
+  });
+
+  totalMonthlyCost = computed(() => {
+    const apps = this.applications();
+    if (apps.length <= 1) return 0;
+    return (apps.length - 1) * COST_PER_ADDITIONAL_APP;
+  });
+
+  maxAppCost = computed(() => {
+    return Math.max(COST_PER_ADDITIONAL_APP, ...this.applicationCosts().map(a => a.cost));
+  });
 
   showCompanyOnboarding = computed(() =>
     !this.customerService.isProfileLoading() && !this.customerService.hasCompany()
