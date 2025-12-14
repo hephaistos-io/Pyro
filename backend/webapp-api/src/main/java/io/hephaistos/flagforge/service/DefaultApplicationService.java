@@ -13,7 +13,9 @@ import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -59,25 +61,21 @@ public class DefaultApplicationService implements ApplicationService {
         CustomerEntity customer = customerRepository.findById(customerId).orElseThrow();
         customer.getAccessibleApplications().add(application);
 
+        // Update the security context's cached accessible application IDs
+        Set<UUID> updatedAppIds = new HashSet<>(securityContext.getAccessibleApplicationIds());
+        updatedAppIds.add(application.getId());
+        securityContext.setAccessibleApplicationIds(updatedAppIds);
+
         environmentService.createDefaultEnvironment(application.getId());
 
         return ApplicationResponse.fromEntity(application);
     }
 
     @Override
-    public List<ApplicationResponse> getApplicationsForCurrentCustomerCompany() {
-        UUID companyId = getCompanyIdFromSecurityContext();
-
-        return applicationRepository.findByCompanyId(companyId)
+    public List<ApplicationResponse> getApplications() {
+        return applicationRepository.findAll()
                 .stream()
                 .map(ApplicationResponse::fromEntity)
                 .toList();
-    }
-
-    private UUID getCompanyIdFromSecurityContext() {
-        var securityContext = FlagForgeSecurityContext.getCurrent();
-        return securityContext.getCompanyId()
-                .orElseThrow(() -> new NoCompanyAssignedException(
-                        "Customer has no company assigned. Cannot perform application operations."));
     }
 }

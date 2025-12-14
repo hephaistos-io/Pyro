@@ -19,8 +19,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,39 +138,61 @@ class DefaultApplicationServiceTest {
     }
 
     @Test
-    void getApplicationsReturnsListForCompany() {
-        var app1 = createApplicationEntity("App 1", testCompanyId);
-        var app2 = createApplicationEntity("App 2", testCompanyId);
-        when(applicationRepository.findByCompanyId(testCompanyId)).thenReturn(List.of(app1, app2));
+    void createApplicationUpdatesSecurityContextAccessibleApplicationIds() {
+        var request = new ApplicationCreationRequest("Test App");
+        var customer = new CustomerEntity();
+        customer.setId(testCustomerId);
+        UUID newAppId = UUID.randomUUID();
 
-        var result = applicationService.getApplicationsForCurrentCustomerCompany();
+        when(applicationRepository.existsByNameAndCompanyId("Test App", testCompanyId)).thenReturn(
+                false);
+        when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(0L);
+        when(applicationRepository.save(any(ApplicationEntity.class))).thenAnswer(invocation -> {
+            ApplicationEntity entity = invocation.getArgument(0);
+            entity.setId(newAppId);
+            return entity;
+        });
+        when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(customer));
 
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting("name").containsExactly("App 1", "App 2");
+        // Set up initial accessible app IDs
+        var context = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
+        UUID existingAppId = UUID.randomUUID();
+        context.setAccessibleApplicationIds(Set.of(existingAppId));
+
+        applicationService.createApplication(request);
+
+        // Verify the security context was updated with the new app ID
+        Set<UUID> accessibleAppIds = context.getAccessibleApplicationIds();
+        assertThat(accessibleAppIds).contains(existingAppId, newAppId);
     }
 
     @Test
-    void getApplicationsReturnsEmptyListWhenNone() {
-        when(applicationRepository.findByCompanyId(testCompanyId)).thenReturn(List.of());
+    void createApplicationGrantsCreatorAccessToApplication() {
+        var request = new ApplicationCreationRequest("Test App");
+        var customer = new CustomerEntity();
+        customer.setId(testCustomerId);
+        customer.setAccessibleApplications(new HashSet<>());
 
-        var result = applicationService.getApplicationsForCurrentCustomerCompany();
+        when(applicationRepository.existsByNameAndCompanyId("Test App", testCompanyId)).thenReturn(
+                false);
+        when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(0L);
+        when(applicationRepository.save(any(ApplicationEntity.class))).thenAnswer(invocation -> {
+            ApplicationEntity entity = invocation.getArgument(0);
+            entity.setId(UUID.randomUUID());
+            return entity;
+        });
+        when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(customer));
 
-        assertThat(result).isEmpty();
-    }
+        applicationService.createApplication(request);
 
-    @Test
-    void getApplicationsThrowsNoCompanyAssignedException() {
-        setupSecurityContextWithoutCompany();
-
-        assertThatThrownBy(
-                () -> applicationService.getApplicationsForCurrentCustomerCompany()).isInstanceOf(
-                NoCompanyAssignedException.class);
+        // Verify the customer was granted access to the application
+        assertThat(customer.getAccessibleApplications()).hasSize(1);
     }
 
     private void setupSecurityContext(UUID companyId, UUID customerId) {
         var context = new FlagForgeSecurityContext();
         context.setCustomerName("test@example.com");
-        context.setCustomerId(customerId.toString());
+        context.setCustomerId(customerId);
         context.setCompanyId(companyId.toString());
         SecurityContextHolder.setContext(context);
     }
@@ -177,7 +200,7 @@ class DefaultApplicationServiceTest {
     private void setupSecurityContextWithoutCompany() {
         var context = new FlagForgeSecurityContext();
         context.setCustomerName("test@example.com");
-        context.setCustomerId(testCustomerId.toString());
+        context.setCustomerId(testCustomerId);
         SecurityContextHolder.setContext(context);
     }
 

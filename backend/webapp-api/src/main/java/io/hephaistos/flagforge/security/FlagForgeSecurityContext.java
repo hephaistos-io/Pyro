@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -29,6 +30,7 @@ public class FlagForgeSecurityContext implements SecurityContext {
     }
     private UUID userId;
     private UUID companyId;
+    private Set<UUID> accessibleApplicationIds = Set.of();
 
     @Override
     public @Nullable Authentication getAuthentication() {
@@ -58,11 +60,24 @@ public class FlagForgeSecurityContext implements SecurityContext {
         }
     }
 
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
+
+    public Set<UUID> getAccessibleApplicationIds() {
+        return accessibleApplicationIds;
+    }
+
+    public void setAccessibleApplicationIds(Set<UUID> accessibleApplicationIds) {
+        this.accessibleApplicationIds =
+                accessibleApplicationIds != null ? accessibleApplicationIds : Set.of();
+    }
+
     public UUID getCustomerId() {
         return userId;
     }
 
-    public void setCustomerId(@NotNull @NotEmpty String userId) {
-        this.userId = UUID.fromString(userId);
+    public void setCustomerId(@NotNull @NotEmpty UUID userId) {
+        this.userId = userId;
     }
 }

@@ -17,14 +17,14 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "environment")
-public class EnvironmentEntity {
+public class EnvironmentEntity extends ApplicationOwnedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "application_id", nullable = false)
+    @JoinColumn(name = "application_id", insertable = false, updatable = false)
     private ApplicationEntity application;
 
     @Column(nullable = false)
@@ -52,10 +52,9 @@ public class EnvironmentEntity {
 
     public void setApplication(ApplicationEntity application) {
         this.application = application;
-    }
-
-    public UUID getApplicationId() {
-        return application != null ? application.getId() : null;
+        if (application != null) {
+            setApplicationId(application.getId());
+        }
     }
 
     public String getName() {

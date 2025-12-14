@@ -9,5 +9,5 @@ public interface ApplicationService {
 
     ApplicationResponse createApplication(ApplicationCreationRequest request);
 
-    List<ApplicationResponse> getApplicationsForCurrentCustomerCompany();
+    List<ApplicationResponse> getApplications();
 }

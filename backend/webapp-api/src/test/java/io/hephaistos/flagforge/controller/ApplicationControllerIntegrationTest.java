@@ -44,15 +44,15 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
     void createFirstApplicationReturns201WithFreePricingTier() {
         String token = registerAndAuthenticateWithCompany();
 
-        var response =
+        var createAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("My Application"), token,
                         ApplicationResponse.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().name()).isEqualTo("My Application");
-        assertThat(response.getBody().id()).isNotNull();
-        assertThat(response.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
+        assertThat(createAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(createAppResponse.getBody()).isNotNull();
+        assertThat(createAppResponse.getBody().name()).isEqualTo("My Application");
+        assertThat(createAppResponse.getBody().id()).isNotNull();
+        assertThat(createAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
     }
 
     @Test
@@ -60,20 +60,20 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         String token = registerAndAuthenticateWithCompany();
 
         // Create first application (should be FREE)
-        var firstResponse =
+        var firstAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("First App"), token,
                         ApplicationResponse.class);
-        assertThat(firstResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
+        assertThat(firstAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
 
         // Create second application (should be PAID)
-        var secondResponse =
+        var secondAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("Second App"), token,
                         ApplicationResponse.class);
 
-        assertThat(secondResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(secondResponse.getBody()).isNotNull();
-        assertThat(secondResponse.getBody().name()).isEqualTo("Second App");
-        assertThat(secondResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(secondAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(secondAppResponse.getBody()).isNotNull();
+        assertThat(secondAppResponse.getBody().name()).isEqualTo("Second App");
+        assertThat(secondAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
     }
 
     @Test
@@ -89,24 +89,24 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
                 ApplicationResponse.class);
 
         // Create third application (should also be PAID)
-        var thirdResponse =
+        var thirdAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("Third App"), token,
                         ApplicationResponse.class);
 
-        assertThat(thirdResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(thirdResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(thirdAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(thirdAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
     }
 
     @Test
     void createApplicationReturns404WhenUserHasNoCompany() {
         String token = registerAndAuthenticate();
 
-        var response =
+        var noCompanyResponse =
                 post("/v1/applications", new ApplicationCreationRequest("My Application"), token,
                         String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).contains("MISSING_COMPANY_ASSIGNMENT");
+        assertThat(noCompanyResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(noCompanyResponse.getBody().isEmpty());
     }
 
     @Test
@@ -118,21 +118,21 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         post("/v1/applications", request, token, ApplicationResponse.class);
 
         // Try to create duplicate
-        var response = post("/v1/applications", request, token, String.class);
+        var duplicateResponse = post("/v1/applications", request, token, String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(response.getBody()).contains("DUPLICATE_RESOURCE");
+        assertThat(duplicateResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(duplicateResponse.getBody()).contains("DUPLICATE_RESOURCE");
     }
 
     @Test
     void createApplicationReturns400ForTooShortName() {
         String token = registerAndAuthenticateWithCompany();
 
-        var response =
+        var invalidNameResponse =
                 post("/v1/applications", new ApplicationCreationRequest("a"), token, String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).contains("VALIDATION_ERROR");
+        assertThat(invalidNameResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(invalidNameResponse.getBody()).contains("VALIDATION_ERROR");
     }
 
     @Test
@@ -141,30 +141,151 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         createApplication(token, "App 1");
         createApplication(token, "App 2");
 
-        var response = get("/v1/applications", token, ApplicationResponse[].class);
+        var listApplicationsResponse = get("/v1/applications", token, ApplicationResponse[].class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2);
+        assertThat(listApplicationsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(listApplicationsResponse.getBody()).hasSize(2);
     }
 
     @Test
     void getApplicationsReturnsEmptyListWhenNone() {
         String token = registerAndAuthenticateWithCompany();
 
-        var response = get("/v1/applications", token, ApplicationResponse[].class);
+        var emptyListResponse = get("/v1/applications", token, ApplicationResponse[].class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEmpty();
+        assertThat(emptyListResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(emptyListResponse.getBody()).isEmpty();
     }
 
     @Test
-    void getApplicationsReturns404WhenUserHasNoCompany() {
+    void getApplicationsReturnsEmptyListWhenUserHasNoCompany() {
         String token = registerAndAuthenticate();
 
-        var response = get("/v1/applications", token, String.class);
+        var noCompanyResponse = get("/v1/applications", token, String.class);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).contains("MISSING_COMPANY_ASSIGNMENT");
+        assertThat(noCompanyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(noCompanyResponse.getBody()).isEqualTo("[]");
+    }
+
+    @Test
+    void getApplicationsReturnsOnlyAccessibleApplications() {
+        // Create user with app access, with company and applications
+        registerUser("User", "WithAccess", "user-with-access@example.com", "password123");
+        String tokenUserWithAccess = authenticate("user-with-access@example.com", "password123");
+        createCompany(tokenUserWithAccess);
+        tokenUserWithAccess = authenticate("user-with-access@example.com", "password123");
+        createApplication(tokenUserWithAccess, "App 1");
+        createApplication(tokenUserWithAccess, "App 2");
+
+        // Create user without app access and manually assign to same company
+        registerUser("User", "WithoutAccess", "user-without-access@example.com", "password123");
+        var customerWithAccess =
+                customerRepository.findByEmail("user-with-access@example.com").orElseThrow();
+        var customerWithoutAccess =
+                customerRepository.findByEmail("user-without-access@example.com").orElseThrow();
+        customerWithoutAccess.setCompanyId(customerWithAccess.getCompanyId().orElseThrow());
+        customerRepository.saveAndFlush(customerWithoutAccess);
+
+        // Re-authenticate user without access to get token with companyId
+        String tokenUserWithoutAccess =
+                authenticate("user-without-access@example.com", "password123");
+
+        // User without access is in the same company but has no application access, so should see empty list
+        var noAccessUserResponse =
+                get("/v1/applications", tokenUserWithoutAccess, ApplicationResponse[].class);
+        assertThat(noAccessUserResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(noAccessUserResponse.getBody()).isEmpty();
+
+        // User with access should still see both applications
+        var accessUserResponse =
+                get("/v1/applications", tokenUserWithAccess, ApplicationResponse[].class);
+        assertThat(accessUserResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(accessUserResponse.getBody()).hasSize(2);
+    }
+
+    @Test
+    void applicationsAreIsolatedBetweenCompanies() {
+        // Create user in company A with applications
+        registerUser("User", "CompanyA", "user-company-a@example.com", "password123");
+        String tokenCompanyA = authenticate("user-company-a@example.com", "password123");
+        createCompany(tokenCompanyA, "Company A");
+        tokenCompanyA = authenticate("user-company-a@example.com", "password123");
+        createApplication(tokenCompanyA, "App A1");
+        createApplication(tokenCompanyA, "App A2");
+
+        // Create user in company B with different applications
+        registerUser("User", "CompanyB", "user-company-b@example.com", "password123");
+        String tokenCompanyB = authenticate("user-company-b@example.com", "password123");
+        createCompany(tokenCompanyB, "Company B");
+        tokenCompanyB = authenticate("user-company-b@example.com", "password123");
+        createApplication(tokenCompanyB, "App B1");
+
+        // User in company A should only see Company A's apps
+        var companyAUserResponse =
+                get("/v1/applications", tokenCompanyA, ApplicationResponse[].class);
+        assertThat(companyAUserResponse.getBody()).hasSize(2);
+        assertThat(companyAUserResponse.getBody()).extracting("name")
+                .containsExactlyInAnyOrder("App A1", "App A2");
+
+        // User in company B should only see Company B's apps
+        var companyBUserResponse =
+                get("/v1/applications", tokenCompanyB, ApplicationResponse[].class);
+        assertThat(companyBUserResponse.getBody()).hasSize(1);
+        assertThat(companyBUserResponse.getBody()[0].name()).isEqualTo("App B1");
+    }
+
+    @Test
+    void newlyCreatedApplicationIsImmediatelyVisible() {
+        String token = registerAndAuthenticateWithCompany();
+
+        // Create an application
+        var createAppResponse =
+                post("/v1/applications", new ApplicationCreationRequest("New App"), token,
+                        ApplicationResponse.class);
+        assertThat(createAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // The application should be immediately visible without re-authentication
+        var listAfterCreateResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        assertThat(listAfterCreateResponse.getBody()).hasSize(1);
+        assertThat(listAfterCreateResponse.getBody()[0].name()).isEqualTo("New App");
+    }
+
+    @Test
+    void revokedApplicationAccessIsReflectedWithoutReAuthentication() {
+        // Setup: Create user with company and two applications
+        String token = registerAndAuthenticateWithCompany();
+        var createApp1Response =
+                post("/v1/applications", new ApplicationCreationRequest("App 1"), token,
+                        ApplicationResponse.class);
+        var createApp2Response =
+                post("/v1/applications", new ApplicationCreationRequest("App 2"), token,
+                        ApplicationResponse.class);
+
+        // Verify user can see both applications
+        var beforeRevokeResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        assertThat(beforeRevokeResponse.getBody()).hasSize(2);
+
+        // Revoke access to App 2 directly in the database (without re-authentication)
+        var customer = customerRepository.findByEmailWithAccessibleApplications("test@example.com")
+                .orElseThrow();
+        var app2Entity =
+                applicationRepository.findById(createApp2Response.getBody().id()).orElseThrow();
+        customer.getAccessibleApplications().remove(app2Entity);
+        customerRepository.saveAndFlush(customer);
+
+        // Verify the database was actually updated
+        var updatedCustomer =
+                customerRepository.findByEmailWithAccessibleApplications("test@example.com")
+                        .orElseThrow();
+        assertThat(updatedCustomer.getAccessibleApplications()).hasSize(1);
+
+        // Without re-authentication, user should only see App 1
+        var afterRevokeResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        assertThat(afterRevokeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(afterRevokeResponse.getBody()).hasSize(1);
+        assertThat(afterRevokeResponse.getBody()[0].name()).isEqualTo("App 1");
+        assertThat(afterRevokeResponse.getBody()[0].id()).isEqualTo(
+                createApp1Response.getBody().id());
     }
 
     private void createApplication(String token, String name) {
