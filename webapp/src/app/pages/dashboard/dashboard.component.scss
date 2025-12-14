@@ -136,6 +136,218 @@
   }
 }
 
+// ===== Costs Overview Section =====
+.costs-overview {
+  margin-top: 2.5rem;
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  animation: fadeUp 0.6s ease-out 0.3s both;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba($charcoal, 0.08);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($black, 0.3);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba($charcoal, 0.08);
+
+    @include dark-mode {
+      border-bottom-color: rgba($white, 0.08);
+    }
+  }
+
+  &__title {
+    font-family: $font-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__total {
+    font-family: $font-sans;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: $pyro-red;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+
+  &__period {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.costs-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 160px 1fr 60px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba($charcoal, 0.03);
+
+      @include dark-mode {
+        background: rgba($white, 0.03);
+      }
+    }
+
+    @media (max-width: 500px) {
+      grid-template-columns: 100px 1fr 50px;
+      gap: 0.5rem;
+    }
+  }
+
+  &__label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  &__name {
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__detail {
+    font-family: $font-sans;
+    font-size: 0.7rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+
+    &--free {
+      color: #22c55e;
+
+      @include dark-mode {
+        color: #4ade80;
+      }
+    }
+  }
+
+  &__bar-wrapper {
+    display: flex;
+    height: 20px;
+    background: rgba($charcoal, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+
+    @include dark-mode {
+      background: rgba($white, 0.08);
+    }
+  }
+
+  &__bar {
+    height: 100%;
+    background: linear-gradient(90deg, $pyro-red 0%, rgba($pyro-red, 0.8) 100%);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+  }
+
+  &__amount {
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: $charcoal;
+    text-align: right;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.costs-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-top-color: rgba($white, 0.08);
+  }
+
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+
+    &--free {
+      background: #22c55e;
+    }
+
+    &--paid {
+      background: $pyro-red;
+    }
+  }
+
+  &__text {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard {
     padding: 6rem 1.5rem 4rem;
