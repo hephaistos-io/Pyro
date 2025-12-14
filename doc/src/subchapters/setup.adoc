@@ -1,90 +1,465 @@
 = Setup
 
-== (java) backend
+This guide covers everything you need to set up and run the FlagForge project locally for development.
 
-The java backend rests in the `./backend` folder and consists of several projects.
+== Prerequisites
 
-The first one is the `webapp-api` one, which contains the code for the webapp to interact with our business logic.
-The application itself is a spring boot application.
+Before starting, ensure you have the following installed:
 
-=== Build details
+[cols="1,2,2"]
+|===
+| Tool | Version | Notes
 
-The management of dependencies and co. is done using _gradle kotlin_.
-This means that all dependencies, gradle tasks and co. are set up through it.
-As it is a bit complicated when you're not used to it, this part is a short summary of the setup.
+| Java
+| 21+
+| Enforced via Gradle toolchain
 
-In the root of the project, we have the `settings.gradle.kts` (.kts being the kotlin ending).
-This file can define many things, but for our current use case it is limited to defining the project name, as well as which folders to include and search through for further _gradle tasks_.
-Gradle tasks are pre-setup commands that run defined functions, for example the `build` command for `java` tasks.
+| Node.js
+| 24.11.1
 
-To enable this, we have several helper files and folders.
-These are, in the root directory of the project, the `gradlew` and `gradlew.bat` files, which allow you to call and execute gradle commands in your terminal using
-`./gradlew <command>`, i.e. `./gradlew build`.
-For this to work, there is also the directory `gradle/wrapper/`
-that contains anything required to run this.
+| npm
+| 11.6.4+
+| Comes with Node.js
 
-Each project imported included in the `settings.gradle.kts` file has to contain a `build.gradle.kts` file.
-This file defines various things, like plugins to use, dependencies as well as tasks.
-In our setup, the file
-`backend/build.gradle.kts` has multiple jobs.
+| Docker & Docker Compose
+| Latest
+| Required for containerized development
 
-- Defines allowed plugin versions
-- Defines for all subprojects (more on this further down)
-* To automatically use the `java` plugin
-* Which java version is used
-* Pins versions of plugins
-* Pins versions of dependencies
-* The repositories where dependencies can be fetched
-* The main package for the *.jar
-* Modifiers for tasks (i.e. that tasks with type `test` should use the `junit-plattform`)
+| Git
+| Latest
+| Version control
+|===
 
-A subproject is basically and directory below this one, that also contains a `build.gradle.tks` file.
-The file `backend/webapp-api/build.gradle.kts` contains the specific dependencies that are used in this service.
-Hence we do not have to use all dependencies defined in the parent, but only what we need.
-As you can also see, we don't need to specifically apply the `java` plugin, as the parent already defines that we use it.
+== Quick Start (Docker)
 
-=== Commands
+The fastest way to get started is using Docker Compose, which runs all services together:
 
-The following gradle commands can be run from the terminal, once you're in the root folder of the project:
+[source,bash]
+----
+# Start all services (PostgreSQL, backend APIs, frontend, nginx)
+./gradlew dockerUp
 
-- `./gradlew test` -> runs all tests in the backend service
-- `./gradlew build` -> builds the backend
-- `./gradlew bootRun` -> locally run the spring application
+# Access the application
+open http://localhost
+----
 
-Whilst right now, there is only one backend service, in the case more are added, you can specify which you want to run with the following command:
+The Docker setup includes:
 
-`./gradlew backend:<service-name>:<command>`
+* *PostgreSQL 16* on port 5432
+* *Webapp API* (Spring Boot) on port 8080
+* *Customer API* (Spring Boot) on port 8081
+* *Frontend* (Angular dev server) on port 4200
+* *Nginx* reverse proxy on port 80 (main entry point)
 
-So you can only run the spring application you're interested in.
+=== Docker Commands
 
-Additional information:
+All Docker operations are available as Gradle tasks:
 
-To generate and store the openAPI spec, which the frontend needs to generate its code, you can run the gradle task
-`./gradlew backend:webapp-api:generateOpenApiDocs`.
-It will then store the spec in the folder `contracts` in the root of the project.
+[source,bash]
+----
+./gradlew dockerUp              # Start all containers
+./gradlew dockerDown            # Stop all containers
+./gradlew dockerRestart         # Restart all containers
+./gradlew dockerLogs            # View logs (follow mode)
+./gradlew dockerPs              # Show container status
+./gradlew dockerBuild           # Build all images
+./gradlew dockerClean           # Remove containers, networks, and volumes
+./gradlew dockerResetDb         # Reset PostgreSQL volume (data loss!)
+./gradlew dockerStartPostgres   # Start only PostgreSQL
+----
+
+== Project Structure
+
+[source]
+----
+flagforge/
+├── backend/
+│   ├── webapp-api/          # Main Spring Boot API (port 8080)
+│   └── customer-api/        # Customer-facing SDK API (port 8081)
+├── webapp/                  # Angular frontend
+├── deployment/local/        # Docker and nginx configuration
+├── contracts/               # Generated OpenAPI specifications
+├── system-tests/            # Playwright E2E tests
+└── doc/                     # ARC42 documentation
+----
+
+== Backend Setup
+
+The backend consists of two Spring Boot services sharing a PostgreSQL database.
+
+=== Build System
+
+The project uses Gradle with Kotlin DSL (`.kts` files):
+
+* `settings.gradle.kts` - Defines project structure and subprojects
+* `build.gradle.kts` - Root build file with Docker tasks and dependency management
+* `backend/build.gradle.kts` - Shared backend configuration (Java 21, dependency versions)
+* `backend/webapp-api/build.gradle.kts` - Webapp API specific dependencies
+* `backend/customer-api/build.gradle.kts` - Customer API specific dependencies
+
+=== Webapp API
+
+The main backend service for the UI.
+Handles authentication, company/application management, and feature flags.
+
+[cols="1,2"]
+|===
+| Port | 8080
+| Context Path | `/api`
+| Database User | `webapp-flagforge`
+| Migrations | Flyway (owns all migrations)
+|===
+
+==== Running Locally
+
+[source,bash]
+----
+# Ensure PostgreSQL is running
+./gradlew dockerStartPostgres
+
+# Run the service
+./gradlew backend:webapp-api:bootRun
+
+# Run tests, postgres is not required for this
+./gradlew backend:webapp-api:test
+----
+
+=== Customer API
+
+Customer-facing API for SDK integrations.
+Read-only access to the database.
+
+[cols="1,2"]
+|===
+| Port | 8081
+| Context Path | `/customer-api`
+| Database User | `customer-flagforge` (read-only)
+| Migrations | Disabled (webapp-api owns migrations)
+|===
+
+==== Running Locally
+
+[source,bash]
+----
+# Ensure PostgreSQL is running
+./gradlew dockerStartPostgres
+
+# Run the service
+./gradlew backend:customer-api:bootRun
+
+# Run tests
+./gradlew backend:customer-api:test
+----
+
+== Webapp Setup
+
+The frontend is an Angular 21 application using standalone components.
+
+=== Tooling
+
+[cols="1,1"]
+|===
+| Tool | Version
+
+| Angular | 21
+| TypeScript | 5.9.2 (strict mode)
+| Testing | Vitest 4.0.8
+| API Client | ng-openapi-gen
+| Styling | SCSS
+|===
+
+=== Running Locally
+
+[source,bash]
+----
+cd webapp
+
+# Install dependencies
+npm install
+
+# Start dev server (port 4200)
+npm start
+
+# Run tests
+npm test
+
+# Production build
+npm run build
+----
+
+=== Directory Structure
+
+[source]
+----
+webapp/src/
+├── app/
+│   ├── api/generated/       # Auto-generated TypeScript API client
+│   ├── components/          # Reusable UI components
+│   ├── guards/              # Route guards (authGuard)
+│   ├── interceptors/        # HTTP interceptors (authInterceptor)
+│   ├── layouts/             # Page layouts
+│   ├── pages/               # Route-level components
+│   ├── services/            # Singleton services
+│   ├── utils/               # Utility functions
+│   ├── app.component.ts     # Root component
+│   ├── app.routes.ts        # Routing definitions
+│   └── app.config.ts        # App configuration
+├── styles/                  # Global SCSS system
+├── environments/            # Environment configuration
+└── index.html
+----
+
+=== Environment Configuration
+
+[cols="1,2"]
+|===
+| File | API Base URL
+
+| `environment.ts` (dev) | `/api` (proxied via nginx)
+| `environment.prod.ts` | `http://localhost:80/api`
+|===
+
+== Database Setup
+
+=== PostgreSQL Configuration
+
+[cols="1,2"]
+|===
+| Database | `flagforge`
+| Port | 5432
+| Admin User | `flagforge / flagforge`
+|===
+
+=== Database Users
+
+The Docker setup creates two application users with different permissions:
+
+[cols="1,2,2"]
+|===
+| User | Password | Permissions
+
+| `webapp-flagforge`
+| `webapp-flagforge`
+| Full CRUD, can run migrations, create tables
+
+| `customer-flagforge`
+| `customer-flagforge`
+| SELECT only (read-only access)
+|===
+
+User creation script: `deployment/local/postgres/init-users.sql`
+
+=== Migrations
+
+Database migrations are managed by Flyway and owned by the `webapp-api` service.
+
+Location: `backend/webapp-api/src/main/resources/db/migration/`
+
+Naming convention: `V{version}__{description}.sql`
+
+Example migrations:
+
+[source]
+----
+V1.0.1__create_user_table.sql
+V1.0.2__create_company_table.sql
+V1.0.3__create_application_table.sql
+...
+----
+
+== API Documentation & Code Generation
+
+=== Generating OpenAPI Specs
+
+The backend services generate OpenAPI 3.0 specifications that are stored in the `contracts/` folder:
+
+[source,bash]
+----
+# Generate webapp API spec
+./gradlew backend:webapp-api:generateOpenApiDocs
+
+# Generate customer API spec
+./gradlew backend:customer-api:generateOpenApiDocs
+----
+
+Output files:
+
+* `contracts/webapp_api.json`
+* `contracts/customer_api.json`
+
+=== Generating TypeScript Client
+
+The frontend uses auto-generated TypeScript code from the OpenAPI specs:
+
+[source,bash]
+----
+# Clean and regenerate TypeScript client
+./gradlew webapp:cleanGenerated && ./gradlew webapp:generateTypeScriptClient
+
+# Or from the webapp folder
+cd webapp && npm run generate-api
+----
+
+Generated code location: `webapp/src/app/api/generated/`
 
 [NOTE]
 ====
-If you're using intelliJ and import the gradle config (it should ask you automatically), you can select the specific tasks to run from your gradle view.
+Always regenerate the TypeScript client after making changes to the backend API.
 ====
 
-=== WebApp
+== System Tests (E2E)
 
-==== Tooling
+End-to-end tests use Playwright and run against the full Docker environment.
 
-At this time, the webapp was created with the following:
+=== Setup
 
-* Node.js: 24.11.1
-* npm: 11.6.4
-* Angular CLI: 21.0.1
-* Angular: 21.0.2
+[source,bash]
+----
+cd system-tests
+npm install
+----
 
-==== Running the webapp locally
+=== Running Tests
 
-To run the web app locally, change to the `webapp` directory, run `npm install` and afterwards `ng serve`.
-Additional information can be found in the `README.md` file in the `webapp` directory.
+[source,bash]
+----
+# Via Gradle (starts Docker, runs tests, stops Docker)
+./gradlew systemTests
 
-==== Generating API code
+# Or manually
+cd system-tests
+npm test                   # Run all tests
+npm run test:ui            # Run with UI mode
+npm run test:headed        # Run in headed mode
+npm run test:chromium      # Run specific browser
+npm run test:debug         # Debug mode
+npm run codegen            # Record new tests
+npm run report             # Show HTML report
+----
 
-The folder `./contracts` contains the openapi spec generated by the backend.
-To generate TS code out of it to use in the frontend, you can run the command `./gradlew webapp:cleanGenerated && ./gradlew webapp:generateTypeScriptClient` which will generate new code.
+=== Configuration
+
+Tests are configured in `system-tests/playwright.config.ts`:
+
+* Base URL: `http://localhost` (Docker nginx)
+* Browsers: Chromium, Firefox, WebKit
+* Parallel execution enabled
+* Retries: 2 on CI, 0 locally
+
+== IDE Setup
+
+=== IntelliJ IDEA
+
+. Open the project root folder
+. Import as a Gradle project when prompted
+. The Gradle view will show all available tasks
+. Use the run configurations for Spring Boot applications
+
+[NOTE]
+====
+IntelliJ will automatically detect and use the correct Java version via the Gradle toolchain configuration.
+====
+
+=== VS Code
+
+Recommended extensions:
+
+* Java Extension Pack
+* Spring Boot Extension Pack
+* Angular Language Service
+* ESLint
+* Prettier
+
+== Common Tasks Reference
+
+=== Development Workflow
+
+[source,bash]
+----
+# Start everything with Docker
+./gradlew dockerUp
+
+# Or run services individually:
+./gradlew dockerStartPostgres          # Database only
+./gradlew backend:webapp-api:bootRun   # Backend (terminal 1)
+cd webapp && npm start                 # Frontend (terminal 2)
+----
+
+=== Backend Development
+
+[source,bash]
+----
+./gradlew backend:webapp-api:bootRun     # Run webapp-api
+./gradlew backend:webapp-api:test        # Run tests
+./gradlew backend:customer-api:bootRun   # Run customer-api
+./gradlew backend:customer-api:test      # Run tests
+./gradlew test                           # Run all backend tests
+./gradlew build                          # Build all backend services
+----
+
+=== Frontend Development
+
+[source,bash]
+----
+cd webapp
+npm start                                # Dev server on port 4200
+npm test                                 # Run unit tests
+npm run build                            # Production build
+npm run generate-api                     # Regenerate API client
+----
+
+=== API & Contract Management
+
+[source,bash]
+----
+# Generate OpenAPI specs from backend
+./gradlew backend:webapp-api:generateOpenApiDocs
+./gradlew backend:customer-api:generateOpenApiDocs
+
+# Generate frontend TypeScript client
+./gradlew webapp:cleanGenerated && ./gradlew webapp:generateTypeScriptClient
+----
+
+== Troubleshooting
+
+=== Port Already in Use
+
+If services fail to start due to port conflicts:
+
+[source,bash]
+----
+# Check what's using the port
+lsof -i :8080
+
+# Kill the process or stop Docker containers
+./gradlew dockerDown
+----
+
+=== Database Connection Issues
+
+[source,bash]
+----
+# Reset the database
+./gradlew dockerResetDb
+
+# Restart PostgreSQL
+./gradlew dockerDown
+./gradlew dockerStartPostgres
+----
+
+=== Frontend Not Loading
+
+. Check that nginx is running: `./gradlew dockerPs`
+. Check logs: `./gradlew dockerLogs`
+. Ensure the backend is healthy (nginx waits for backend health checks)
+
+=== Gradle Build Issues
+
+[source,bash]
+----
+# Clean all build artifacts
+./gradlew clean
+
+# Refresh dependencies
+./gradlew --refresh-dependencies build
+----
