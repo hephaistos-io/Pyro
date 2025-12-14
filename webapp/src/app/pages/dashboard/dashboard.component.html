@@ -2,15 +2,40 @@
   @if (greeting()) {
     <h1 class="greeting">{{ greeting() }}</h1>
   }
+
+  @if (companyName()) {
+    <div class="dashboard-tabs">
+      <button
+        class="dashboard-tab"
+        [class.dashboard-tab--active]="activeTab() === 'applications'"
+        (click)="setActiveTab('applications')"
+        type="button">
+        Applications
+      </button>
+      <button
+        class="dashboard-tab"
+        [class.dashboard-tab--active]="activeTab() === 'users'"
+        (click)="setActiveTab('users')"
+        type="button">
+        Users
+      </button>
+    </div>
+  }
+
   <div class="dashboard-content">
     @if (companyName()) {
-      <h2 class="section-title">Applications of {{ companyName() }}:</h2>
-      <div class="app-cards">
-        <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
-        @for (app of applications(); track app.id) {
-          <app-card [name]="app.name" [application]="app" (applicationClick)="onApplicationClick($event)"/>
-        }
-      </div>
+      @if (activeTab() === 'applications') {
+        <h2 class="section-title">Applications of {{ companyName() }}:</h2>
+        <div class="app-cards">
+          <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
+          @for (app of applications(); track app.id) {
+            <app-card [name]="app.name" [application]="app" (applicationClick)="onApplicationClick($event)"/>
+          }
+        </div>
+      } @else if (activeTab() === 'users') {
+        <h2 class="section-title">Users of {{ companyName() }}:</h2>
+        <app-users-table (addUserClick)="onAddUserClick()" (editUserClick)="onEditUserClick($event)"/>
+      }
     }
   </div>
 </section>
@@ -33,4 +58,16 @@
   <app-onboarding-overlay [closable]="true" (closeOverlay)="onCloseApplicationCreation()">
     <app-application-creation-form (applicationCreated)="onApplicationCreated($event)"/>
   </app-onboarding-overlay>
+}
+
+@if (showUserCreation()) {
+  <app-form-overlay (closeOverlay)="onCloseUserCreation()">
+    <app-user-creation-form (userCreated)="onUserCreated($event)"/>
+  </app-form-overlay>
+}
+
+@if (userToEdit()) {
+  <app-form-overlay (closeOverlay)="onCloseUserEdit()">
+    <app-user-edit-form [user]="userToEdit()!" (userUpdated)="onUserUpdated($event)"/>
+  </app-form-overlay>
 }

@@ -1,22 +1,27 @@
 import {Component, computed, inject, OnInit, signal} from '@angular/core';
 import {Router} from '@angular/router';
 import {OnboardingOverlayComponent} from '../../components/onboarding-overlay/onboarding-overlay.component';
+import {FormOverlayComponent} from '../../components/form-overlay/form-overlay.component';
 import {CompanyCreationFormComponent} from '../../components/company-creation-form/company-creation-form.component';
 import {
   ApplicationCreationFormComponent
 } from '../../components/application-creation-form/application-creation-form.component';
+import {UserCreationFormComponent} from '../../components/user-creation-form/user-creation-form.component';
+import {UserEditFormComponent} from '../../components/user-edit-form/user-edit-form.component';
 import {AppCardComponent} from '../../components/app-card/app-card.component';
+import {UsersTableComponent} from '../../components/users-table/users-table.component';
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
 import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
+import {User} from '../../services/users.service';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [OnboardingOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, AppCardComponent],
+  imports: [OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -24,10 +29,13 @@ export class DashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
   private router = inject(Router);
   showApplicationCreation = signal(false);
+  showUserCreation = signal(false);
+  userToEdit = signal<User | null>(null);
 
   showSuccessMessage = signal(false);
   applications = signal<ApplicationResponse[]>([]);
   private api = inject(Api);
+  activeTab = signal<'applications' | 'users'>('applications');
 
   showCompanyOnboarding = computed(() =>
     !this.customerService.isProfileLoading() && !this.customerService.hasCompany()
@@ -87,6 +95,34 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/dashboard/application', application.id], {
       state: {application}
     });
+  }
+
+  setActiveTab(tab: 'applications' | 'users'): void {
+    this.activeTab.set(tab);
+  }
+
+  onAddUserClick(): void {
+    this.showUserCreation.set(true);
+  }
+
+  onCloseUserCreation(): void {
+    this.showUserCreation.set(false);
+  }
+
+  onUserCreated(user: User): void {
+    this.showUserCreation.set(false);
+  }
+
+  onEditUserClick(user: User): void {
+    this.userToEdit.set(user);
+  }
+
+  onCloseUserEdit(): void {
+    this.userToEdit.set(null);
+  }
+
+  onUserUpdated(user: User): void {
+    this.userToEdit.set(null);
   }
 
   private async fetchApplications(): Promise<void> {

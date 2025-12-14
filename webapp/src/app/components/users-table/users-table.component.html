@@ -1,0 +1,136 @@
+<div class="users-table">
+  <div class="users-table__header">
+    <div class="search-bar">
+      <input
+        (input)="onSearchChange($any($event.target).value)"
+        [value]="searchQuery()"
+        class="search-bar__input"
+        placeholder="Search users by name or email..."
+        type="text"
+      />
+    </div>
+    <button (click)="onAddUserClick()" class="btn-add-user" type="button">
+      + Invite User
+    </button>
+  </div>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <p>Loading users...</p>
+    </div>
+  } @else if (filteredUsers().length === 0 && searchQuery()) {
+    <div class="empty-state">
+      <h3>No users found</h3>
+      <p>Try adjusting your search criteria</p>
+    </div>
+  } @else if (users().length === 0) {
+    <div class="empty-state">
+      <h3>No users yet</h3>
+      <p>Invite team members to get started</p>
+    </div>
+  } @else {
+    <div class="users-table__container">
+      <div class="users-table__grid-header">
+        <div class="users-table__column-header">User</div>
+        <div class="users-table__column-header">Applications</div>
+        <div class="users-table__column-header">Roles</div>
+        <div class="users-table__column-header">Last Active</div>
+        <div class="users-table__column-header">Actions</div>
+      </div>
+
+      @for (user of filteredUsers(); track user.id; let i = $index) {
+        <div class="users-table__row" [style.animation-delay]="i * 0.05 + 's'">
+          <div class="users-table__cell users-table__cell--user">
+            <div class="user-identity">
+              <div class="user-identity__name">{{ user.firstName }} {{ user.lastName }}</div>
+              <div class="user-identity__email">{{ user.email }}</div>
+              <span class="status-badge status-badge--{{ user.status }}">
+                {{ user.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="users-table__cell users-table__cell--applications">
+            <div class="user-tags">
+              <div class="user-tags__list">
+                @for (app of user.applications; track app.id) {
+                  <app-user-tag
+                    [label]="app.name"
+                    variant="application"
+                  />
+                }
+                @if (user.applications.length === 0) {
+                  <span class="user-tags__empty">No applications</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="users-table__cell users-table__cell--roles">
+            <div class="user-tags">
+              <div class="user-tags__list">
+                @for (role of user.roles; track role.id) {
+                  <app-user-tag
+                    [label]="role.name"
+                    [variant]="getRoleVariant(role.type)"
+                  />
+                }
+                @if (user.roles.length === 0) {
+                  <span class="user-tags__empty">No roles</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="users-table__cell users-table__cell--last-active">
+            <span class="last-active-time">{{ getRelativeTime(user.lastActive) }}</span>
+          </div>
+
+          <div class="users-table__cell users-table__cell--actions">
+            <button
+              class="btn-edit-user"
+              (click)="onEditUserClick(user)"
+              type="button"
+              aria-label="Edit user {{ user.firstName }} {{ user.lastName }}">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.333 2A1.886 1.886 0 0 1 14 4.667l-9 9-3.667 1 1-3.667 9-9Z" stroke="currentColor"
+                      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button
+              class="btn-delete-user"
+              (click)="onDeleteUserClick(user)"
+              type="button"
+              aria-label="Delete user {{ user.firstName }} {{ user.lastName }}">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M2 4h12M5.333 4V2.667a1.333 1.333 0 0 1 1.334-1.334h2.666a1.333 1.333 0 0 1 1.334 1.334V4m2 0v9.333a1.333 1.333 0 0 1-1.334 1.334H4.667a1.333 1.333 0 0 1-1.334-1.334V4h9.334Z"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (userToDelete()) {
+  <div class="delete-confirmation-overlay" (click)="cancelDeleteUser()">
+    <div class="delete-confirmation-modal" (click)="$event.stopPropagation()">
+      <h3>Remove User</h3>
+      <p>
+        Are you sure you want to remove <strong>{{ userToDelete()!.firstName }} {{ userToDelete()!.lastName }}</strong>?
+        This action cannot be undone.
+      </p>
+      <div class="delete-confirmation-actions">
+        <button class="btn-cancel" (click)="cancelDeleteUser()" type="button">
+          Cancel
+        </button>
+        <button class="btn-confirm-delete" (click)="confirmDeleteUser()" type="button">
+          Remove User
+        </button>
+      </div>
+    </div>
+  </div>
+}

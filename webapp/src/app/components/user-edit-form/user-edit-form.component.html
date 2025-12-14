@@ -1,0 +1,67 @@
+<div class="user-form-container">
+  <h2>Edit User</h2>
+  <div class="user-info">
+    <div class="user-info__name">{{ user().firstName }} {{ user().lastName }}</div>
+    <div class="user-info__email">{{ user().email }}</div>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="user-form">
+    <div class="form-group">
+      <label class="section-label">Applications Access</label>
+      <p class="helper-text">Select which applications this user can access</p>
+      <div class="checkbox-grid">
+        @for (app of availableApplications(); track app.id) {
+          <label class="checkbox-item">
+            <input
+              type="checkbox"
+              [checked]="isApplicationSelected(app.id)"
+              (change)="toggleApplication(app.id)"
+              [disabled]="isLoading()"
+            />
+            <span class="checkbox-label">{{ app.name }}</span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="section-label">Roles <span class="required">*</span></label>
+      <p class="helper-text">Select at least one role for this user</p>
+      <div class="checkbox-grid">
+        @for (role of availableRoles(); track role.id) {
+          <label class="checkbox-item">
+            <input
+              type="checkbox"
+              [checked]="isRoleSelected(role.id)"
+              (change)="toggleRole(role.id)"
+              [disabled]="isLoading()"
+            />
+            <span class="checkbox-label">
+              {{ role.name }}
+              @if (role.type === 'admin') {
+                <span class="role-description">Full access to all features</span>
+              } @else if (role.type === 'developer') {
+                <span class="role-description">Can manage flags and environments</span>
+              } @else if (role.type === 'viewer') {
+                <span class="role-description">Read-only access</span>
+              }
+            </span>
+          </label>
+        }
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="error-message">{{ error() }}</div>
+    }
+
+    <button [disabled]="isLoading()" class="btn btn-primary btn-submit" type="submit">
+      @if (isLoading()) {
+        <span class="spinner"></span>
+        <span>Saving...</span>
+      } @else {
+        <span>Save Changes</span>
+      }
+    </button>
+  </form>
+</div>

@@ -1,0 +1,10 @@
+<div (click)="onBackdropClick($event)" class="form-overlay">
+  <div [style.max-width]="maxWidth()" class="form-overlay__content">
+    @if (closable()) {
+      <button class="form-overlay__close" (click)="onClose()" aria-label="Close" type="button">
+        &times;
+      </button>
+    }
+    <ng-content></ng-content>
+  </div>
+</div>
