@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
+import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import io.hephaistos.flagforge.service.CustomerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -35,5 +38,19 @@ public class CustomerController {
                 .map(CustomerResponse::fromEntity)
                 .orElseThrow(
                         () -> new UsernameNotFoundException("Customer not found for your session"));
+    }
+
+    @Operation(summary = "Retrieve all customers for the assigned company")
+    @GetMapping(value = "/all", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public List<CustomerResponse> getCustomers() {
+        FlagForgeSecurityContext.getCurrent()
+                .getCompanyId()
+                .orElseThrow(() -> new NoCompanyAssignedException(
+                        "Customer has no company assigned. Cannot perform application operations."));
+        return customerService.getAllCustomers()
+                .stream()
+                .map(CustomerResponse::fromEntity)
+                .toList();
     }
 }

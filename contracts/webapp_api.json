@@ -351,6 +351,31 @@
         }
       }
     },
+    "/v1/customer/all": {
+      "get": {
+        "tags": [
+          "v1",
+          "customer"
+        ],
+        "summary": "Retrieve all customers for the assigned company",
+        "operationId": "getCustomers",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/company/{companyId}": {
       "get": {
         "tags": [
