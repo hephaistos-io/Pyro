@@ -2,12 +2,21 @@ package io.hephaistos.flagforge.data;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -32,6 +41,17 @@ public class CustomerEntity {
 
     @Column(name = "company_id")
     private UUID companyId;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "role", nullable = false)
+    private CustomerRole role = CustomerRole.READ_ONLY;
+
+    @ManyToMany
+    @JoinTable(name = "customer_application_access",
+            joinColumns = @JoinColumn(name = "customer_id"),
+            inverseJoinColumns = @JoinColumn(name = "application_id"))
+    private Set<ApplicationEntity> accessibleApplications = new HashSet<>();
 
     public UUID getId() {
         return id;
@@ -79,5 +99,21 @@ public class CustomerEntity {
 
     public void setCompanyId(UUID companyId) {
         this.companyId = companyId;
+    }
+
+    public CustomerRole getRole() {
+        return role;
+    }
+
+    public void setRole(CustomerRole role) {
+        this.role = role;
+    }
+
+    public Set<ApplicationEntity> getAccessibleApplications() {
+        return accessibleApplications;
+    }
+
+    public void setAccessibleApplications(Set<ApplicationEntity> accessibleApplications) {
+        this.accessibleApplications = accessibleApplications;
     }
 }

@@ -3,8 +3,10 @@ package io.hephaistos.flagforge.service;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
@@ -20,16 +22,22 @@ public class DefaultApplicationService implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final EnvironmentService environmentService;
+    private final CustomerRepository customerRepository;
 
     public DefaultApplicationService(ApplicationRepository applicationRepository,
-            EnvironmentService environmentService) {
+            EnvironmentService environmentService, CustomerRepository customerRepository) {
         this.applicationRepository = applicationRepository;
         this.environmentService = environmentService;
+        this.customerRepository = customerRepository;
     }
 
     @Override
     public ApplicationResponse createApplication(ApplicationCreationRequest request) {
-        UUID companyId = getCompanyIdFromSecurityContext();
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        UUID companyId = securityContext.getCompanyId()
+                .orElseThrow(() -> new NoCompanyAssignedException(
+                        "Customer has no company assigned. Cannot perform application operations."));
+        UUID customerId = securityContext.getCustomerId();
 
         if (applicationRepository.existsByNameAndCompanyId(request.name(), companyId)) {
             throw new DuplicateResourceException(
@@ -46,6 +54,10 @@ public class DefaultApplicationService implements ApplicationService {
         application.setCompanyId(companyId);
         application.setPricingTier(pricingTier);
         applicationRepository.save(application);
+
+        // Grant the creator access to the application
+        CustomerEntity customer = customerRepository.findById(customerId).orElseThrow();
+        customer.getAccessibleApplications().add(application);
 
         environmentService.createDefaultEnvironment(application.getId());
 

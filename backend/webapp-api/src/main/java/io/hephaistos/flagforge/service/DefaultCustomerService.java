@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import io.hephaistos.flagforge.data.CustomerEntity;
+import io.hephaistos.flagforge.data.CustomerRole;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
@@ -50,6 +51,7 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
         customer.setFirstName(customerRegistrationRequest.firstName());
         customer.setLastName(customerRegistrationRequest.lastName());
         customer.setPassword(passwordEncoder.encode(customerRegistrationRequest.password()));
+        customer.setRole(CustomerRole.ADMIN);
 
         try {
             customerRepository.save(customer);
