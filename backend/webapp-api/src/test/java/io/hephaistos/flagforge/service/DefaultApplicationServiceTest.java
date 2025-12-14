@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -51,10 +53,11 @@ class DefaultApplicationServiceTest {
     }
 
     @Test
-    void createApplicationSucceeds() {
+    void createFirstApplicationForCompanyHasFreePricingTier() {
         var request = new ApplicationCreationRequest("Test App");
         when(applicationRepository.existsByNameAndCompanyId("Test App", testCompanyId)).thenReturn(
                 false);
+        when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(0L);
         when(applicationRepository.save(any(ApplicationEntity.class))).thenAnswer(invocation -> {
             ApplicationEntity entity = invocation.getArgument(0);
             entity.setId(UUID.randomUUID());
@@ -65,7 +68,38 @@ class DefaultApplicationServiceTest {
 
         assertThat(response.name()).isEqualTo("Test App");
         assertThat(response.companyId()).isEqualTo(testCompanyId);
+        assertThat(response.pricingTier()).isEqualTo(PricingTier.FREE);
         verify(environmentService).createDefaultEnvironment(response.id());
+
+        // Verify the entity was saved with FREE tier
+        ArgumentCaptor<ApplicationEntity> captor = ArgumentCaptor.forClass(ApplicationEntity.class);
+        verify(applicationRepository).save(captor.capture());
+        assertThat(captor.getValue().getPricingTier()).isEqualTo(PricingTier.FREE);
+    }
+
+    @Test
+    void createSubsequentApplicationForCompanyHasPaidPricingTier() {
+        var request = new ApplicationCreationRequest("Second App");
+        when(applicationRepository.existsByNameAndCompanyId("Second App",
+                testCompanyId)).thenReturn(false);
+        when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(1L);
+        when(applicationRepository.save(any(ApplicationEntity.class))).thenAnswer(invocation -> {
+            ApplicationEntity entity = invocation.getArgument(0);
+            entity.setId(UUID.randomUUID());
+            return entity;
+        });
+
+        var response = applicationService.createApplication(request);
+
+        assertThat(response.name()).isEqualTo("Second App");
+        assertThat(response.companyId()).isEqualTo(testCompanyId);
+        assertThat(response.pricingTier()).isEqualTo(PricingTier.PAID);
+        verify(environmentService).createDefaultEnvironment(response.id());
+
+        // Verify the entity was saved with PAID tier
+        ArgumentCaptor<ApplicationEntity> captor = ArgumentCaptor.forClass(ApplicationEntity.class);
+        verify(applicationRepository).save(captor.capture());
+        assertThat(captor.getValue().getPricingTier()).isEqualTo(PricingTier.PAID);
     }
 
     @Test

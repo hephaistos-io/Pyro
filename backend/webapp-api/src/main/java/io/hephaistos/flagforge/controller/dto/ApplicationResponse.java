@@ -1,11 +1,12 @@
 package io.hephaistos.flagforge.controller.dto;
 
 import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.PricingTier;
 
 import java.util.List;
 import java.util.UUID;
 
-public record ApplicationResponse(UUID id, String name, UUID companyId,
+public record ApplicationResponse(UUID id, String name, UUID companyId, PricingTier pricingTier,
                                   List<EnvironmentResponse> environments) {
 
     public static ApplicationResponse fromEntity(ApplicationEntity applicationEntity) {
@@ -14,6 +15,6 @@ public record ApplicationResponse(UUID id, String name, UUID companyId,
                 .map(EnvironmentResponse::fromEntity)
                 .toList();
         return new ApplicationResponse(applicationEntity.getId(), applicationEntity.getName(),
-                applicationEntity.getCompanyId(), environments);
+                applicationEntity.getCompanyId(), applicationEntity.getPricingTier(), environments);
     }
 }

@@ -6,7 +6,7 @@ import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
-import io.hephaistos.flagforge.data.EnvironmentTier;
+import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
@@ -62,7 +62,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().name()).isEqualTo("Production");
         assertThat(response.getBody().description()).isEqualTo("Production environment");
-        assertThat(response.getBody().tier()).isEqualTo(EnvironmentTier.PAID);
+        assertThat(response.getBody().tier()).isEqualTo(PricingTier.PAID);
     }
 
     @Test
@@ -123,7 +123,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
                 EnvironmentResponse[].class);
 
         assertThat(listResponse.getBody()).hasSize(1); // Only default environment remains
-        assertThat(listResponse.getBody()[0].tier()).isEqualTo(EnvironmentTier.FREE);
+        assertThat(listResponse.getBody()[0].tier()).isEqualTo(PricingTier.FREE);
     }
 
     @Test

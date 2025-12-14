@@ -12,7 +12,7 @@ import {EnvironmentResponse} from '../../models/environment-response';
 
 export interface CreateEnvironment$Params {
   applicationId: string;
-  body: EnvironmentCreationRequest
+    body: EnvironmentCreationRequest
 }
 
 export function createEnvironment(http: HttpClient, rootUrl: string, params: CreateEnvironment$Params, context?: HttpContext): Observable<StrictHttpResponse<EnvironmentResponse>> {
@@ -23,7 +23,7 @@ export function createEnvironment(http: HttpClient, rootUrl: string, params: Cre
   }
 
   return http.request(
-    rb.build({responseType: 'json', accept: 'application/json', context})
+      rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {

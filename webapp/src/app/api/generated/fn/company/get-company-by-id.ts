@@ -20,7 +20,7 @@ export function getCompanyById(http: HttpClient, rootUrl: string, params: GetCom
   }
 
   return http.request(
-    rb.build({responseType: 'json', accept: 'application/json', context})
+      rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {

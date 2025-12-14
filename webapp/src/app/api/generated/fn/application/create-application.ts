@@ -11,7 +11,7 @@ import {ApplicationCreationRequest} from '../../models/application-creation-requ
 import {ApplicationResponse} from '../../models/application-response';
 
 export interface CreateApplication$Params {
-  body: ApplicationCreationRequest
+    body: ApplicationCreationRequest
 }
 
 export function createApplication(http: HttpClient, rootUrl: string, params: CreateApplication$Params, context?: HttpContext): Observable<StrictHttpResponse<ApplicationResponse>> {
@@ -21,7 +21,7 @@ export function createApplication(http: HttpClient, rootUrl: string, params: Cre
   }
 
   return http.request(
-    rb.build({responseType: 'json', accept: 'application/json', context})
+      rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {

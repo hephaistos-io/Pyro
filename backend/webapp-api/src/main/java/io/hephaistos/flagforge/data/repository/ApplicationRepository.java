@@ -13,4 +13,6 @@ public interface ApplicationRepository extends JpaRepository<ApplicationEntity, 
     List<ApplicationEntity> findByCompanyId(UUID companyId);
 
     boolean existsByNameAndCompanyId(String name, UUID companyId);
+
+    long countByCompanyId(UUID companyId);
 }

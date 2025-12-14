@@ -568,6 +568,13 @@
             "type": "string",
             "format": "uuid"
           },
+          "pricingTier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "PAID"
+            ]
+          },
           "environments": {
             "type": "array",
             "items": {

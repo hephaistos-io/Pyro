@@ -12,7 +12,7 @@ import {ApiKeyCreationResponse} from '../../models/api-key-creation-response';
 
 export interface CreateApiKey$Params {
   applicationId: string;
-  body: ApiKeyCreationRequest
+    body: ApiKeyCreationRequest
 }
 
 export function createApiKey(http: HttpClient, rootUrl: string, params: CreateApiKey$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyCreationResponse>> {
@@ -23,7 +23,7 @@ export function createApiKey(http: HttpClient, rootUrl: string, params: CreateAp
   }
 
   return http.request(
-    rb.build({responseType: 'json', accept: 'application/json', context})
+      rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
