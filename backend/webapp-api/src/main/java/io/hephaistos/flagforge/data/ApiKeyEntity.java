@@ -12,7 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "api_key")
-public class ApiKeyEntity {
+public class ApiKeyEntity extends ApplicationOwnedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -23,9 +23,6 @@ public class ApiKeyEntity {
 
     @Column(name = "key_prefix", nullable = false)
     private String keyPrefix;
-
-    @Column(name = "application_id", nullable = false)
-    private UUID applicationId;
 
     @Column(nullable = false)
     private String name;
@@ -67,14 +64,6 @@ public class ApiKeyEntity {
 
     public void setKeyPrefix(String keyPrefix) {
         this.keyPrefix = keyPrefix;
-    }
-
-    public UUID getApplicationId() {
-        return applicationId;
-    }
-
-    public void setApplicationId(UUID applicationId) {
-        this.applicationId = applicationId;
     }
 
     public String getName() {

@@ -42,6 +42,6 @@ public class ApplicationController {
     @GetMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public List<ApplicationResponse> getApplications() {
-        return applicationService.getApplicationsForCurrentCustomerCompany();
+        return applicationService.getApplications();
     }
 }

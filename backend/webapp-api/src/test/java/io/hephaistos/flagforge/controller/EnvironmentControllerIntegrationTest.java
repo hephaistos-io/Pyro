@@ -208,6 +208,57 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+    @Test
+    void environmentsAreIsolatedBetweenCompanies() {
+        // Create user 1 with company A and application
+        registerUser("User", "One", "user1@example.com", "password123");
+        String token1 = authenticate("user1@example.com", "password123");
+        createCompany(token1, "Company A");
+        token1 = authenticate("user1@example.com", "password123");
+        UUID appIdA = createApplication(token1, "App A");
+
+        // Create user 2 with company B and application
+        registerUser("User", "Two", "user2@example.com", "password123");
+        String token2 = authenticate("user2@example.com", "password123");
+        createCompany(token2, "Company B");
+        token2 = authenticate("user2@example.com", "password123");
+        UUID appIdB = createApplication(token2, "App B");
+
+        // User 1 should not be able to access environments for Company B's app
+        var responseUser1AccessAppB =
+                get("/v1/applications/" + appIdB + "/environments", token1, String.class);
+        // Should return 404 because the application is not accessible
+        assertThat(responseUser1AccessAppB.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        // User 2 should not be able to access environments for Company A's app
+        var responseUser2AccessAppA =
+                get("/v1/applications/" + appIdA + "/environments", token2, String.class);
+        // Should return 404 because the application is not accessible
+        assertThat(responseUser2AccessAppA.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void cannotCreateEnvironmentInInaccessibleApplication() {
+        // Create user 1 with company A and application
+        registerUser("User", "One", "user1@example.com", "password123");
+        String token1 = authenticate("user1@example.com", "password123");
+        createCompany(token1, "Company A");
+        token1 = authenticate("user1@example.com", "password123");
+        UUID appIdA = createApplication(token1, "App A");
+
+        // Create user 2 with company B
+        registerUser("User", "Two", "user2@example.com", "password123");
+        String token2 = authenticate("user2@example.com", "password123");
+        createCompany(token2, "Company B");
+        token2 = authenticate("user2@example.com", "password123");
+
+        // User 2 should not be able to create environment in Company A's app
+        var response = post("/v1/applications/" + appIdA + "/environments",
+                new EnvironmentCreationRequest("Production", "Prod env"), token2, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
     private UUID createApplication(String token, String name) {
         var response = post("/v1/applications", new ApplicationCreationRequest(name), token,
                 ApplicationResponse.class);

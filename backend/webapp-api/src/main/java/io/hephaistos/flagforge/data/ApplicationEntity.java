@@ -11,16 +11,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Entity
 @Table(name = "application")
-public class ApplicationEntity {
+@Filter(name = ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER,
+        condition = "id IN (:accessibleAppIds)")
+public class ApplicationEntity extends CompanyOwnedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -28,9 +32,6 @@ public class ApplicationEntity {
 
     @Column(nullable = false)
     private String name;
-
-    @Column(name = "company_id", nullable = false)
-    private UUID companyId;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -57,14 +58,6 @@ public class ApplicationEntity {
         this.name = name;
     }
 
-    public UUID getCompanyId() {
-        return companyId;
-    }
-
-    public void setCompanyId(UUID companyId) {
-        this.companyId = companyId;
-    }
-
     public List<EnvironmentEntity> getEnvironments() {
         return environments;
     }
@@ -79,5 +72,20 @@ public class ApplicationEntity {
 
     public void setPricingTier(PricingTier pricingTier) {
         this.pricingTier = pricingTier;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ApplicationEntity that = (ApplicationEntity) o;
+        return id != null && Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

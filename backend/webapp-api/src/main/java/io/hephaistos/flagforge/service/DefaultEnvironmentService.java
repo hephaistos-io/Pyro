@@ -71,7 +71,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
     @Override
     @Transactional(readOnly = true)
     public List<EnvironmentResponse> getEnvironmentsForApplication(UUID applicationId) {
-        if (!applicationRepository.existsById(applicationId)) {
+        if (!applicationRepository.existsByIdFiltered(applicationId)) {
             throw new NotFoundException("Application not found");
         }
 
@@ -83,8 +83,8 @@ public class DefaultEnvironmentService implements EnvironmentService {
 
     @Override
     public void deleteEnvironment(UUID applicationId, UUID environmentId) {
-        // Verify application exists
-        if (!applicationRepository.existsById(applicationId)) {
+        // Verify application exists (with filter applied)
+        if (!applicationRepository.existsByIdFiltered(applicationId)) {
             throw new NotFoundException("Application not found");
         }
 
@@ -106,7 +106,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
     }
 
     private ApplicationEntity getApplicationOrThrow(UUID applicationId) {
-        return applicationRepository.findById(applicationId)
+        return applicationRepository.findByIdFiltered(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application not found"));
     }
 }

@@ -56,6 +56,10 @@ public class DefaultCompanyService implements CompanyService {
         company.setName(companyCreationRequest.companyName());
         companyRepository.save(company);
         customer.setCompanyId(company.getId());
+
+        // Update the security context's cached companyId
+        securityContext.setCompanyId(company.getId());
+
         return CompanyResponse.fromEntity(company);
     }
 }
