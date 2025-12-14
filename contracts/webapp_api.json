@@ -670,6 +670,14 @@
           "companyId": {
             "type": "string",
             "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "READ_ONLY",
+              "DEV",
+              "ADMIN"
+            ]
           }
         }
       },
