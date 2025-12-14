@@ -1,0 +1,525 @@
+@use '../../../styles/index' as *;
+
+.users-table {
+  width: 100%;
+  animation: fadeUp 0.6s ease-out both;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__container {
+    background: $white;
+    border: 1px solid rgba($charcoal, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+
+    @include dark-mode {
+      background: $dark-card;
+      border-color: $dark-border;
+    }
+  }
+
+  &__grid-header {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 120px 80px;
+    gap: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 2px solid rgba($charcoal, 0.1);
+    margin-bottom: 0.5rem;
+
+    @include dark-mode {
+      border-bottom-color: $dark-border;
+    }
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 200px 1fr 100px 80px;
+    }
+
+    @media (max-width: 768px) {
+      display: none;
+    }
+  }
+
+  &__column-header {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 220px 1fr 1fr 120px 80px;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    animation: fadeUp 0.4s ease-out both;
+
+    &:hover {
+      background: rgba($charcoal, 0.03);
+
+      @include dark-mode {
+        background: rgba($white, 0.03);
+      }
+    }
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 200px 1fr 100px 80px;
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      padding: 1.5rem 1rem;
+      border: 1px solid rgba($charcoal, 0.1);
+      margin-bottom: 1rem;
+
+      @include dark-mode {
+        border-color: $dark-border;
+      }
+    }
+  }
+
+  &__cell {
+    &--applications,
+    &--roles {
+      @media (max-width: 1024px) {
+        grid-column: 2;
+      }
+
+      @media (max-width: 768px) {
+        grid-column: 1;
+      }
+    }
+
+    &--last-active {
+      @media (max-width: 1024px) {
+        grid-column: 3;
+        grid-row: 1;
+      }
+
+      @media (max-width: 768px) {
+        grid-column: 1;
+      }
+    }
+
+    &--actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+  }
+}
+
+.search-bar {
+  flex: 1;
+
+  &__input {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba($charcoal, 0.15);
+    border-radius: 8px;
+    font-family: $font-sans;
+    font-size: 0.95rem;
+    background: $white;
+    color: $charcoal;
+    transition: all 0.2s ease;
+
+    &::placeholder {
+      color: $charcoal-light;
+      opacity: 0.5;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.1);
+    }
+
+    @include dark-mode {
+      background: $dark-card;
+      color: $dark-text;
+      border-color: $dark-border;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+
+      &:focus {
+        border-color: $pyro-red;
+      }
+    }
+  }
+}
+
+.btn-add-user {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: $pyro-red;
+  color: $white;
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: $pyro-red-deep;
+    box-shadow: 0 4px 12px rgba($pyro-red, 0.3);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  @include dark-mode {
+    background: $pyro-red;
+    color: $white;
+
+    &:hover {
+      background: $pyro-red-deep;
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.user-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__name {
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__email {
+    font-size: 0.85rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 0.375rem;
+
+  &--active {
+    color: #22c55e;
+    background: rgba(#22c55e, 0.1);
+
+    @include dark-mode {
+      color: #4ade80;
+      background: rgba(#4ade80, 0.15);
+    }
+  }
+
+  &--inactive {
+    color: $charcoal-light;
+    background: rgba($charcoal-light, 0.1);
+
+    @include dark-mode {
+      color: $dark-text-muted;
+      background: rgba($charcoal-light, 0.15);
+    }
+  }
+
+  &--invited {
+    color: #3b82f6;
+    background: rgba(#3b82f6, 0.1);
+
+    @include dark-mode {
+      color: #93c5fd;
+      background: rgba(#3b82f6, 0.15);
+    }
+  }
+}
+
+.user-tags {
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  &__empty {
+    font-size: 0.85rem;
+    color: $charcoal-light;
+    font-style: italic;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.last-active-time {
+  font-size: 0.9rem;
+  color: $charcoal-light;
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.btn-edit-user,
+.btn-delete-user {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: $charcoal-light;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  svg {
+    pointer-events: none;
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.btn-edit-user {
+  &:hover {
+    background: rgba(#3b82f6, 0.1);
+    color: #3b82f6;
+  }
+
+  @include dark-mode {
+    &:hover {
+      background: rgba(#3b82f6, 0.15);
+      color: #93c5fd;
+    }
+  }
+}
+
+.btn-delete-user {
+  &:hover {
+    background: rgba($pyro-red, 0.1);
+    color: $pyro-red;
+  }
+
+  @include dark-mode {
+    &:hover {
+      background: rgba($pyro-red, 0.15);
+      color: $pyro-red-light;
+    }
+  }
+}
+
+.loading-state,
+.empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: $charcoal-light;
+
+  h3 {
+    margin: 0 0 0.5rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+  }
+}
+
+.delete-confirmation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 10000;
+  background: rgba($black, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+
+  @include dark-mode {
+    background: rgba($black, 0.7);
+  }
+}
+
+.delete-confirmation-modal {
+  background: $white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 440px;
+  width: 90%;
+  animation: fadeUp 0.3s ease-out;
+  box-shadow: 0 25px 50px -12px rgba($black, 0.25);
+
+  @include dark-mode {
+    background: $dark-card;
+  }
+
+  h3 {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    color: $charcoal;
+    margin: 0 0 1rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+
+    strong {
+      color: $charcoal;
+      font-weight: 600;
+
+      @include dark-mode {
+        color: $dark-text;
+      }
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.delete-confirmation-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+  }
+}
+
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba($charcoal, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: $charcoal;
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($charcoal, 0.05);
+    border-color: rgba($charcoal, 0.3);
+  }
+
+  @include dark-mode {
+    color: $dark-text;
+    border-color: $dark-border;
+
+    &:hover {
+      background: rgba($white, 0.05);
+      border-color: rgba($white, 0.2);
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+}
+
+.btn-confirm-delete {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: $pyro-red;
+  color: $white;
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: $pyro-red-deep;
+    box-shadow: 0 4px 12px rgba($pyro-red, 0.3);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  @include dark-mode {
+    background: $pyro-red;
+
+    &:hover {
+      background: $pyro-red-deep;
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
+}
