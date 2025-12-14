@@ -6,4 +6,5 @@ export interface CustomerResponse {
   email?: string;
   firstName?: string;
   lastName?: string;
+    role?: 'READ_ONLY' | 'DEV' | 'ADMIN';
 }

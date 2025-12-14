@@ -11,7 +11,7 @@ import {AuthenticationResponse} from '../../models/authentication-response';
 import {CustomerAuthenticationRequest} from '../../models/customer-authentication-request';
 
 export interface Authenticate$Params {
-    body: CustomerAuthenticationRequest
+  body: CustomerAuthenticationRequest
 }
 
 export function authenticate(http: HttpClient, rootUrl: string, params: Authenticate$Params, context?: HttpContext): Observable<StrictHttpResponse<AuthenticationResponse>> {
@@ -21,7 +21,7 @@ export function authenticate(http: HttpClient, rootUrl: string, params: Authenti
   }
 
   return http.request(
-      rb.build({responseType: 'json', accept: 'application/json', context})
+    rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
