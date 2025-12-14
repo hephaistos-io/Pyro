@@ -38,20 +38,22 @@ export class DashboardComponent implements OnInit {
   private api = inject(Api);
   activeTab = signal<'applications' | 'users'>('applications');
 
-  // Cost overview computed values
+  // Cost overview computed values - uses pricingTier from API
   applicationCosts = computed(() => {
-    return this.applications().map((app, index) => ({
-      id: app.id,
-      name: app.name,
-      cost: index === 0 ? 0 : COST_PER_ADDITIONAL_APP,
-      isFree: index === 0
-    }));
+    return this.applications().map(app => {
+      const isFree = app.pricingTier === 'FREE';
+      return {
+        id: app.id,
+        name: app.name,
+        cost: isFree ? 0 : COST_PER_ADDITIONAL_APP,
+        isFree
+      };
+    });
   });
 
   totalMonthlyCost = computed(() => {
-    const apps = this.applications();
-    if (apps.length <= 1) return 0;
-    return (apps.length - 1) * COST_PER_ADDITIONAL_APP;
+    const paidApps = this.applications().filter(app => app.pricingTier === 'PAID');
+    return paidApps.length * COST_PER_ADDITIONAL_APP;
   });
 
   maxAppCost = computed(() => {

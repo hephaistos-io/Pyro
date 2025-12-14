@@ -4,7 +4,7 @@ import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
 import io.hephaistos.flagforge.data.ApplicationEntity;
 import io.hephaistos.flagforge.data.EnvironmentEntity;
-import io.hephaistos.flagforge.data.EnvironmentTier;
+import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
@@ -61,7 +61,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
         environment.setApplication(application);
         environment.setName(DEFAULT_ENVIRONMENT_NAME);
         environment.setDescription(DEFAULT_ENVIRONMENT_DESCRIPTION);
-        environment.setTier(EnvironmentTier.FREE);
+        environment.setTier(PricingTier.FREE);
 
         EnvironmentEntity saved = environmentRepository.save(environment);
 
@@ -97,7 +97,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
         }
 
         // Prevent deletion of FREE tier environments
-        if (environment.getTier() == EnvironmentTier.FREE) {
+        if (environment.getTier() == PricingTier.FREE) {
             throw new OperationNotAllowedException(
                     "Cannot delete the default environment. FREE tier environments cannot be deleted.");
         }

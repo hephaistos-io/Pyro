@@ -4,5 +4,8 @@
     <span class="app-card__label">New Application</span>
   } @else {
     <span class="app-card__name">{{ name() }}</span>
+    @if (application()?.pricingTier === 'FREE') {
+      <span class="app-card__badge app-card__badge--free">Free</span>
+    }
   }
 </button>

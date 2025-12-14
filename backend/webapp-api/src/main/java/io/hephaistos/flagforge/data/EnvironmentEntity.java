@@ -36,7 +36,7 @@ public class EnvironmentEntity {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
-    private EnvironmentTier tier = EnvironmentTier.PAID;
+    private PricingTier tier = PricingTier.PAID;
 
     public UUID getId() {
         return id;
@@ -74,11 +74,11 @@ public class EnvironmentEntity {
         this.description = description;
     }
 
-    public EnvironmentTier getTier() {
+    public PricingTier getTier() {
         return tier;
     }
 
-    public void setTier(EnvironmentTier tier) {
+    public void setTier(PricingTier tier) {
         this.tier = tier;
     }
 }
