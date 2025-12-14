@@ -2,8 +2,10 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
@@ -18,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,15 +39,21 @@ class DefaultApplicationServiceTest {
     @Mock
     private EnvironmentService environmentService;
 
+    @Mock
+    private CustomerRepository customerRepository;
+
     private DefaultApplicationService applicationService;
     private UUID testCompanyId;
+    private UUID testCustomerId;
 
     @BeforeEach
     void setUp() {
         applicationService =
-                new DefaultApplicationService(applicationRepository, environmentService);
+                new DefaultApplicationService(applicationRepository, environmentService,
+                        customerRepository);
         testCompanyId = UUID.randomUUID();
-        setupSecurityContext(testCompanyId);
+        testCustomerId = UUID.randomUUID();
+        setupSecurityContext(testCompanyId, testCustomerId);
     }
 
     @AfterEach
@@ -55,6 +64,8 @@ class DefaultApplicationServiceTest {
     @Test
     void createFirstApplicationForCompanyHasFreePricingTier() {
         var request = new ApplicationCreationRequest("Test App");
+        var customer = new CustomerEntity();
+        customer.setId(testCustomerId);
         when(applicationRepository.existsByNameAndCompanyId("Test App", testCompanyId)).thenReturn(
                 false);
         when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(0L);
@@ -63,6 +74,7 @@ class DefaultApplicationServiceTest {
             entity.setId(UUID.randomUUID());
             return entity;
         });
+        when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(customer));
 
         var response = applicationService.createApplication(request);
 
@@ -80,6 +92,8 @@ class DefaultApplicationServiceTest {
     @Test
     void createSubsequentApplicationForCompanyHasPaidPricingTier() {
         var request = new ApplicationCreationRequest("Second App");
+        var customer = new CustomerEntity();
+        customer.setId(testCustomerId);
         when(applicationRepository.existsByNameAndCompanyId("Second App",
                 testCompanyId)).thenReturn(false);
         when(applicationRepository.countByCompanyId(testCompanyId)).thenReturn(1L);
@@ -88,6 +102,7 @@ class DefaultApplicationServiceTest {
             entity.setId(UUID.randomUUID());
             return entity;
         });
+        when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(customer));
 
         var response = applicationService.createApplication(request);
 
@@ -151,10 +166,10 @@ class DefaultApplicationServiceTest {
                 NoCompanyAssignedException.class);
     }
 
-    private void setupSecurityContext(UUID companyId) {
+    private void setupSecurityContext(UUID companyId, UUID customerId) {
         var context = new FlagForgeSecurityContext();
         context.setCustomerName("test@example.com");
-        context.setCustomerId(UUID.randomUUID().toString());
+        context.setCustomerId(customerId.toString());
         context.setCompanyId(companyId.toString());
         SecurityContextHolder.setContext(context);
     }
@@ -162,7 +177,7 @@ class DefaultApplicationServiceTest {
     private void setupSecurityContextWithoutCompany() {
         var context = new FlagForgeSecurityContext();
         context.setCustomerName("test@example.com");
-        context.setCustomerId(UUID.randomUUID().toString());
+        context.setCustomerId(testCustomerId.toString());
         SecurityContextHolder.setContext(context);
     }
 
