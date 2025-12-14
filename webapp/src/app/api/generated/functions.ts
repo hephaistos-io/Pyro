@@ -25,6 +25,8 @@ export type {CreateApiKey$Params} from './fn/api-keys/create-api-key';
 export {createApiKey} from './fn/api-keys/create-api-key';
 export type {Profile$Params} from './fn/v-1/profile';
 export {profile} from './fn/v-1/profile';
+export type {GetCustomers$Params} from './fn/v-1/get-customers';
+export {getCustomers} from './fn/v-1/get-customers';
 export type {DeleteEnvironment$Params} from './fn/environments/delete-environment';
 export {deleteEnvironment} from './fn/environments/delete-environment';
 export type {RevokeApiKey$Params} from './fn/api-keys/revoke-api-key';

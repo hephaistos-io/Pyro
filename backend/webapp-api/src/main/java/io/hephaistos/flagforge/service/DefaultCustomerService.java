@@ -72,8 +72,8 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
     }
 
     @Override
-    public CustomerEntity getCustomerByEmailOrThrow(String email) {
-        return getCustomerByEmail(email).orElseThrow(() -> new UsernameNotFoundException(email));
+    public List<CustomerEntity> getAllCustomers() {
+        return customerRepository.findAll();
     }
 
     @Override

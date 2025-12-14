@@ -2,6 +2,7 @@ package io.hephaistos.flagforge;
 
 import io.hephaistos.flagforge.controller.dto.AuthenticationResponse;
 import io.hephaistos.flagforge.controller.dto.CompanyCreationRequest;
+import io.hephaistos.flagforge.controller.dto.CompanyResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+
+import java.time.OffsetDateTime;
 
 /**
  * Base class for integration tests providing common HTTP request utilities and authentication
@@ -52,6 +55,10 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
     protected void initializeTestSupport() {
         restTemplate = new TestRestTemplate();
         mockPasswordBreachCheckWithResponse(false);
+    }
+
+    protected String randomEmail() {
+        return OffsetDateTime.now() + "@test.mail.com";
     }
 
     /**
@@ -138,8 +145,7 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
         registerUser();
         String token = authenticate();
         createCompany(token);
-        // Re-authenticate to get token with companyId populated in security context
-        return authenticate();
+        return token;
     }
 
     /**
@@ -155,6 +161,12 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
      */
     protected void registerUser() {
         registerUser(DEFAULT_FIRST_NAME, DEFAULT_LAST_NAME, DEFAULT_EMAIL, DEFAULT_PASSWORD);
+    }
+
+    protected String registerUserWithRandomEmail() {
+        var email = randomEmail();
+        registerUser(DEFAULT_FIRST_NAME, DEFAULT_LAST_NAME, email, DEFAULT_PASSWORD);
+        return email;
     }
 
     /**
@@ -178,8 +190,9 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
     /**
      * Create a company with the given name for the authenticated user.
      */
-    protected void createCompany(String token, String companyName) {
-        post("/v1/company", new CompanyCreationRequest(companyName), token, String.class);
+    protected CompanyResponse createCompany(String token, String companyName) {
+        return post("/v1/company", new CompanyCreationRequest(companyName), token,
+                CompanyResponse.class).getBody();
     }
 
     /**
