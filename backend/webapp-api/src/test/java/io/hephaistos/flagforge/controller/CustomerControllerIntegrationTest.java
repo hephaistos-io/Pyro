@@ -67,15 +67,56 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
 
     @Test
     void companyWithMultipleUsersReturnsAllOfThem() {
+        // Get company ID from the customer in the database after creating it
         String token = registerAndAuthenticateWithCompany();
-        var company = createCompany(token, "TestCompanyPleaseIgnore");
 
-        createUserForCompany(company.id());
-        createUserForCompany(company.id());
-        createUserForCompany(company.id());
+        // Get the company ID from the current user's profile
+        var profile = get("/v1/customer/profile", token, CustomerResponse.class);
+        assertThat(profile.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(profile.getBody().companyId()).isPresent();
+        UUID companyId = profile.getBody().companyId().orElseThrow();
+
+        createUserForCompany(companyId);
+        createUserForCompany(companyId);
+        createUserForCompany(companyId);
+
         var allCustomersResponse = get("/v1/customer/all", token, CustomerResponse[].class);
         assertThat(allCustomersResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(allCustomersResponse.getBody()).hasSize(4);
+    }
+
+    @Test
+    void usersFromDifferentCompaniesAreIsolated() {
+        // Create first user with company A
+        registerUser("UserA", "LastA", "usera@test.com", "password123");
+        String tokenA = authenticate("usera@test.com", "password123");
+        var companyA = createCompany(tokenA, "Company A");
+        assertThat(companyA).as("Company A creation should succeed").isNotNull();
+        createUserForCompany(companyA.id());
+        createUserForCompany(companyA.id());
+
+        // Create second user with company B
+        registerUser("UserB", "LastB", "userb@test.com", "password123");
+        String tokenB = authenticate("userb@test.com", "password123");
+        var companyB = createCompany(tokenB, "Company B");
+        assertThat(companyB).as("Company B creation should succeed").isNotNull();
+        createUserForCompany(companyB.id());
+
+        // User A should only see users from company A (themselves + 2 created)
+        var responseA = get("/v1/customer/all", tokenA, CustomerResponse[].class);
+        assertThat(responseA.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseA.getBody()).hasSize(3);
+        for (CustomerResponse customer : responseA.getBody()) {
+            assertThat(customer.companyId()).hasValue(companyA.id());
+        }
+
+        // User B should only see users from company B (themselves + 1 created)
+        var responseB = get("/v1/customer/all", tokenB, CustomerResponse[].class);
+        assertThat(responseB.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(responseB.getBody()).hasSize(2);
+        for (CustomerResponse customer : responseB.getBody()) {
+            assertThat(customer.companyId()).hasValue(companyB.id());
+        }
     }
 
     private void createUserForCompany(UUID id) {

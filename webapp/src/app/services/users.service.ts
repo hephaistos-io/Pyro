@@ -1,4 +1,7 @@
-import {Injectable, signal} from '@angular/core';
+import {inject, Injectable, signal} from '@angular/core';
+import {Api} from '../api/generated/api';
+import {getCustomers} from '../api/generated/functions';
+import {CustomerResponse} from '../api/generated/models/customer-response';
 
 export interface User {
   id: string;
@@ -22,120 +25,6 @@ export interface Role {
   type: 'admin' | 'developer' | 'viewer';
 }
 
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@example.com',
-    applications: [
-      {id: 'app1', name: 'Mobile App'},
-      {id: 'app2', name: 'Web Portal'}
-    ],
-    roles: [
-      {id: 'role1', name: 'Admin', type: 'admin'},
-      {id: 'role2', name: 'Developer', type: 'developer'}
-    ],
-    lastActive: new Date('2025-12-14T10:30:00'),
-    status: 'active'
-  },
-  {
-    id: '2',
-    firstName: 'Michael',
-    lastName: 'Chen',
-    email: 'michael.chen@example.com',
-    applications: [
-      {id: 'app1', name: 'Mobile App'}
-    ],
-    roles: [
-      {id: 'role3', name: 'Viewer', type: 'viewer'}
-    ],
-    lastActive: new Date('2025-12-13T16:45:00'),
-    status: 'active'
-  },
-  {
-    id: '3',
-    firstName: 'Emma',
-    lastName: 'Rodriguez',
-    email: 'emma.rodriguez@example.com',
-    applications: [],
-    roles: [],
-    lastActive: null,
-    status: 'invited'
-  },
-  {
-    id: '4',
-    firstName: 'James',
-    lastName: 'Wilson',
-    email: 'james.wilson@example.com',
-    applications: [
-      {id: 'app2', name: 'Web Portal'},
-      {id: 'app3', name: 'Admin Dashboard'}
-    ],
-    roles: [
-      {id: 'role1', name: 'Admin', type: 'admin'}
-    ],
-    lastActive: new Date('2025-12-14T09:15:00'),
-    status: 'active'
-  },
-  {
-    id: '5',
-    firstName: 'Olivia',
-    lastName: 'Martinez',
-    email: 'olivia.martinez@example.com',
-    applications: [
-      {id: 'app1', name: 'Mobile App'},
-      {id: 'app3', name: 'Admin Dashboard'}
-    ],
-    roles: [
-      {id: 'role2', name: 'Developer', type: 'developer'}
-    ],
-    lastActive: new Date('2025-12-12T14:20:00'),
-    status: 'active'
-  },
-  {
-    id: '6',
-    firstName: 'Liam',
-    lastName: 'Taylor',
-    email: 'liam.taylor@example.com',
-    applications: [
-      {id: 'app2', name: 'Web Portal'}
-    ],
-    roles: [
-      {id: 'role3', name: 'Viewer', type: 'viewer'}
-    ],
-    lastActive: new Date('2025-12-10T11:00:00'),
-    status: 'inactive'
-  },
-  {
-    id: '7',
-    firstName: 'Sophia',
-    lastName: 'Anderson',
-    email: 'sophia.anderson@example.com',
-    applications: [
-      {id: 'app1', name: 'Mobile App'},
-      {id: 'app2', name: 'Web Portal'},
-      {id: 'app3', name: 'Admin Dashboard'}
-    ],
-    roles: [
-      {id: 'role2', name: 'Developer', type: 'developer'},
-      {id: 'role3', name: 'Viewer', type: 'viewer'}
-    ],
-    lastActive: new Date('2025-12-14T08:00:00'),
-    status: 'active'
-  },
-  {
-    id: '8',
-    firstName: 'Noah',
-    lastName: 'Thomas',
-    email: 'noah.thomas@example.com',
-    applications: [],
-    roles: [],
-    lastActive: null,
-    status: 'invited'
-  }
-];
-
 const AVAILABLE_APPLICATIONS: Application[] = [
   {id: 'app1', name: 'Mobile App'},
   {id: 'app2', name: 'Web Portal'},
@@ -153,8 +42,10 @@ const AVAILABLE_ROLES: Role[] = [
   providedIn: 'root'
 })
 export class UsersService {
+  private api = inject(Api);
+
   isLoading = signal(false);
-  private usersData = signal<User[]>(MOCK_USERS);
+  private usersData = signal<User[]>([]);
   users = this.usersData.asReadonly();
   private availableApps = signal<Application[]>(AVAILABLE_APPLICATIONS);
   applications = this.availableApps.asReadonly();
@@ -163,9 +54,36 @@ export class UsersService {
 
   async fetchUsers(): Promise<void> {
     this.isLoading.set(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    this.isLoading.set(false);
+    try {
+      const customers = await this.api.invoke(getCustomers);
+      const users = customers.map(customer => this.mapCustomerToUser(customer));
+      this.usersData.set(users);
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private mapCustomerToUser(customer: CustomerResponse): User {
+    return {
+      id: customer.email ?? crypto.randomUUID(),
+      firstName: customer.firstName ?? 'Unknown',
+      lastName: customer.lastName ?? 'User',
+      email: customer.email ?? '',
+      applications: [],
+      roles: this.mapRole(customer.role),
+      lastActive: null,
+      status: 'active'
+    };
+  }
+
+  private mapRole(role?: 'READ_ONLY' | 'DEV' | 'ADMIN'): Role[] {
+    if (!role) return [];
+    const roleMap: Record<string, Role> = {
+      'ADMIN': {id: 'role1', name: 'Admin', type: 'admin'},
+      'DEV': {id: 'role2', name: 'Developer', type: 'developer'},
+      'READ_ONLY': {id: 'role3', name: 'Viewer', type: 'viewer'}
+    };
+    return roleMap[role] ? [roleMap[role]] : [];
   }
 
   createUser(email: string, applicationIds: string[], roleIds: string[]): User {
