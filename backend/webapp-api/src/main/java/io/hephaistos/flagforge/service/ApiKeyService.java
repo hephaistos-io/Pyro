@@ -1,6 +1,5 @@
 package io.hephaistos.flagforge.service;
 
-import io.hephaistos.flagforge.controller.dto.ApiKeyCreationResponse;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.data.KeyType;
 
@@ -12,5 +11,5 @@ public interface ApiKeyService {
 
     ApiKeyResponse getApiKeyByType(UUID applicationId, UUID environmentId, KeyType keyType);
 
-    ApiKeyCreationResponse regenerateKey(UUID applicationId, UUID apiKeyId);
+    ApiKeyResponse regenerateKey(UUID applicationId, UUID environmentId, KeyType keyType);
 }

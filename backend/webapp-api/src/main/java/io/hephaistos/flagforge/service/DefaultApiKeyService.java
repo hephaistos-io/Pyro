@@ -1,6 +1,5 @@
 package io.hephaistos.flagforge.service;
 
-import io.hephaistos.flagforge.controller.dto.ApiKeyCreationResponse;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.data.ApiKeyEntity;
 import io.hephaistos.flagforge.data.KeyType;
@@ -62,21 +61,25 @@ public class DefaultApiKeyService implements ApiKeyService {
     }
 
     @Override
-    public ApiKeyCreationResponse regenerateKey(UUID applicationId, UUID apiKeyId) {
-        ApiKeyEntity apiKey = apiKeyRepository.findById(apiKeyId)
-                .orElseThrow(() -> new NotFoundException("API key not found"));
-
-        if (!apiKey.getApplicationId().equals(applicationId)) {
-            throw new NotFoundException("API key not found for this application");
+    public ApiKeyResponse regenerateKey(UUID applicationId, UUID environmentId, KeyType keyType) {
+        if (!applicationRepository.existsById(applicationId)) {
+            throw new NotFoundException("Application not found");
         }
+
+        ApiKeyEntity apiKey =
+                apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                                environmentId, keyType)
+                        .orElseThrow(() -> new NotFoundException(
+                                "API key not found for type " + keyType));
 
         String newKey = generateSecretKey();
         apiKey.setKey(newKey);
 
         apiKeyRepository.save(apiKey);
-        LOGGER.info("Regenerated API key {} for application {}", apiKeyId, applicationId);
+        LOGGER.info("Regenerated API key (type: {}) for application {} and environment {}", keyType,
+                applicationId, environmentId);
 
-        return new ApiKeyCreationResponse(apiKey.getId(), null, newKey);
+        return ApiKeyResponse.fromEntity(apiKey);
     }
 
     private String generateSecretKey() {

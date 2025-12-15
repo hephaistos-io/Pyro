@@ -2,7 +2,6 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
-import io.hephaistos.flagforge.controller.dto.ApiKeyCreationResponse;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
@@ -187,20 +186,21 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         UUID applicationId = createApplication(token, "Test App");
         UUID environmentId = getDefaultEnvironmentId(token, applicationId);
 
-        // Get the original key ID
+        // Get the original key
         var originalKey = get(apiKeyPath(applicationId, environmentId, KeyType.READ), token,
                 ApiKeyResponse.class).getBody();
 
-        // Regenerate
-        var regenerateResponse = post(apiKeyBasePath(applicationId,
-                        environmentId) + "/" + originalKey.id() + "/regenerate", null, token,
-                ApiKeyCreationResponse.class);
+        // Regenerate by key type
+        var regenerateResponse =
+                post(apiKeyPath(applicationId, environmentId, KeyType.READ) + "/regenerate", null,
+                        token, ApiKeyResponse.class);
 
         assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(regenerateResponse.getBody()).isNotNull();
         assertThat(regenerateResponse.getBody().id()).isEqualTo(originalKey.id());
         assertThat(regenerateResponse.getBody().secretKey()).isNotNull();
         assertThat(regenerateResponse.getBody().secretKey()).hasSize(64);
+        assertThat(regenerateResponse.getBody().secretKey()).isNotEqualTo(originalKey.secretKey());
     }
 
     @Test
@@ -212,8 +212,8 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         var originalKey = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
                 ApiKeyResponse.class).getBody();
 
-        post(apiKeyBasePath(applicationId, environmentId) + "/" + originalKey.id() + "/regenerate",
-                null, token, ApiKeyCreationResponse.class);
+        post(apiKeyPath(applicationId, environmentId, KeyType.WRITE) + "/regenerate", null, token,
+                ApiKeyResponse.class);
 
         // Verify the key ID is unchanged
         var newKey = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
@@ -223,34 +223,27 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void regenerateApiKeyReturns404ForNonExistentKey() {
+    void regenerateApiKeyReturns404ForNonExistentApplication() {
         String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-        UUID nonExistentKeyId = UUID.randomUUID();
+        UUID nonExistentAppId = UUID.randomUUID();
+        UUID environmentId = UUID.randomUUID();
 
-        var response = post(apiKeyBasePath(applicationId,
-                environmentId) + "/" + nonExistentKeyId + "/regenerate", null, token, String.class);
+        var response =
+                post(apiKeyPath(nonExistentAppId, environmentId, KeyType.READ) + "/regenerate",
+                        null, token, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
-    void regenerateApiKeyReturns404ForKeyInDifferentApplication() {
+    void regenerateApiKeyReturns404ForNonExistentEnvironment() {
         String token = registerAndAuthenticateWithCompany();
-        UUID app1Id = createApplication(token, "App 1");
-        UUID app2Id = createApplication(token, "App 2");
-        UUID env1Id = getDefaultEnvironmentId(token, app1Id);
-        UUID env2Id = getDefaultEnvironmentId(token, app2Id);
+        UUID applicationId = createApplication(token, "Test App");
+        UUID nonExistentEnvId = UUID.randomUUID();
 
-        // Get key from app 1
-        var app1Key = get(apiKeyPath(app1Id, env1Id, KeyType.READ), token,
-                ApiKeyResponse.class).getBody();
-
-        // Try to regenerate via app 2
         var response =
-                post(apiKeyBasePath(app2Id, env2Id) + "/" + app1Key.id() + "/regenerate", null,
-                        token, String.class);
+                post(apiKeyPath(applicationId, nonExistentEnvId, KeyType.READ) + "/regenerate",
+                        null, token, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -288,21 +281,16 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         token1 = authenticate("user1@example.com", "password123");
         UUID appIdA = createApplication(token1, "App A");
         UUID envIdA = getDefaultEnvironmentId(token1, appIdA);
-        var keyA = get(apiKeyPath(appIdA, envIdA, KeyType.READ), token1,
-                ApiKeyResponse.class).getBody();
 
-        // Create user 2 with company B and application
+        // Create user 2 with company B
         registerUser("User", "Two", "user2@example.com", "password123");
         String token2 = authenticate("user2@example.com", "password123");
         createCompany(token2, "Company B");
         token2 = authenticate("user2@example.com", "password123");
-        UUID appIdB = createApplication(token2, "App B");
-        UUID envIdB = getDefaultEnvironmentId(token2, appIdB);
 
-        // User 2 should not be able to regenerate keys from Company A
-        var response =
-                post(apiKeyBasePath(appIdB, envIdB) + "/" + keyA.id() + "/regenerate", null, token2,
-                        String.class);
+        // User 2 should not be able to regenerate keys from Company A's app
+        var response = post(apiKeyPath(appIdA, envIdA, KeyType.READ) + "/regenerate", null, token2,
+                String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }

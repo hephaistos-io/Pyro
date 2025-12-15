@@ -1,6 +1,5 @@
 package io.hephaistos.flagforge.controller;
 
-import io.hephaistos.flagforge.controller.dto.ApiKeyCreationResponse;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.data.KeyType;
 import io.hephaistos.flagforge.service.ApiKeyService;
@@ -38,11 +37,11 @@ public class ApiKeyController {
         return apiKeyService.getApiKeyByType(applicationId, environmentId, keyType);
     }
 
-    @Operation(summary = "Regenerate an API key and return the new key")
-    @PostMapping(value = "/{apiKeyId}/regenerate", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Regenerate an API key by type and return the new key")
+    @PostMapping(value = "/{keyType}/regenerate", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public ApiKeyCreationResponse regenerateApiKey(@PathVariable UUID applicationId,
-            @PathVariable UUID environmentId, @PathVariable UUID apiKeyId) {
-        return apiKeyService.regenerateKey(applicationId, apiKeyId);
+    public ApiKeyResponse regenerateApiKey(@PathVariable UUID applicationId,
+            @PathVariable UUID environmentId, @PathVariable KeyType keyType) {
+        return apiKeyService.regenerateKey(applicationId, environmentId, keyType);
     }
 }

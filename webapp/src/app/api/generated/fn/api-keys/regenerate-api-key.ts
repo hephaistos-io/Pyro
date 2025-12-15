@@ -7,20 +7,20 @@ import {filter, map} from 'rxjs/operators';
 import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
-import {ApiKeyCreationResponse} from '../../models/api-key-creation-response';
+import {ApiKeyResponse} from '../../models/api-key-response';
 
 export interface RegenerateApiKey$Params {
   applicationId: string;
   environmentId: string;
-  apiKeyId: string;
+  keyType: 'READ' | 'WRITE';
 }
 
-export function regenerateApiKey(http: HttpClient, rootUrl: string, params: RegenerateApiKey$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyCreationResponse>> {
+export function regenerateApiKey(http: HttpClient, rootUrl: string, params: RegenerateApiKey$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyResponse>> {
   const rb = new RequestBuilder(rootUrl, regenerateApiKey.PATH, 'post');
   if (params) {
     rb.path('applicationId', params.applicationId, {});
     rb.path('environmentId', params.environmentId, {});
-    rb.path('apiKeyId', params.apiKeyId, {});
+    rb.path('keyType', params.keyType, {});
   }
 
   return http.request(
@@ -28,9 +28,9 @@ export function regenerateApiKey(http: HttpClient, rootUrl: string, params: Rege
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<ApiKeyCreationResponse>;
+      return r as StrictHttpResponse<ApiKeyResponse>;
     })
   );
 }
 
-regenerateApiKey.PATH = '/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{apiKeyId}/regenerate';
+regenerateApiKey.PATH = '/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}/regenerate';
