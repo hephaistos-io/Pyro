@@ -398,6 +398,27 @@ cd webapp && npm start                 # Frontend (terminal 2)
 ./gradlew build                          # Build all backend services
 ----
 
+=== Architecture Tests
+
+Architecture tests use https://www.archunit.org/[ArchUnit] to enforce coding standards and prevent common mistakes.
+These tests are fast (no containers needed) and run separately from the main test suite.
+
+[source,bash]
+----
+./gradlew backend:webapp-api:architectureTest   # Run architecture tests only
+----
+
+Current architecture rules enforce:
+
+* *Repository filter usage* - Services must use `findByIdFiltered()` and `existsByIdFiltered()` instead of the standard `findById()` and `existsById()` methods on filtered repositories.
+This ensures Hibernate `@Filter` annotations are applied for proper multi-tenancy isolation.
+
+[NOTE]
+====
+Architecture tests are excluded from the default `test` task to keep the feedback loop fast during development.
+Run them explicitly or as part of CI to verify architectural constraints.
+====
+
 === Frontend Development
 
 [source,bash]
