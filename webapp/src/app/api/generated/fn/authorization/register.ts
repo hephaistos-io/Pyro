@@ -10,7 +10,7 @@ import {RequestBuilder} from '../../request-builder';
 import {CustomerRegistrationRequest} from '../../models/customer-registration-request';
 
 export interface Register$Params {
-    body: CustomerRegistrationRequest
+  body: CustomerRegistrationRequest
 }
 
 export function register(http: HttpClient, rootUrl: string, params: Register$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
@@ -20,11 +20,11 @@ export function register(http: HttpClient, rootUrl: string, params: Register$Par
   }
 
   return http.request(
-      rb.build({responseType: 'text', accept: '*/*', context})
+    rb.build({responseType: 'text', accept: '*/*', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-        return (r as HttpResponse<any>).clone({body: undefined}) as StrictHttpResponse<void>;
+      return (r as HttpResponse<any>).clone({body: undefined}) as StrictHttpResponse<void>;
     })
   );
 }
