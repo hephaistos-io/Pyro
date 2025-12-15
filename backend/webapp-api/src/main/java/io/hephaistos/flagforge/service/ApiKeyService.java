@@ -2,15 +2,15 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.ApiKeyCreationResponse;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
+import io.hephaistos.flagforge.data.KeyType;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface ApiKeyService {
 
-    ApiKeyCreationResponse createApiKey(UUID applicationId, String name);
+    void createApiKey(UUID applicationId, UUID environmentId, KeyType keyType);
 
-    List<ApiKeyResponse> getApiKeysForApplication(UUID applicationId);
+    ApiKeyResponse getApiKeyByType(UUID applicationId, UUID environmentId, KeyType keyType);
 
-    void revokeApiKey(UUID applicationId, UUID apiKeyId);
+    ApiKeyCreationResponse regenerateKey(UUID applicationId, UUID apiKeyId);
 }

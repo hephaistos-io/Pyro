@@ -3,7 +3,7 @@
 
 CREATE TABLE environment
 (
-    id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id             UUID DEFAULT uuidv7() PRIMARY KEY,
     application_id UUID         NOT NULL,
     name           VARCHAR(255) NOT NULL,
     description    VARCHAR(255),

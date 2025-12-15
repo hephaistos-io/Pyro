@@ -3,7 +3,7 @@
 
 CREATE TABLE application
 (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID DEFAULT uuidv7() PRIMARY KEY,
     name       VARCHAR(255) NOT NULL,
     company_id UUID         NOT NULL,
     CONSTRAINT fk_application_company FOREIGN KEY (company_id)

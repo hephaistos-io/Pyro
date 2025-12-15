@@ -4,6 +4,7 @@ import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
 import io.hephaistos.flagforge.data.ApplicationEntity;
 import io.hephaistos.flagforge.data.EnvironmentEntity;
+import io.hephaistos.flagforge.data.KeyType;
 import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
@@ -25,11 +26,13 @@ public class DefaultEnvironmentService implements EnvironmentService {
 
     private final EnvironmentRepository environmentRepository;
     private final ApplicationRepository applicationRepository;
+    private final ApiKeyService apiKeyService;
 
     public DefaultEnvironmentService(EnvironmentRepository environmentRepository,
-            ApplicationRepository applicationRepository) {
+            ApplicationRepository applicationRepository, ApiKeyService apiKeyService) {
         this.environmentRepository = environmentRepository;
         this.applicationRepository = applicationRepository;
+        this.apiKeyService = apiKeyService;
     }
 
     @Override
@@ -50,6 +53,8 @@ public class DefaultEnvironmentService implements EnvironmentService {
 
         EnvironmentEntity saved = environmentRepository.save(environment);
 
+        createApiKeysForEnvironment(applicationId, saved.getId());
+
         return EnvironmentResponse.fromEntity(saved);
     }
 
@@ -64,6 +69,8 @@ public class DefaultEnvironmentService implements EnvironmentService {
         environment.setTier(PricingTier.FREE);
 
         EnvironmentEntity saved = environmentRepository.save(environment);
+
+        createApiKeysForEnvironment(applicationId, saved.getId());
 
         return EnvironmentResponse.fromEntity(saved);
     }
@@ -108,5 +115,10 @@ public class DefaultEnvironmentService implements EnvironmentService {
     private ApplicationEntity getApplicationOrThrow(UUID applicationId) {
         return applicationRepository.findByIdFiltered(applicationId)
                 .orElseThrow(() -> new NotFoundException("Application not found"));
+    }
+
+    private void createApiKeysForEnvironment(UUID applicationId, UUID environmentId) {
+        apiKeyService.createApiKey(applicationId, environmentId, KeyType.READ);
+        apiKeyService.createApiKey(applicationId, environmentId, KeyType.WRITE);
     }
 }
