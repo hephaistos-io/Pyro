@@ -45,11 +45,18 @@ subprojects {
             testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.2")
             testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
             testImplementation("org.springframework.security:spring-security-test:7.0.0")
+            testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
             testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.1")
         }
     }
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    tasks.named<Test>("test") {
+        useJUnitPlatform {
+            excludeTags("architecture")
+        }
     }
 }
