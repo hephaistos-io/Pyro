@@ -175,24 +175,41 @@ test.describe('API Key Management', () => {
         await expect(writeKeySection.getByRole('button', {name: 'Show key'})).toBeVisible();
     });
 
-    test('refresh button is disabled when key is hidden', async () => {
+    test('refresh button is always enabled for both keys', async () => {
         const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
-        const refreshButton = readKeySection.getByRole('button', {name: 'Refresh key'});
+        const writeKeySection = sharedPage.locator('.stat').filter({hasText: 'Write-Key'});
 
-        // Refresh button should be disabled when key is hidden
-        await expect(refreshButton).toBeDisabled();
+        // Both refresh buttons should be enabled (regardless of whether key is shown)
+        const readRefreshButton = readKeySection.getByRole('button', {name: 'Refresh key'});
+        const writeRefreshButton = writeKeySection.getByRole('button', {name: 'Refresh key'});
+
+        await expect(readRefreshButton).toBeEnabled();
+        await expect(writeRefreshButton).toBeEnabled();
     });
 
-    test('refresh button is enabled when key is shown', async () => {
+    test('clicking refresh button when key is hidden shows confirmation modal', async () => {
+        const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
+        const refreshButton = readKeySection.getByRole('button', {name: 'Refresh key'});
+
+        // Click refresh (key is hidden at this point)
+        await refreshButton.click();
+
+        // Confirmation modal should appear
+        await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
+        await expect(sharedPage.getByText('This action will immediately invalidate the current key')).toBeVisible();
+
+        // Cancel to close modal
+        await sharedPage.getByRole('button', {name: 'Cancel'}).click();
+        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible();
+    });
+
+    test('show Read-Key before regeneration tests', async () => {
         const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
 
-        // First show the key
+        // Show the key for the next tests
         await readKeySection.getByRole('button', {name: 'Show key'}).click();
         await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
-
-        // Now refresh button should be enabled
-        const refreshButton = readKeySection.getByRole('button', {name: 'Refresh key'});
-        await expect(refreshButton).toBeEnabled();
+        await expect(readKeySection.getByRole('button', {name: 'Hide key'})).toBeVisible();
     });
 
     test('clicking refresh button shows confirmation modal', async () => {
@@ -203,7 +220,7 @@ test.describe('API Key Management', () => {
         await refreshButton.click();
 
         // Confirmation modal should appear
-        await expect(sharedPage.getByRole('heading', {name: /Refresh Read-Key/})).toBeVisible();
+        await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
         await expect(sharedPage.getByText('This action will immediately invalidate the current key')).toBeVisible();
 
         // Cancel button should be visible
@@ -222,7 +239,7 @@ test.describe('API Key Management', () => {
         await sharedPage.getByRole('button', {name: 'Cancel'}).click();
 
         // Modal should close
-        await expect(sharedPage.getByRole('heading', {name: /Refresh Read-Key/})).not.toBeVisible();
+        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible();
 
         // Key should be unchanged
         const keyAfter = await readKeySection.locator('.stat__code--key').textContent();
@@ -232,18 +249,29 @@ test.describe('API Key Management', () => {
     test('confirming refresh regenerates the key', async () => {
         const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
 
+        // First ensure the key is shown (makes test self-contained)
+        const showButton = readKeySection.getByRole('button', {name: 'Show key'});
+        if (await showButton.isVisible()) {
+            await showButton.click();
+        }
+        // Wait for loading to complete
+        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        // Wait for key to appear (matches 64 hex chars)
+        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i, {timeout: 10000});
+
         // Get the current key value
         const keyBefore = await readKeySection.locator('.stat__code--key').textContent();
+        expect(keyBefore?.trim()).toMatch(/^[a-f0-9]{64}$/i); // Ensure key is actually shown
 
         // Open refresh modal
         await readKeySection.getByRole('button', {name: 'Refresh key'}).click();
-        await expect(sharedPage.getByRole('heading', {name: /Refresh Read-Key/})).toBeVisible();
+        await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
 
         // Confirm refresh
         await sharedPage.getByRole('button', {name: 'I understand'}).click();
 
         // Wait for modal to close and key to be updated
-        await expect(sharedPage.getByRole('heading', {name: /Refresh Read-Key/})).not.toBeVisible({timeout: 10000});
+        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible({timeout: 10000});
 
         // Key should be different
         const keyAfter = await readKeySection.locator('.stat__code--key').textContent();
@@ -267,6 +295,75 @@ test.describe('API Key Management', () => {
 
         // Keys should be different
         expect(readKey?.trim()).not.toBe(writeKey?.trim());
+    });
+
+    test('clicking refresh on Write-Key shows correct modal', async () => {
+        const writeKeySection = sharedPage.locator('.stat').filter({hasText: 'Write-Key'});
+        const refreshButton = writeKeySection.getByRole('button', {name: 'Refresh key'});
+
+        // Click refresh
+        await refreshButton.click();
+
+        // Confirmation modal should show "Write-Key" in the title
+        await expect(sharedPage.getByText('Refresh Write')).toBeVisible();
+
+        // Cancel to close modal
+        await sharedPage.getByRole('button', {name: 'Cancel'}).click();
+        await expect(sharedPage.getByText('Refresh Write')).not.toBeVisible();
+    });
+
+    test('confirming refresh on Write-Key regenerates the key', async () => {
+        const writeKeySection = sharedPage.locator('.stat').filter({hasText: 'Write-Key'});
+
+        // First ensure the key is shown (makes test self-contained)
+        const showButton = writeKeySection.getByRole('button', {name: 'Show key'});
+        if (await showButton.isVisible()) {
+            await showButton.click();
+        }
+        // Wait for loading to complete
+        await expect(writeKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        // Wait for key to appear (matches 64 hex chars)
+        await expect(writeKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i, {timeout: 10000});
+
+        // Get the current key value
+        const keyBefore = await writeKeySection.locator('.stat__code--key').textContent();
+        expect(keyBefore?.trim()).toMatch(/^[a-f0-9]{64}$/i); // Ensure key is actually shown
+
+        // Open refresh modal
+        await writeKeySection.getByRole('button', {name: 'Refresh key'}).click();
+        await expect(sharedPage.getByText('Refresh Write')).toBeVisible();
+
+        // Confirm refresh
+        await sharedPage.getByRole('button', {name: 'I understand'}).click();
+
+        // Wait for modal to close and key to be updated
+        await expect(sharedPage.getByText('Refresh Write')).not.toBeVisible({timeout: 10000});
+
+        // Key should be different
+        const keyAfter = await writeKeySection.locator('.stat__code--key').textContent();
+        expect(keyAfter?.trim()).toMatch(/^[a-f0-9]{64}$/i);
+        expect(keyAfter).not.toBe(keyBefore);
+    });
+
+    test('regenerated key persists after page refresh', async () => {
+        const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
+
+        // Get current key value
+        const keyBeforeRefresh = await readKeySection.locator('.stat__code--key').textContent();
+
+        // Reload the page
+        await sharedPage.reload();
+
+        // Wait for page to load
+        await expect(sharedPage.getByRole('heading', {name: sharedAppName})).toBeVisible({timeout: 10000});
+
+        // Show the Read-Key again
+        await readKeySection.getByRole('button', {name: 'Show key'}).click();
+        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+
+        // Key should be the same as before page refresh
+        const keyAfterRefresh = await readKeySection.locator('.stat__code--key').textContent();
+        expect(keyAfterRefresh?.trim()).toBe(keyBeforeRefresh?.trim());
     });
 });
 

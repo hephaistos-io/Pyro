@@ -252,13 +252,13 @@
         }
       }
     },
-    "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{apiKeyId}/regenerate": {
+    "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}/regenerate": {
       "post": {
         "tags": [
           "api-keys",
           "v1"
         ],
-        "summary": "Regenerate an API key and return the new key",
+        "summary": "Regenerate an API key by type and return the new key",
         "operationId": "regenerateApiKey",
         "parameters": [
           {
@@ -280,12 +280,15 @@
             }
           },
           {
-            "name": "apiKeyId",
+            "name": "keyType",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid"
+              "enum": [
+                "READ",
+                "WRITE"
+              ]
             }
           }
         ],
@@ -295,7 +298,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiKeyCreationResponse"
+                  "$ref": "#/components/schemas/ApiKeyResponse"
                 }
               }
             }
@@ -645,15 +648,27 @@
           }
         }
       },
-      "ApiKeyCreationResponse": {
+      "ApiKeyResponse": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "name": {
-            "type": "string"
+          "environmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rateLimitRequestsPerMinute": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "keyType": {
+            "type": "string",
+            "enum": [
+              "READ",
+              "WRITE"
+            ]
           },
           "secretKey": {
             "type": "string"
@@ -683,33 +698,6 @@
               "DEV",
               "ADMIN"
             ]
-          }
-        }
-      },
-      "ApiKeyResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "environmentId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rateLimitRequestsPerMinute": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "keyType": {
-            "type": "string",
-            "enum": [
-              "READ",
-              "WRITE"
-            ]
-          },
-          "secretKey": {
-            "type": "string"
           }
         }
       }

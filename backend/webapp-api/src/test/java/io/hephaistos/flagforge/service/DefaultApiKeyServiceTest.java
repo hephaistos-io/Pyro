@@ -215,11 +215,13 @@ class DefaultApiKeyServiceTest {
         var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.READ);
         apiKeyEntity.setKey(originalKey);
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.of(apiKeyEntity));
+        when(applicationRepository.existsById(applicationId)).thenReturn(true);
+        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                environmentId, KeyType.READ)).thenReturn(Optional.of(apiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
-        var result = apiKeyService.regenerateKey(applicationId, keyId);
+        var result = apiKeyService.regenerateKey(applicationId, environmentId, KeyType.READ);
 
         assertThat(result.id()).isEqualTo(keyId);
         assertThat(result.secretKey()).isNotNull();
@@ -237,11 +239,13 @@ class DefaultApiKeyServiceTest {
         var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.WRITE);
         apiKeyEntity.setKey(originalKey);
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.of(apiKeyEntity));
+        when(applicationRepository.existsById(applicationId)).thenReturn(true);
+        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                environmentId, KeyType.WRITE)).thenReturn(Optional.of(apiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
-        apiKeyService.regenerateKey(applicationId, keyId);
+        apiKeyService.regenerateKey(applicationId, environmentId, KeyType.WRITE);
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository).save(captor.capture());
@@ -249,33 +253,32 @@ class DefaultApiKeyServiceTest {
     }
 
     @Test
-    void regenerateKeyThrowsNotFoundExceptionWhenKeyNotFound() {
+    void regenerateKeyThrowsNotFoundExceptionWhenApplicationNotFound() {
         UUID applicationId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
+        UUID environmentId = UUID.randomUUID();
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.empty());
+        when(applicationRepository.existsById(applicationId)).thenReturn(false);
 
-        assertThatThrownBy(() -> apiKeyService.regenerateKey(applicationId, keyId)).isInstanceOf(
-                NotFoundException.class).hasMessageContaining("API key not found");
+        assertThatThrownBy(() -> apiKeyService.regenerateKey(applicationId, environmentId,
+                KeyType.READ)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Application not found");
+
+        verify(apiKeyRepository, never()).findByApplicationIdAndEnvironmentIdAndKeyType(any(),
+                any(), any());
     }
 
     @Test
-    void regenerateKeyThrowsNotFoundExceptionWhenKeyBelongsToDifferentApplication() {
+    void regenerateKeyThrowsNotFoundExceptionWhenKeyNotFound() {
         UUID applicationId = UUID.randomUUID();
-        UUID differentApplicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
 
-        var apiKeyEntity =
-                createApiKeyEntity(keyId, differentApplicationId, environmentId, KeyType.READ);
+        when(applicationRepository.existsById(applicationId)).thenReturn(true);
+        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                environmentId, KeyType.READ)).thenReturn(Optional.empty());
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.of(apiKeyEntity));
-
-        assertThatThrownBy(() -> apiKeyService.regenerateKey(applicationId, keyId)).isInstanceOf(
-                        NotFoundException.class)
-                .hasMessageContaining("API key not found for this application");
-
-        verify(apiKeyRepository, never()).save(any());
+        assertThatThrownBy(() -> apiKeyService.regenerateKey(applicationId, environmentId,
+                KeyType.READ)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("API key not found for type READ");
     }
 
     @Test
@@ -286,11 +289,13 @@ class DefaultApiKeyServiceTest {
 
         var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.WRITE);
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.of(apiKeyEntity));
+        when(applicationRepository.existsById(applicationId)).thenReturn(true);
+        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                environmentId, KeyType.WRITE)).thenReturn(Optional.of(apiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
-        apiKeyService.regenerateKey(applicationId, keyId);
+        apiKeyService.regenerateKey(applicationId, environmentId, KeyType.WRITE);
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository).save(captor.capture());
@@ -305,11 +310,13 @@ class DefaultApiKeyServiceTest {
 
         var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.READ);
 
-        when(apiKeyRepository.findById(keyId)).thenReturn(Optional.of(apiKeyEntity));
+        when(applicationRepository.existsById(applicationId)).thenReturn(true);
+        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                environmentId, KeyType.READ)).thenReturn(Optional.of(apiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
-        apiKeyService.regenerateKey(applicationId, keyId);
+        apiKeyService.regenerateKey(applicationId, environmentId, KeyType.READ);
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository).save(captor.capture());

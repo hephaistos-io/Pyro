@@ -358,19 +358,11 @@ export class ApplicationOverview implements OnInit {
   }
 
   async confirmKeyRefresh(): Promise<void> {
-        const keyType = this.keyToRefresh();
+    const keyType = this.keyToRefresh();
     const app = this.application();
     const env = this.selectedEnvironment();
 
     if (!keyType || !app?.id || !env?.id) {
-      this.showKeyRefreshConfirmation.set(false);
-      this.keyToRefresh.set(null);
-      return;
-    }
-
-    const keyData = keyType === 'read' ? this.readKeyData() : this.writeKeyData();
-    if (!keyData?.id) {
-      console.error('No key ID available for regeneration');
       this.showKeyRefreshConfirmation.set(false);
       this.keyToRefresh.set(null);
       return;
@@ -381,14 +373,16 @@ export class ApplicationOverview implements OnInit {
       const response = await this.api.invoke(regenerateApiKey, {
         applicationId: app.id,
         environmentId: env.id,
-        apiKeyId: keyData.id
+        keyType: keyType === 'read' ? 'READ' : 'WRITE'
       });
 
-      // Update the key with the new secret
+      // Update the key and key data with the new secret
       if (keyType === 'read') {
         this.readKey.set(response.secretKey ?? null);
+        this.readKeyData.set(response);
       } else {
         this.writeKey.set(response.secretKey ?? null);
+        this.writeKeyData.set(response);
       }
     } catch (error) {
       console.error('Failed to regenerate key:', error);
@@ -397,7 +391,7 @@ export class ApplicationOverview implements OnInit {
       this.showKeyRefreshConfirmation.set(false);
       this.keyToRefresh.set(null);
     }
-    }
+  }
 
   getKeyPlaceholder(): string {
     return '••••••••••••••••••••••••';
