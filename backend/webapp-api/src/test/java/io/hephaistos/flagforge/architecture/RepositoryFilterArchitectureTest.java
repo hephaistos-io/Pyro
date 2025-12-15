@@ -4,7 +4,9 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
+import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import org.hibernate.annotations.Filter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
@@ -56,6 +59,19 @@ class RepositoryFilterArchitectureTest {
                 .callMethod(ApplicationRepository.class, "existsById", UUID.class)
                 .because(
                         "existsById() bypasses Hibernate filters. Use existsByIdFiltered() instead " + "to ensure proper company/application filtering for multi-tenancy isolation.");
+
+        rule.check(importedClasses);
+    }
+
+    @Test
+    @DisplayName("CustomerEntity should have @Filter annotation for multi-tenancy")
+    void customerEntityShouldHaveFilterAnnotation() {
+        ArchRule rule = classes().that()
+                .areAssignableTo(CustomerEntity.class)
+                .should()
+                .beAnnotatedWith(Filter.class)
+                .because(
+                        "CustomerEntity must have @Filter annotation to ensure proper company " + "filtering for multi-tenancy isolation when querying customers.");
 
         rule.check(importedClasses);
     }
