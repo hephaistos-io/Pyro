@@ -17,7 +17,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 public class PostgresTestContainerConfiguration {
 
     private static final PostgreSQLContainer POSTGRES =
-            new PostgreSQLContainer("postgres:16-alpine").withDatabaseName("flagforge")
+            new PostgreSQLContainer("postgres:18.1-alpine").withDatabaseName("flagforge")
                     .withUsername("flagforge")
                     .withPassword("flagforge")
                     .withExposedPorts(5432)

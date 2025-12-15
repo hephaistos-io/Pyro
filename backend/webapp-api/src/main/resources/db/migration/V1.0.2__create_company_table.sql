@@ -3,7 +3,7 @@
 
 CREATE TABLE company
 (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID DEFAULT uuidv7() PRIMARY KEY,
     name VARCHAR(255) NOT NULL
 );
 

@@ -4,10 +4,9 @@
 
 CREATE TABLE customer_application_access
 (
-    id             UUID                              DEFAULT gen_random_uuid() PRIMARY KEY,
+    id UUID DEFAULT uuidv7() PRIMARY KEY,
     customer_id    UUID                     NOT NULL,
     application_id UUID                     NOT NULL,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES customer (id) ON DELETE CASCADE,
     CONSTRAINT fk_application FOREIGN KEY (application_id) REFERENCES application (id) ON DELETE CASCADE,
     CONSTRAINT uq_customer_application UNIQUE (customer_id, application_id)
