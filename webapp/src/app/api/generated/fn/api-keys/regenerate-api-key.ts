@@ -7,23 +7,24 @@ import {filter, map} from 'rxjs/operators';
 import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
-import {ApiKeyCreationRequest} from '../../models/api-key-creation-request';
 import {ApiKeyCreationResponse} from '../../models/api-key-creation-response';
 
-export interface CreateApiKey$Params {
+export interface RegenerateApiKey$Params {
   applicationId: string;
-    body: ApiKeyCreationRequest
+  environmentId: string;
+  apiKeyId: string;
 }
 
-export function createApiKey(http: HttpClient, rootUrl: string, params: CreateApiKey$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyCreationResponse>> {
-  const rb = new RequestBuilder(rootUrl, createApiKey.PATH, 'post');
+export function regenerateApiKey(http: HttpClient, rootUrl: string, params: RegenerateApiKey$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyCreationResponse>> {
+  const rb = new RequestBuilder(rootUrl, regenerateApiKey.PATH, 'post');
   if (params) {
     rb.path('applicationId', params.applicationId, {});
-    rb.body(params.body, 'application/json');
+    rb.path('environmentId', params.environmentId, {});
+    rb.path('apiKeyId', params.apiKeyId, {});
   }
 
   return http.request(
-      rb.build({responseType: 'json', accept: 'application/json', context})
+    rb.build({responseType: 'json', accept: 'application/json', context})
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
@@ -32,4 +33,4 @@ export function createApiKey(http: HttpClient, rootUrl: string, params: CreateAp
   );
 }
 
-createApiKey.PATH = '/v1/applications/{applicationId}/api-keys';
+regenerateApiKey.PATH = '/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{apiKeyId}/regenerate';

@@ -1,8 +1,8 @@
 import {Component, computed, effect, inject, OnInit, signal} from '@angular/core';
 import {Router} from '@angular/router';
-import {ApplicationResponse, EnvironmentResponse} from '../../api/generated/models';
+import {ApiKeyResponse, ApplicationResponse, EnvironmentResponse} from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
-import {createEnvironment, deleteEnvironment} from '../../api/generated/functions';
+import {createEnvironment, deleteEnvironment, getApiKeyByType, regenerateApiKey} from '../../api/generated/functions';
 
 interface RequestTier {
     id: string;
@@ -49,17 +49,20 @@ export class ApplicationOverview implements OnInit {
     showEnvironmentDropdown = signal(false);
     environmentSearchQuery = signal('');
 
-    // API key visibility
+  // API key visibility and state
     showReadKey = signal(false);
     showWriteKey = signal(false);
-
-    // Mock API keys - Replace with: this.api.invoke(getApiKeys, {envId})
-    readKey = signal('rk_live_a1b2c3d4e5f6g7h8i9j0');
-    writeKey = signal('wk_live_x9y8z7w6v5u4t3s2r1q0');
+  readKey = signal<string | null>(null);
+  writeKey = signal<string | null>(null);
+  readKeyData = signal<ApiKeyResponse | null>(null);
+  writeKeyData = signal<ApiKeyResponse | null>(null);
+  isLoadingReadKey = signal(false);
+  isLoadingWriteKey = signal(false);
 
     // Key refresh confirmation
     showKeyRefreshConfirmation = signal(false);
     keyToRefresh = signal<'read' | 'write' | null>(null);
+  isRefreshingKey = signal(false);
 
     // Environment deletion confirmation
     showEnvironmentDeletion = signal(false);
@@ -224,6 +227,19 @@ export class ApplicationOverview implements OnInit {
                 this.selectedEnvironment.set(envs[0]);
             }
         });
+
+      // Clear API key state when environment changes
+      effect(() => {
+        // Just reading selectedEnvironment triggers the effect when it changes
+        this.selectedEnvironment();
+        // Clear all key state
+        this.showReadKey.set(false);
+        this.showWriteKey.set(false);
+        this.readKey.set(null);
+        this.writeKey.set(null);
+        this.readKeyData.set(null);
+        this.writeKeyData.set(null);
+      }, {allowSignalWrites: true});
     }
 
     // Format number with commas
@@ -317,12 +333,74 @@ export class ApplicationOverview implements OnInit {
     }
 
     // API Key methods
-    toggleReadKeyVisibility(): void {
-        this.showReadKey.update(show => !show);
+  async toggleReadKeyVisibility(): Promise<void> {
+    if (this.showReadKey()) {
+      // Hide the key - clear the state
+      this.showReadKey.set(false);
+      this.readKey.set(null);
+    } else {
+      // Show the key - fetch from backend
+      await this.fetchReadKey();
+      this.showReadKey.set(true);
+    }
+  }
+
+  async toggleWriteKeyVisibility(): Promise<void> {
+    if (this.showWriteKey()) {
+      // Hide the key - clear the state
+      this.showWriteKey.set(false);
+      this.writeKey.set(null);
+    } else {
+      // Show the key - fetch from backend
+      await this.fetchWriteKey();
+      this.showWriteKey.set(true);
+    }
+  }
+
+  async confirmKeyRefresh(): Promise<void> {
+        const keyType = this.keyToRefresh();
+    const app = this.application();
+    const env = this.selectedEnvironment();
+
+    if (!keyType || !app?.id || !env?.id) {
+      this.showKeyRefreshConfirmation.set(false);
+      this.keyToRefresh.set(null);
+      return;
     }
 
-    toggleWriteKeyVisibility(): void {
-        this.showWriteKey.update(show => !show);
+    const keyData = keyType === 'read' ? this.readKeyData() : this.writeKeyData();
+    if (!keyData?.id) {
+      console.error('No key ID available for regeneration');
+      this.showKeyRefreshConfirmation.set(false);
+      this.keyToRefresh.set(null);
+      return;
+    }
+
+    this.isRefreshingKey.set(true);
+    try {
+      const response = await this.api.invoke(regenerateApiKey, {
+        applicationId: app.id,
+        environmentId: env.id,
+        apiKeyId: keyData.id
+      });
+
+      // Update the key with the new secret
+      if (keyType === 'read') {
+        this.readKey.set(response.secretKey ?? null);
+      } else {
+        this.writeKey.set(response.secretKey ?? null);
+      }
+    } catch (error) {
+      console.error('Failed to regenerate key:', error);
+    } finally {
+      this.isRefreshingKey.set(false);
+      this.showKeyRefreshConfirmation.set(false);
+      this.keyToRefresh.set(null);
+    }
+    }
+
+  getKeyPlaceholder(): string {
+    return '••••••••••••••••••••••••';
     }
 
     requestKeyRefresh(keyType: 'read' | 'write'): void {
@@ -335,21 +413,48 @@ export class ApplicationOverview implements OnInit {
         this.keyToRefresh.set(null);
     }
 
-    confirmKeyRefresh(): void {
-        const keyType = this.keyToRefresh();
-        if (keyType === 'read') {
-            // Mock new key generation
-            this.readKey.set('rk_live_' + Math.random().toString(36).substring(2, 22));
-        } else if (keyType === 'write') {
-            this.writeKey.set('wk_live_' + Math.random().toString(36).substring(2, 22));
-        }
-        this.showKeyRefreshConfirmation.set(false);
-        this.keyToRefresh.set(null);
+  private async fetchReadKey(): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
+
+    this.isLoadingReadKey.set(true);
+    try {
+      const response = await this.api.invoke(getApiKeyByType, {
+        applicationId: app.id,
+        environmentId: env.id,
+        keyType: 'READ'
+      });
+      this.readKeyData.set(response);
+      this.readKey.set(response.secretKey ?? null);
+    } catch (error) {
+      console.error('Failed to fetch read key:', error);
+      this.readKey.set(null);
+    } finally {
+      this.isLoadingReadKey.set(false);
+    }
     }
 
-    maskApiKey(key: string): string {
-        if (key.length <= 8) return '•'.repeat(key.length);
-        return key.substring(0, 8) + '•'.repeat(key.length - 8);
+  private async fetchWriteKey(): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
+
+    this.isLoadingWriteKey.set(true);
+    try {
+      const response = await this.api.invoke(getApiKeyByType, {
+        applicationId: app.id,
+        environmentId: env.id,
+        keyType: 'WRITE'
+      });
+      this.writeKeyData.set(response);
+      this.writeKey.set(response.secretKey ?? null);
+    } catch (error) {
+      console.error('Failed to fetch write key:', error);
+      this.writeKey.set(null);
+    } finally {
+      this.isLoadingWriteKey.set(false);
+    }
     }
 
     // Environment deletion methods

@@ -171,6 +171,7 @@ class DefaultApiKeyServiceTest {
         assertThat(result.id()).isEqualTo(keyId);
         assertThat(result.environmentId()).isEqualTo(environmentId);
         assertThat(result.keyType()).isEqualTo(KeyType.READ);
+        assertThat(result.secretKey()).isEqualTo(apiKeyEntity.getKey());
     }
 
     @Test

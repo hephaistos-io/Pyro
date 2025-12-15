@@ -88,3 +88,51 @@ tasks.register<Exec>("systemTests") {
     dependsOn("dockerUp")
     finalizedBy("dockerDown")
 }
+
+// Frontend tests (Vitest)
+tasks.register<Exec>("frontendTests") {
+    description = "Run frontend unit tests with Vitest"
+    group = "verification"
+    workingDir = file("webapp")
+    commandLine("sh", "-c", "npm test")
+}
+
+// Run all tests in order: architecture -> JUnit -> Vitest -> Playwright
+tasks.register("allTests") {
+    description = "Run all tests: architecture, backend (JUnit), frontend (Vitest), and system (Playwright)"
+    group = "verification"
+
+    // Depend on all test tasks
+    dependsOn(
+        ":backend:webapp-api:architectureTest",
+        ":backend:webapp-api:test",
+        ":backend:customer-api:test",
+        "frontendTests",
+        "systemTests"
+    )
+
+    doLast {
+        println("\n✓ All tests completed successfully!")
+    }
+}
+
+// Configure test execution order after all projects are evaluated
+gradle.projectsEvaluated {
+    val archTest = tasks.findByPath(":backend:webapp-api:architectureTest")
+    val webappApiTest = tasks.findByPath(":backend:webapp-api:test")
+    val customerApiTest = tasks.findByPath(":backend:customer-api:test")
+    val frontendTest = tasks.findByName("frontendTests")
+    val systemTest = tasks.findByName("systemTests")
+
+    // Enforce execution order: arch -> junit -> vitest -> playwright
+    if (archTest != null) {
+        webappApiTest?.mustRunAfter(archTest)
+        customerApiTest?.mustRunAfter(archTest)
+    }
+    if (webappApiTest != null && customerApiTest != null) {
+        frontendTest?.mustRunAfter(webappApiTest, customerApiTest)
+    }
+    if (frontendTest != null) {
+        systemTest?.mustRunAfter(frontendTest)
+    }
+}

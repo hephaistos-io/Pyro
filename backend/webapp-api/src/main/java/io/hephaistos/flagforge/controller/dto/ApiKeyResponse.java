@@ -6,11 +6,11 @@ import io.hephaistos.flagforge.data.KeyType;
 import java.util.UUID;
 
 public record ApiKeyResponse(UUID id, UUID environmentId, int rateLimitRequestsPerMinute,
-                             KeyType keyType) {
+                             KeyType keyType, String secretKey) {
     public static ApiKeyResponse fromEntity(ApiKeyEntity entity) {
         return new ApiKeyResponse(entity.getId(), entity.getEnvironmentId(),
                 entity.getRateLimitRequestsPerMinute() != null ?
-                        entity.getRateLimitRequestsPerMinute() :
-                        1000, entity.getKeyType());
+                        entity.getRateLimitRequestsPerMinute() : 1000, entity.getKeyType(),
+                entity.getKey());
     }
 }

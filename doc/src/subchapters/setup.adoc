@@ -308,11 +308,162 @@ Generated code location: `webapp/src/app/api/generated/`
 Always regenerate the TypeScript client after making changes to the backend API.
 ====
 
-== System Tests (E2E)
+== Testing
+
+FlagForge has a comprehensive test suite covering unit tests, integration tests, architecture tests, and end-to-end system tests.
+
+=== Test Overview
+
+[cols="1,2,2,2"]
+|===
+| Type | Framework | Location | Command
+
+| Backend Unit Tests
+| JUnit 5, Mockito
+| `backend/webapp-api/src/test/java/.../service/`
+| `./gradlew backend:webapp-api:test`
+
+| Backend Integration Tests
+| JUnit 5, Testcontainers
+| `backend/webapp-api/src/test/java/.../controller/`
+| `./gradlew backend:webapp-api:test`
+
+| Architecture Tests
+| ArchUnit
+| `backend/webapp-api/src/test/java/.../architecture/`
+| `./gradlew backend:webapp-api:architectureTest`
+
+| Frontend Unit Tests
+| Vitest
+| `webapp/src/**/*.spec.ts`
+| `./gradlew frontendTests`
+
+| System Tests (E2E)
+| Playwright
+| `system-tests/tests/`
+| `./gradlew systemTests`
+
+| *All Tests*
+| *All frameworks*
+| *All locations*
+| `./gradlew allTests`
+|===
+
+=== Backend Tests
+
+==== Unit Tests
+
+Unit tests mock dependencies and test business logic in isolation.
+
+Location: `backend/webapp-api/src/test/java/io/hephaistos/flagforge/service/`
+
+[source]
+----
+service/
+├── DefaultApiKeyServiceTest.java
+├── DefaultApplicationServiceTest.java
+├── DefaultEnvironmentServiceTest.java
+├── DefaultJwtServiceTest.java
+└── CustomerServiceTest.java
+----
+
+[source,bash]
+----
+# Run all backend tests (unit + integration)
+./gradlew backend:webapp-api:test
+
+# Run only unit tests
+./gradlew backend:webapp-api:test --tests "*Test" -x architectureTest
+----
+
+==== Integration Tests
+
+Integration tests use Testcontainers to spin up a real PostgreSQL database and test the full request/response cycle.
+
+Location: `backend/webapp-api/src/test/java/io/hephaistos/flagforge/controller/`
+
+[source]
+----
+controller/
+├── ApiKeyControllerIntegrationTest.java
+├── ApplicationControllerIntegrationTest.java
+├── AuthorizationControllerIntegrationTest.java
+├── CustomerControllerIntegrationTest.java
+└── EnvironmentControllerIntegrationTest.java
+----
+
+[source,bash]
+----
+# Run integration tests (requires Docker for Testcontainers)
+./gradlew backend:webapp-api:test --tests "*IntegrationTest"
+----
+
+==== Architecture Tests
+
+Architecture tests use ArchUnit to enforce coding standards and multi-tenancy security rules.
+
+Location: `backend/webapp-api/src/test/java/io/hephaistos/flagforge/architecture/`
+
+[source,bash]
+----
+# Run architecture tests only
+./gradlew backend:webapp-api:architectureTest
+----
+
+Current rules enforce:
+
+* Services must use `findByIdFiltered()` instead of `findById()` on filtered repositories
+* Ensures Hibernate `@Filter` annotations are applied for multi-tenancy isolation
+
+=== Frontend Tests
+
+Frontend unit tests use Vitest with jsdom for DOM simulation.
+
+Location: `webapp/src/**/*.spec.ts`
+
+[source,bash]
+----
+cd webapp
+npm test              # Run tests once
+npm test -- --watch   # Watch mode
+----
+
+=== System Tests (E2E)
 
 End-to-end tests use Playwright and run against the full Docker environment.
 
-=== Setup
+==== Test Location
+
+Location: `system-tests/tests/`
+
+[source]
+----
+system-tests/tests/
+├── auth/
+│   ├── login.spec.ts          # Login flow tests
+│   └── register.spec.ts       # Registration flow tests
+└── application/
+    └── api-keys.spec.ts       # API key show/hide/regenerate tests
+----
+
+==== Test Coverage
+
+*Auth Tests:*
+
+* Login form validation
+* Registration form validation
+* Password strength validation
+* Successful login/registration flows
+
+*API Key Tests:*
+
+* Keys hidden by default (placeholder dots)
+* Show key fetches from backend
+* Hide key clears state
+* Key regeneration with confirmation modal
+* State cleared on environment change
+
+==== Setup
 
 [source,bash]
 ----
@@ -320,25 +471,29 @@ cd system-tests
 npm install
 ----
 
-=== Running Tests
+==== Running Tests
 
 [source,bash]
 ----
 # Via Gradle (starts Docker, runs tests, stops Docker)
 ./gradlew systemTests
 
-# Or manually
+# Or manually (requires Docker environment running)
+./gradlew dockerUp    # Start environment first
+
 cd system-tests
 npm test                   # Run all tests
 npm run test:ui            # Run with UI mode
 npm run test:headed        # Run in headed mode
 npm run test:chromium      # Run specific browser
+npm run test:firefox       # Run Firefox only
+npm run test:webkit        # Run Safari only
 npm run test:debug         # Debug mode
 npm run codegen            # Record new tests
 npm run report             # Show HTML report
 ----
 
-=== Configuration
+==== Configuration
 
 Tests are configured in `system-tests/playwright.config.ts`:
 
@@ -346,6 +501,50 @@ Tests are configured in `system-tests/playwright.config.ts`:
 * Browsers: Chromium, Firefox, WebKit
 * Parallel execution enabled
 * Retries: 2 on CI, 0 locally
+* Screenshots: On failure
+* Video: On first retry
+
+=== Running All Tests
+
+==== Single Command (Recommended)
+
+Run all tests in the correct order with a single Gradle command:
+
+[source,bash]
+----
+./gradlew allTests
+----
+
+This runs tests in the following order:
+
+1. *Architecture tests* - Fast structural checks (no containers)
+2. *Backend JUnit tests* - Unit and integration tests (uses Testcontainers)
+3. *Frontend Vitest tests* - Angular component and service tests
+4. *System tests* - E2E Playwright tests (starts Docker automatically)
+
+[NOTE]
+====
+The `allTests` task automatically manages Docker for system tests - it starts the environment before E2E tests and stops it after completion.
+====
+
+==== Running Tests Individually
+
+[source,bash]
+----
+# Architecture tests only (fastest)
+./gradlew backend:webapp-api:architectureTest
+
+# Backend tests (unit + integration)
+./gradlew backend:webapp-api:test
+./gradlew backend:customer-api:test
+
+# Frontend tests only
+./gradlew frontendTests
+# Or: cd webapp && npm test
+
+# System tests only (manages Docker automatically)
+./gradlew systemTests
+----
 
 == IDE Setup
 
@@ -397,27 +596,6 @@ cd webapp && npm start                 # Frontend (terminal 2)
 ./gradlew test                           # Run all backend tests
 ./gradlew build                          # Build all backend services
 ----
-
-=== Architecture Tests
-
-Architecture tests use https://www.archunit.org/[ArchUnit] to enforce coding standards and prevent common mistakes.
-These tests are fast (no containers needed) and run separately from the main test suite.
-
-[source,bash]
-----
-./gradlew backend:webapp-api:architectureTest   # Run architecture tests only
-----
-
-Current architecture rules enforce:
-
-* *Repository filter usage* - Services must use `findByIdFiltered()` and `existsByIdFiltered()` instead of the standard `findById()` and `existsById()` methods on filtered repositories.
-This ensures Hibernate `@Filter` annotations are applied for proper multi-tenancy isolation.
-
-[NOTE]
-====
-Architecture tests are excluded from the default `test` task to keep the feedback loop fast during development.
-Run them explicitly or as part of CI to verify architectural constraints.
-====
 
 === Frontend Development
 

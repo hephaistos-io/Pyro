@@ -252,9 +252,18 @@
                         <div class="stat">
                             <span class="stat__label">Read-Key</span>
                             <div class="stat__key-row">
-                                <code class="stat__code stat__code--key">{{ showReadKey() ? readKey() : maskApiKey(readKey()) }}</code>
+                              <code class="stat__code stat__code--key">
+                                @if (isLoadingReadKey()) {
+                                  Loading...
+                                } @else if (showReadKey() && readKey()) {
+                                  {{ readKey() }}
+                                } @else {
+                                  {{ getKeyPlaceholder() }}
+                                }
+                              </code>
                                 <div class="stat__key-actions">
                                     <button class="stat__key-btn" (click)="toggleReadKeyVisibility()"
+                                            [disabled]="isLoadingReadKey()"
                                             [attr.aria-label]="showReadKey() ? 'Hide key' : 'Show key'">
                                         @if (showReadKey()) {
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -277,7 +286,9 @@
                                         }
                                     </button>
                                     <button class="stat__key-btn stat__key-btn--refresh"
-                                            (click)="requestKeyRefresh('read')" aria-label="Refresh key">
+                                            (click)="requestKeyRefresh('read')"
+                                            [disabled]="!showReadKey() || !readKeyData()"
+                                            aria-label="Refresh key">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                                              xmlns="http://www.w3.org/2000/svg">
                                             <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2"
@@ -293,9 +304,18 @@
                         <div class="stat">
                             <span class="stat__label">Write-Key</span>
                             <div class="stat__key-row">
-                                <code class="stat__code stat__code--key">{{ showWriteKey() ? writeKey() : maskApiKey(writeKey()) }}</code>
+                              <code class="stat__code stat__code--key">
+                                @if (isLoadingWriteKey()) {
+                                  Loading...
+                                } @else if (showWriteKey() && writeKey()) {
+                                  {{ writeKey() }}
+                                } @else {
+                                  {{ getKeyPlaceholder() }}
+                                }
+                              </code>
                                 <div class="stat__key-actions">
                                     <button class="stat__key-btn" (click)="toggleWriteKeyVisibility()"
+                                            [disabled]="isLoadingWriteKey()"
                                             [attr.aria-label]="showWriteKey() ? 'Hide key' : 'Show key'">
                                         @if (showWriteKey()) {
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -318,7 +338,9 @@
                                         }
                                     </button>
                                     <button class="stat__key-btn stat__key-btn--refresh"
-                                            (click)="requestKeyRefresh('write')" aria-label="Refresh key">
+                                            (click)="requestKeyRefresh('write')"
+                                            [disabled]="!showWriteKey() || !writeKeyData()"
+                                            aria-label="Refresh key">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                                              xmlns="http://www.w3.org/2000/svg">
                                             <path d="M23 4v6h-6M1 20v-6h6" stroke="currentColor" stroke-width="2"
@@ -602,9 +624,9 @@
 
 <!-- Key Refresh Confirmation Modal -->
 @if (showKeyRefreshConfirmation()) {
-    <div class="modal-overlay" (click)="cancelKeyRefresh()">
+  <div class="modal-overlay" (click)="isRefreshingKey() ? null : cancelKeyRefresh()">
         <div class="modal-content modal-content--warning" (click)="$event.stopPropagation()">
-            <button class="modal-close" (click)="cancelKeyRefresh()">
+          <button class="modal-close" (click)="cancelKeyRefresh()" [disabled]="isRefreshingKey()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -622,8 +644,16 @@
             <p class="warning-text">This action will immediately invalidate the current key. Any applications or
                 services using this key will lose access.</p>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn--cancel" (click)="cancelKeyRefresh()">Cancel</button>
-                <button class="modal-btn modal-btn--danger" (click)="confirmKeyRefresh()">I understand</button>
+              <button class="modal-btn modal-btn--cancel" (click)="cancelKeyRefresh()" [disabled]="isRefreshingKey()">
+                Cancel
+              </button>
+              <button class="modal-btn modal-btn--danger" (click)="confirmKeyRefresh()" [disabled]="isRefreshingKey()">
+                @if (isRefreshingKey()) {
+                  Refreshing...
+                } @else {
+                  I understand
+                }
+              </button>
             </div>
         </div>
     </div>

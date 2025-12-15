@@ -252,17 +252,35 @@
         }
       }
     },
-    "/v1/applications/{applicationId}/api-keys": {
-      "get": {
+    "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{apiKeyId}/regenerate": {
+      "post": {
         "tags": [
           "api-keys",
           "v1"
         ],
-        "summary": "List all API keys for an application",
-        "operationId": "getApiKeys",
+        "summary": "Regenerate an API key and return the new key",
+        "operationId": "regenerateApiKey",
         "parameters": [
           {
             "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "apiKeyId",
             "in": "path",
             "required": true,
             "schema": {
@@ -274,50 +292,6 @@
         "responses": {
           "200": {
             "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ApiKeyResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "api-keys",
-          "v1"
-        ],
-        "summary": "Create a new API key for an application",
-        "operationId": "createApiKey",
-        "parameters": [
-          {
-            "name": "applicationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApiKeyCreationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
             "content": {
               "application/json": {
                 "schema": {
@@ -409,6 +383,60 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}": {
+      "get": {
+        "tags": [
+          "api-keys",
+          "v1"
+        ],
+        "summary": "Get an API key by type for an application and environment",
+        "operationId": "getApiKeyByType",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "keyType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "READ",
+                "WRITE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/environments/{environmentId}": {
       "delete": {
         "tags": [
@@ -429,41 +457,6 @@
           },
           {
             "name": "environmentId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/v1/applications/{applicationId}/api-keys/{apiKeyId}": {
-      "delete": {
-        "tags": [
-          "api-keys",
-          "v1"
-        ],
-        "summary": "Revoke an API key",
-        "operationId": "revokeApiKey",
-        "parameters": [
-          {
-            "name": "applicationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "apiKeyId",
             "in": "path",
             "required": true,
             "schema": {
@@ -652,19 +645,6 @@
           }
         }
       },
-      "ApiKeyCreationRequest": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "maxLength": 2147483647,
-            "minLength": 2,
-            "type": "string"
-          }
-        }
-      },
       "ApiKeyCreationResponse": {
         "type": "object",
         "properties": {
@@ -713,26 +693,23 @@
             "type": "string",
             "format": "uuid"
           },
-          "keyPrefix": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "createdAt": {
+          "environmentId": {
             "type": "string",
-            "format": "date-time"
-          },
-          "lastUsedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "isActive": {
-            "type": "boolean"
+            "format": "uuid"
           },
           "rateLimitRequestsPerMinute": {
             "type": "integer",
             "format": "int32"
+          },
+          "keyType": {
+            "type": "string",
+            "enum": [
+              "READ",
+              "WRITE"
+            ]
+          },
+          "secretKey": {
+            "type": "string"
           }
         }
       }

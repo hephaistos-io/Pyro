@@ -9,14 +9,18 @@ import {RequestBuilder} from '../../request-builder';
 
 import {ApiKeyResponse} from '../../models/api-key-response';
 
-export interface GetApiKeys$Params {
+export interface GetApiKeyByType$Params {
   applicationId: string;
+  environmentId: string;
+  keyType: 'READ' | 'WRITE';
 }
 
-export function getApiKeys(http: HttpClient, rootUrl: string, params: GetApiKeys$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ApiKeyResponse>>> {
-  const rb = new RequestBuilder(rootUrl, getApiKeys.PATH, 'get');
+export function getApiKeyByType(http: HttpClient, rootUrl: string, params: GetApiKeyByType$Params, context?: HttpContext): Observable<StrictHttpResponse<ApiKeyResponse>> {
+  const rb = new RequestBuilder(rootUrl, getApiKeyByType.PATH, 'get');
   if (params) {
     rb.path('applicationId', params.applicationId, {});
+    rb.path('environmentId', params.environmentId, {});
+    rb.path('keyType', params.keyType, {});
   }
 
   return http.request(
@@ -24,9 +28,9 @@ export function getApiKeys(http: HttpClient, rootUrl: string, params: GetApiKeys
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<ApiKeyResponse>>;
+      return r as StrictHttpResponse<ApiKeyResponse>;
     })
   );
 }
 
-getApiKeys.PATH = '/v1/applications/{applicationId}/api-keys';
+getApiKeyByType.PATH = '/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}';
