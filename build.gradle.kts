@@ -5,11 +5,19 @@
 // Note: Docker must be in the system PATH for these tasks to work
 // Uses shell wrapper to inherit PATH correctly at execution time
 
+tasks.register<Exec>("dockerBuildBackend") {
+    description = "Build backend Docker images (webapp-api, customer-api)"
+    group = "docker"
+    workingDir = projectDir
+    commandLine("sh", "-c", "docker compose build webapp-api customer-api")
+}
+
 tasks.register<Exec>("dockerUp") {
     description = "Start all containers with Docker Compose"
     group = "docker"
     workingDir = projectDir
     commandLine("sh", "-c", "docker compose up -d")
+    dependsOn("dockerBuildBackend")
 }
 
 tasks.register<Exec>("dockerDown") {
