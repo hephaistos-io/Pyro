@@ -24,7 +24,7 @@ public class ApiSecurityConfiguration {
 
     private static final String[] WHITELIST_POST_ENDPOINTS =
             {"/v1/auth/register", "/v1/auth/authenticate"};
-    private static final String[] WHITELIST_GET_ENDPOINTS = {"/v3/api-docs"};
+    private static final String[] WHITELIST_GET_ENDPOINTS = {"/v3/api-docs", "/v1/invite/**"};
 
     private final JwtOncePerRequestFilter jwtOncePerRequestFilter;
 

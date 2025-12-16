@@ -58,7 +58,7 @@ public class CustomerServiceTest extends MockPasswordCheck {
     }
 
     private CustomerRegistrationRequest newCustomerRegistrationRequest(String email) {
-        return new CustomerRegistrationRequest("FirstName", "LastName", email, "123456");
+        return CustomerRegistrationRequest.withEmail("FirstName", "LastName", email, "12345678");
     }
 
 }

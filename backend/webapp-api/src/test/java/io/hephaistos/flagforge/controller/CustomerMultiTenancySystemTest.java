@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
+import io.hephaistos.flagforge.controller.dto.TeamResponse;
 import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
@@ -79,52 +80,54 @@ class CustomerMultiTenancySystemTest extends IntegrationTestSupport {
         assertThat(responseNoCompany.getBody()).contains("MISSING_COMPANY_ASSIGNMENT");
 
         // Verify: User A sees only Company A customers (themselves + 2 extra)
-        var responseA = get("/v1/customer/all", tokenA, CustomerResponse[].class);
+        var responseA = get("/v1/customer/all", tokenA, TeamResponse.class);
         assertThat(responseA.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseA.getBody()).as("User A should see exactly 3 customers from Company A")
+        assertThat(responseA.getBody().members()).as(
+                        "User A should see exactly 3 customers from Company A")
                 .hasSize(3);
-        for (CustomerResponse customer : responseA.getBody()) {
+        for (CustomerResponse customer : responseA.getBody().members()) {
             assertThat(customer.companyId()).as(
                             "All customers visible to User A should belong to Company A")
                     .hasValue(companyA.id());
         }
         // Verify User A can see the specific emails
-        assertThat(responseA.getBody()).extracting(CustomerResponse::email)
+        assertThat(responseA.getBody().members()).extracting(CustomerResponse::email)
                 .containsExactlyInAnyOrder("usera@test.com", "extra1a@test.com",
                         "extra2a@test.com");
 
         // Verify: User B sees only Company B customers (themselves + 1 extra)
-        var responseB = get("/v1/customer/all", tokenB, CustomerResponse[].class);
+        var responseB = get("/v1/customer/all", tokenB, TeamResponse.class);
         assertThat(responseB.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseB.getBody()).as("User B should see exactly 2 customers from Company B")
+        assertThat(responseB.getBody().members()).as(
+                        "User B should see exactly 2 customers from Company B")
                 .hasSize(2);
-        for (CustomerResponse customer : responseB.getBody()) {
+        for (CustomerResponse customer : responseB.getBody().members()) {
             assertThat(customer.companyId()).as(
                             "All customers visible to User B should belong to Company B")
                     .hasValue(companyB.id());
         }
         // Verify User B can see the specific emails
-        assertThat(responseB.getBody()).extracting(CustomerResponse::email)
+        assertThat(responseB.getBody().members()).extracting(CustomerResponse::email)
                 .containsExactlyInAnyOrder("userb@test.com", "extra1b@test.com");
 
         // Cross-verification: User A should NOT see any Company B users
-        for (CustomerResponse customer : responseA.getBody()) {
+        for (CustomerResponse customer : responseA.getBody().members()) {
             assertThat(customer.email()).as("User A should not see Company B users")
                     .doesNotContain("userb", "extra1b");
         }
 
         // Cross-verification: User B should NOT see any Company A users
-        for (CustomerResponse customer : responseB.getBody()) {
+        for (CustomerResponse customer : responseB.getBody().members()) {
             assertThat(customer.email()).as("User B should not see Company A users")
                     .doesNotContain("usera", "extra1a", "extra2a");
         }
 
         // Cross-verification: Neither should see the unassigned user
-        for (CustomerResponse customer : responseA.getBody()) {
+        for (CustomerResponse customer : responseA.getBody().members()) {
             assertThat(customer.email()).as("User A should not see unassigned user")
                     .isNotEqualTo("nocompany@test.com");
         }
-        for (CustomerResponse customer : responseB.getBody()) {
+        for (CustomerResponse customer : responseB.getBody().members()) {
             assertThat(customer.email()).as("User B should not see unassigned user")
                     .isNotEqualTo("nocompany@test.com");
         }

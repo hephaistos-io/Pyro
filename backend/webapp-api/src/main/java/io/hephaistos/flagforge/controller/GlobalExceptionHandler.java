@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
+import io.hephaistos.flagforge.exception.InvalidInviteException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.exception.OperationNotAllowedException;
@@ -110,6 +111,13 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Operation not allowed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse("OPERATION_NOT_ALLOWED", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidInviteException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidInvite(InvalidInviteException ex) {
+        LOGGER.warn("Invalid invite: {} (reason: {})", ex.getMessage(), ex.getReason());
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("INVALID_INVITE", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

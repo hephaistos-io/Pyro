@@ -152,7 +152,18 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
      * Register a user with custom credentials.
      */
     protected void registerUser(String firstName, String lastName, String email, String password) {
-        var registration = new CustomerRegistrationRequest(firstName, lastName, email, password);
+        var registration =
+                CustomerRegistrationRequest.withEmail(firstName, lastName, email, password);
+        restTemplate.postForEntity(getBaseUrl() + "/v1/auth/register", registration, Void.class);
+    }
+
+    /**
+     * Register a user with an invite token.
+     */
+    protected void registerUserWithInvite(String firstName, String lastName, String password,
+            String inviteToken) {
+        var registration =
+                CustomerRegistrationRequest.withInvite(firstName, lastName, password, inviteToken);
         restTemplate.postForEntity(getBaseUrl() + "/v1/auth/register", registration, Void.class);
     }
 

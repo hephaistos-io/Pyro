@@ -63,6 +63,38 @@
         }
       }
     },
+    "/v1/company/invite": {
+      "post": {
+        "tags": [
+          "invite",
+          "v1"
+        ],
+        "summary": "Create an invite link for a new team member",
+        "operationId": "createInvite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteCreationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/register": {
       "post": {
         "tags": [
@@ -306,6 +338,38 @@
         }
       }
     },
+    "/v1/invite/{token}": {
+      "get": {
+        "tags": [
+          "invite",
+          "v1"
+        ],
+        "summary": "Validate an invite token (public endpoint)",
+        "operationId": "validateInvite",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteValidationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/customer/profile": {
       "get": {
         "tags": [
@@ -334,18 +398,15 @@
           "v1",
           "customer"
         ],
-        "summary": "Retrieve all customers for the assigned company",
-        "operationId": "getCustomers",
+        "summary": "Retrieve all team members and pending invites for the assigned company",
+        "operationId": "getTeam",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CustomerResponse"
-                  }
+                  "$ref": "#/components/schemas/TeamResponse"
                 }
               }
             }
@@ -502,9 +563,84 @@
           }
         }
       },
-      "CustomerRegistrationRequest": {
+      "InviteCreationRequest": {
         "required": [
           "email",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email",
+            "example": "newuser@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "READ_ONLY",
+              "DEV",
+              "ADMIN"
+            ]
+          },
+          "applicationIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "description": "Application IDs to grant access to",
+            "items": {
+              "type": "string",
+              "description": "Application IDs to grant access to",
+              "format": "uuid"
+            }
+          },
+          "expiresInDays": {
+            "type": "integer",
+            "description": "Days until invite expires (default: 7)",
+            "format": "int32"
+          }
+        }
+      },
+      "InviteCreationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "inviteUrl": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "READ_ONLY",
+              "DEV",
+              "ADMIN"
+            ]
+          },
+          "applicationIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CustomerRegistrationRequest": {
+        "required": [
           "firstName",
           "lastName",
           "password"
@@ -520,8 +656,8 @@
             "type": "string"
           },
           "email": {
-            "minLength": 1,
             "type": "string",
+            "description": "Required unless inviteToken is provided",
             "format": "email",
             "example": "your@email.com"
           },
@@ -529,6 +665,10 @@
             "maxLength": 2147483647,
             "minLength": 8,
             "type": "string"
+          },
+          "inviteToken": {
+            "type": "string",
+            "description": "Invite token for joining an existing company"
           }
         }
       },
@@ -675,6 +815,42 @@
           }
         }
       },
+      "InviteValidationResponse": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "companyName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "READ_ONLY",
+              "DEV",
+              "ADMIN"
+            ]
+          },
+          "applicationNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "NOT_FOUND",
+              "EXPIRED",
+              "ALREADY_USED"
+            ]
+          }
+        }
+      },
       "CustomerResponse": {
         "type": "object",
         "properties": {
@@ -698,6 +874,59 @@
               "DEV",
               "ADMIN"
             ]
+          }
+        }
+      },
+      "PendingInviteResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "READ_ONLY",
+              "DEV",
+              "ADMIN"
+            ]
+          },
+          "applicationIds": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TeamResponse": {
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerResponse"
+            }
+          },
+          "pendingInvites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingInviteResponse"
+            }
           }
         }
       }
