@@ -7,6 +7,10 @@ export type {CreateCompanyForCurrentCustomer$Params} from './fn/company/create-c
 export {createCompanyForCurrentCustomer} from './fn/company/create-company-for-current-customer';
 export type {GetCompanyById$Params} from './fn/company/get-company-by-id';
 export {getCompanyById} from './fn/company/get-company-by-id';
+export type {CreateInvite$Params} from './fn/invite/create-invite';
+export {createInvite} from './fn/invite/create-invite';
+export type {RegenerateInvite$Params} from './fn/invite/regenerate-invite';
+export {regenerateInvite} from './fn/invite/regenerate-invite';
 export type {Register$Params} from './fn/authorization/register';
 export {register} from './fn/authorization/register';
 export type {Authenticate$Params} from './fn/authorization/authenticate';
@@ -21,11 +25,15 @@ export type {CreateEnvironment$Params} from './fn/environments/create-environmen
 export {createEnvironment} from './fn/environments/create-environment';
 export type {RegenerateApiKey$Params} from './fn/api-keys/regenerate-api-key';
 export {regenerateApiKey} from './fn/api-keys/regenerate-api-key';
+export type {ValidateInvite$Params} from './fn/invite/validate-invite';
+export {validateInvite} from './fn/invite/validate-invite';
 export type {Profile$Params} from './fn/v-1/profile';
 export {profile} from './fn/v-1/profile';
-export type {GetCustomers$Params} from './fn/v-1/get-customers';
-export {getCustomers} from './fn/v-1/get-customers';
+export type {GetTeam$Params} from './fn/v-1/get-team';
+export {getTeam} from './fn/v-1/get-team';
 export type {GetApiKeyByType$Params} from './fn/api-keys/get-api-key-by-type';
 export {getApiKeyByType} from './fn/api-keys/get-api-key-by-type';
+export type {DeleteInvite$Params} from './fn/invite/delete-invite';
+export {deleteInvite} from './fn/invite/delete-invite';
 export type {DeleteEnvironment$Params} from './fn/environments/delete-environment';
 export {deleteEnvironment} from './fn/environments/delete-environment';

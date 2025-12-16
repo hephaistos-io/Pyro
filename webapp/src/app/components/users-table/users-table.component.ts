@@ -13,9 +13,11 @@ import {UserTagComponent} from '../user-tag/user-tag.component';
 })
 export class UsersTableComponent implements OnInit {
   searchQuery = signal('');
-  userToDelete = signal<User | null>(null);
   addUserClick = output<void>();
   editUserClick = output<User>();
+  deleteUserClick = output<User>();
+  deleteInviteClick = output<User>();
+  regenerateInviteClick = output<User>();
   filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.users();
@@ -68,18 +70,18 @@ export class UsersTableComponent implements OnInit {
   }
 
   onDeleteUserClick(user: User): void {
-    this.userToDelete.set(user);
+    this.deleteUserClick.emit(user);
   }
 
-  confirmDeleteUser(): void {
-    const user = this.userToDelete();
-    if (!user) return;
-
-    this.usersService.removeUser(user.id);
-    this.userToDelete.set(null);
+  onRegenerateClick(user: User): void {
+    this.regenerateInviteClick.emit(user);
   }
 
-  cancelDeleteUser(): void {
-    this.userToDelete.set(null);
+  onDeleteInviteClick(user: User): void {
+    this.deleteInviteClick.emit(user);
+  }
+
+  isInvitedUser(user: User): boolean {
+    return user.status === 'invited' || user.status === 'expired';
   }
 }

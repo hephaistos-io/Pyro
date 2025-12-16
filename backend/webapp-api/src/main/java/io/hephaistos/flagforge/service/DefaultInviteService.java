@@ -35,6 +35,7 @@ public class DefaultInviteService implements InviteService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultInviteService.class);
     private static final int INVITE_TOKEN_LENGTH = 32;
+    private static final int DEFAULT_EXPIRATION_DAYS = 7;
 
     private final CompanyInviteRepository companyInviteRepository;
     private final CompanyRepository companyRepository;
@@ -159,6 +160,66 @@ public class DefaultInviteService implements InviteService {
                 .filter(invite -> !invite.isExpired())
                 .map(PendingInviteResponse::fromEntity)
                 .toList();
+    }
+
+    @Override
+    public InviteCreationResponse regenerateInvite(UUID inviteId, String baseUrl) {
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        UUID companyId = securityContext.getCompanyId()
+                .orElseThrow(() -> new OperationNotAllowedException(
+                        "Cannot regenerate invite without a company"));
+
+        // Validate that the user has ADMIN role
+        if (!securityContext.hasMinimumRole(CustomerRole.ADMIN)) {
+            throw new OperationNotAllowedException("Only ADMIN users can regenerate invites");
+        }
+
+        var invite = companyInviteRepository.findByIdWithApplications(inviteId)
+                .orElseThrow(() -> new NotFoundException("Invite not found"));
+
+        // Verify invite belongs to the user's company
+        if (!invite.getCompanyId().equals(companyId)) {
+            throw new NotFoundException("Invite not found");
+        }
+
+        // Cannot regenerate a used invite
+        if (invite.isUsed()) {
+            throw new OperationNotAllowedException(
+                    "Cannot regenerate an invite that has already been used");
+        }
+
+        // Generate new token and reset expiration
+        invite.setToken(generateInviteToken());
+        invite.setExpiresAt(Instant.now().plus(DEFAULT_EXPIRATION_DAYS, ChronoUnit.DAYS));
+
+        companyInviteRepository.save(invite);
+        LOGGER.info("Regenerated invite {} for email {}", inviteId, invite.getEmail());
+
+        return InviteCreationResponse.fromEntity(invite, baseUrl);
+    }
+
+    @Override
+    public void deleteInvite(UUID inviteId) {
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        UUID companyId = securityContext.getCompanyId()
+                .orElseThrow(() -> new OperationNotAllowedException(
+                        "Cannot delete invite without a company"));
+
+        // Validate that the user has ADMIN role
+        if (!securityContext.hasMinimumRole(CustomerRole.ADMIN)) {
+            throw new OperationNotAllowedException("Only ADMIN users can delete invites");
+        }
+
+        var invite = companyInviteRepository.findById(inviteId)
+                .orElseThrow(() -> new NotFoundException("Invite not found"));
+
+        // Verify invite belongs to the user's company
+        if (!invite.getCompanyId().equals(companyId)) {
+            throw new NotFoundException("Invite not found");
+        }
+
+        companyInviteRepository.delete(invite);
+        LOGGER.info("Deleted invite {} for email {}", inviteId, invite.getEmail());
     }
 
     private String generateInviteToken() {

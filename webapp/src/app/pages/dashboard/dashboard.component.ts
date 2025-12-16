@@ -13,8 +13,9 @@ import {UsersTableComponent} from '../../components/users-table/users-table.comp
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
-import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
-import {User} from '../../services/users.service';
+import {ApplicationResponse, CompanyResponse, InviteCreationResponse} from '../../api/generated/models';
+import {User, UsersService} from '../../services/users.service';
+import {CommonModule} from '@angular/common';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
 const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
@@ -22,16 +23,22 @@ const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent],
+  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
+  userToDelete = signal<User | null>(null);
   private router = inject(Router);
   showApplicationCreation = signal(false);
   showUserCreation = signal(false);
   userToEdit = signal<User | null>(null);
+  inviteToDelete = signal<User | null>(null);
+  regeneratedInvite = signal<InviteCreationResponse | null>(null);
+  isRegenerating = signal(false);
+  urlCopied = signal(false);
+  private usersService = inject(UsersService);
 
   showSuccessMessage = signal(false);
   applications = signal<ApplicationResponse[]>([]);
@@ -132,8 +139,9 @@ export class DashboardComponent implements OnInit {
     this.showUserCreation.set(false);
   }
 
-  onUserCreated(user: User): void {
+  async onUserCreated(): Promise<void> {
     this.showUserCreation.set(false);
+    await this.usersService.fetchUsers();
   }
 
   onEditUserClick(user: User): void {
@@ -146,6 +154,62 @@ export class DashboardComponent implements OnInit {
 
   onUserUpdated(user: User): void {
     this.userToEdit.set(null);
+  }
+
+  onDeleteUserClick(user: User): void {
+    this.userToDelete.set(user);
+  }
+
+  confirmDeleteUser(): void {
+    const user = this.userToDelete();
+    if (!user) return;
+
+    this.usersService.removeUser(user.id);
+    this.userToDelete.set(null);
+  }
+
+  cancelDeleteUser(): void {
+    this.userToDelete.set(null);
+  }
+
+  onDeleteInviteClick(user: User): void {
+    this.inviteToDelete.set(user);
+  }
+
+  async confirmDeleteInvite(): Promise<void> {
+    const invite = this.inviteToDelete();
+    if (!invite) return;
+
+    await this.usersService.deleteInvite(invite.id);
+    this.inviteToDelete.set(null);
+  }
+
+  cancelDeleteInvite(): void {
+    this.inviteToDelete.set(null);
+  }
+
+  async onRegenerateInviteClick(user: User): Promise<void> {
+    this.isRegenerating.set(true);
+    try {
+      const response = await this.usersService.regenerateInvite(user.id);
+      this.regeneratedInvite.set(response);
+    } finally {
+      this.isRegenerating.set(false);
+    }
+  }
+
+  closeRegenerateOverlay(): void {
+    this.regeneratedInvite.set(null);
+    this.urlCopied.set(false);
+  }
+
+  async copyRegeneratedUrl(): Promise<void> {
+    const invite = this.regeneratedInvite();
+    if (!invite?.inviteUrl) return;
+
+    await navigator.clipboard.writeText(invite.inviteUrl);
+    this.urlCopied.set(true);
+    setTimeout(() => this.urlCopied.set(false), 2000);
   }
 
   private async fetchApplications(): Promise<void> {

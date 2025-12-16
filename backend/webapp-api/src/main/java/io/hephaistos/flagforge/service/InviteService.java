@@ -20,4 +20,8 @@ public interface InviteService {
     void consumeInvite(CompanyInviteEntity invite, UUID customerId);
 
     List<PendingInviteResponse> getPendingInvitesForCompany();
+
+    InviteCreationResponse regenerateInvite(UUID inviteId, String baseUrl);
+
+    void deleteInvite(UUID inviteId);
 }

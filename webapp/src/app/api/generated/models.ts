@@ -12,3 +12,8 @@ export type {CustomerRegistrationRequest} from './models/customer-registration-r
 export type {CustomerResponse} from './models/customer-response';
 export type {EnvironmentCreationRequest} from './models/environment-creation-request';
 export type {EnvironmentResponse} from './models/environment-response';
+export type {InviteCreationRequest} from './models/invite-creation-request';
+export type {InviteCreationResponse} from './models/invite-creation-response';
+export type {InviteValidationResponse} from './models/invite-validation-response';
+export type {PendingInviteResponse} from './models/pending-invite-response';
+export type {TeamResponse} from './models/team-response';

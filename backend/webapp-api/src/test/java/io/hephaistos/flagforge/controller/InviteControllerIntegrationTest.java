@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -358,6 +359,346 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             assertThat(response.getBody().members()).hasSize(2); // Admin + invited user
             assertThat(response.getBody().pendingInvites()).isEmpty();
+        }
+    }
+
+
+    @Nested
+    @DisplayName("POST /v1/company/invite/{id}/regenerate - Regenerate Invite")
+    class RegenerateInvite {
+
+        @Test
+        void regenerateInviteReturns200WithNewToken() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+            String originalToken = createResponse.getBody().token();
+
+            // Regenerate invite
+            var regenerateResponse =
+                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
+                            null, token, InviteCreationResponse.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(regenerateResponse.getBody()).isNotNull();
+            assertThat(regenerateResponse.getBody().token()).hasSize(64);
+            assertThat(regenerateResponse.getBody().token()).isNotEqualTo(originalToken);
+            assertThat(regenerateResponse.getBody().email()).isEqualTo("newuser@example.com");
+            assertThat(regenerateResponse.getBody().role()).isEqualTo(CustomerRole.DEV);
+        }
+
+        @Test
+        void regenerateInviteInvalidatesOldToken() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+            String originalToken = createResponse.getBody().token();
+
+            // Regenerate invite
+            post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate", null, token,
+                    InviteCreationResponse.class);
+
+            // Validate old token should fail
+            var validateResponse =
+                    get("/v1/invite/" + originalToken, InviteValidationResponse.class);
+            assertThat(validateResponse.getBody().valid()).isFalse();
+            assertThat(validateResponse.getBody().reason()).isEqualTo(
+                    InvalidInviteReason.NOT_FOUND);
+        }
+
+        @Test
+        void regenerateInviteNewTokenIsValid() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            // Regenerate invite
+            var regenerateResponse =
+                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
+                            null, token, InviteCreationResponse.class);
+
+            // Validate new token should succeed
+            var validateResponse = get("/v1/invite/" + regenerateResponse.getBody().token(),
+                    InviteValidationResponse.class);
+            assertThat(validateResponse.getBody().valid()).isTrue();
+            assertThat(validateResponse.getBody().email()).isEqualTo("newuser@example.com");
+        }
+
+        @Test
+        void regenerateInvitePreservesEmailRoleAndApplications() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create an application
+            var appRequest = new ApplicationCreationRequest("Test App");
+            var appResponse =
+                    post("/v1/applications", appRequest, token, ApplicationResponse.class);
+
+            // Create invite with role and apps
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.READ_ONLY,
+                            Set.of(appResponse.getBody().id()), null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            // Regenerate invite
+            var regenerateResponse =
+                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
+                            null, token, InviteCreationResponse.class);
+
+            assertThat(regenerateResponse.getBody().email()).isEqualTo("newuser@example.com");
+            assertThat(regenerateResponse.getBody().role()).isEqualTo(CustomerRole.READ_ONLY);
+            assertThat(regenerateResponse.getBody().applicationIds()).containsExactly(
+                    appResponse.getBody().id());
+        }
+
+        @Test
+        void regenerateInviteResetsExpiration() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite with 1 day expiry
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, 1);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            // Manually expire the invite
+            var invite =
+                    companyInviteRepository.findByToken(createResponse.getBody().token()).get();
+            invite.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS));
+            companyInviteRepository.save(invite);
+
+            // Regenerate invite (should reset to 7 days)
+            var regenerateResponse =
+                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
+                            null, token, InviteCreationResponse.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+            // New expiration should be roughly 7 days from now
+            assertThat(regenerateResponse.getBody().expiresAt()).isAfter(
+                    Instant.now().plus(6, ChronoUnit.DAYS));
+        }
+
+        @Test
+        void regenerateUsedInviteReturns403() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create and use an invite
+            var createRequest =
+                    new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            registerUserWithInvite("Jane", "Smith", "password123",
+                    createResponse.getBody().token());
+
+            // Try to regenerate used invite
+            var regenerateResponse =
+                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
+                            null, token, GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void regenerateNonExistentInviteReturns404() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            var regenerateResponse =
+                    post("/v1/company/invite/" + UUID.randomUUID() + "/regenerate", null, token,
+                            GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        void regenerateInviteFromAnotherCompanyReturns404() {
+            // Company A creates invite
+            registerUser("Admin", "A", "admin-a@example.com", "password123");
+            String tokenA = authenticate("admin-a@example.com", "password123");
+            createCompany(tokenA, "Company A");
+            tokenA = authenticate("admin-a@example.com", "password123");
+
+            var inviteRequestA =
+                    new InviteCreationRequest("invite-a@example.com", CustomerRole.DEV, null, null);
+            var inviteResponseA = post("/v1/company/invite", inviteRequestA, tokenA,
+                    InviteCreationResponse.class);
+
+            // Company B tries to regenerate Company A's invite
+            registerUser("Admin", "B", "admin-b@example.com", "password123");
+            String tokenB = authenticate("admin-b@example.com", "password123");
+            createCompany(tokenB, "Company B");
+            tokenB = authenticate("admin-b@example.com", "password123");
+
+            var regenerateResponse =
+                    post("/v1/company/invite/" + inviteResponseA.getBody().id() + "/regenerate",
+                            null, tokenB, GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        void regenerateInviteRequiresAuthentication() {
+            var regenerateResponse =
+                    post("/v1/company/invite/" + UUID.randomUUID() + "/regenerate", null,
+                            Void.class);
+
+            assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+
+    @Nested
+    @DisplayName("DELETE /v1/company/invite/{id} - Delete Invite")
+    class DeleteInvite {
+
+        @Test
+        void deleteInviteReturns204() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            // Delete invite
+            var deleteResponse =
+                    delete("/v1/company/invite/" + createResponse.getBody().id(), token,
+                            Void.class);
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        }
+
+        @Test
+        void deleteInviteInvalidatesToken() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+            String inviteToken = createResponse.getBody().token();
+
+            // Delete invite
+            delete("/v1/company/invite/" + createResponse.getBody().id(), token, Void.class);
+
+            // Validate token should fail
+            var validateResponse = get("/v1/invite/" + inviteToken, InviteValidationResponse.class);
+            assertThat(validateResponse.getBody().valid()).isFalse();
+            assertThat(validateResponse.getBody().reason()).isEqualTo(
+                    InvalidInviteReason.NOT_FOUND);
+        }
+
+        @Test
+        void deleteInviteRemovesFromPendingList() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create invite
+            var createRequest =
+                    new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            // Verify it's in pending list
+            var teamBefore = get("/v1/customer/all", token, TeamResponse.class);
+            assertThat(teamBefore.getBody().pendingInvites()).hasSize(1);
+
+            // Delete invite
+            delete("/v1/company/invite/" + createResponse.getBody().id(), token, Void.class);
+
+            // Verify it's no longer in pending list
+            var teamAfter = get("/v1/customer/all", token, TeamResponse.class);
+            assertThat(teamAfter.getBody().pendingInvites()).isEmpty();
+        }
+
+        @Test
+        void deleteNonExistentInviteReturns404() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            var deleteResponse = delete("/v1/company/invite/" + UUID.randomUUID(), token,
+                    GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        void deleteInviteFromAnotherCompanyReturns404() {
+            // Company A creates invite
+            registerUser("Admin", "A", "admin-a@example.com", "password123");
+            String tokenA = authenticate("admin-a@example.com", "password123");
+            createCompany(tokenA, "Company A");
+            tokenA = authenticate("admin-a@example.com", "password123");
+
+            var inviteRequestA =
+                    new InviteCreationRequest("invite-a@example.com", CustomerRole.DEV, null, null);
+            var inviteResponseA = post("/v1/company/invite", inviteRequestA, tokenA,
+                    InviteCreationResponse.class);
+
+            // Company B tries to delete Company A's invite
+            registerUser("Admin", "B", "admin-b@example.com", "password123");
+            String tokenB = authenticate("admin-b@example.com", "password123");
+            createCompany(tokenB, "Company B");
+            tokenB = authenticate("admin-b@example.com", "password123");
+
+            var deleteResponse =
+                    delete("/v1/company/invite/" + inviteResponseA.getBody().id(), tokenB,
+                            GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        void deleteInviteRequiresAuthentication() {
+            var deleteResponse =
+                    delete("/v1/company/invite/" + UUID.randomUUID(), null, Void.class);
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        void deleteUsedInviteStillWorks() {
+            String token = registerAndAuthenticateWithCompany();
+            token = authenticate();
+
+            // Create and use an invite
+            var createRequest =
+                    new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
+            var createResponse =
+                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+
+            registerUserWithInvite("Jane", "Smith", "password123",
+                    createResponse.getBody().token());
+
+            // Delete used invite - should still work (cleanup)
+            var deleteResponse =
+                    delete("/v1/company/invite/" + createResponse.getBody().id(), token,
+                            Void.class);
+
+            assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         }
     }
 }

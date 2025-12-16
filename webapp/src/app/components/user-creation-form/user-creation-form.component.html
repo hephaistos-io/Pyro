@@ -1,81 +1,123 @@
 <div class="user-form-container">
-  <h2>Invite New User</h2>
-  <p class="form-description">
-    Invite a team member to your company. They will receive an invitation email and can access
-    the applications and features based on their assigned roles.
-  </p>
+  @if (inviteCreated()) {
+    <!-- Success State -->
+    <div class="success-state">
+      <div class="success-icon">&#10003;</div>
+      <h2>Invitation Created!</h2>
+      <p class="success-description">
+        An invitation has been created for <strong>{{ inviteCreated()!.email }}</strong>.
+        Share the link below with them to join your team.
+      </p>
 
-  <form (ngSubmit)="onSubmit()" class="user-form">
-    <div class="form-group">
-      <label for="userEmail">Email Address</label>
-      <input
-        (ngModelChange)="email.set($event)"
-        [disabled]="isLoading()"
-        [ngModel]="email()"
-        autocomplete="email"
-        id="userEmail"
-        name="userEmail"
-        placeholder="colleague@example.com"
-        type="email"
-      />
-    </div>
-
-    <div class="form-group">
-      <label class="section-label">Applications Access</label>
-      <p class="helper-text">Select which applications this user can access (optional)</p>
-      <div class="checkbox-grid">
-        @for (app of availableApplications(); track app.id) {
-          <label class="checkbox-item">
-            <input
-              type="checkbox"
-              [checked]="isApplicationSelected(app.id)"
-              (change)="toggleApplication(app.id)"
-              [disabled]="isLoading()"
-            />
-            <span class="checkbox-label">{{ app.name }}</span>
-          </label>
-        }
+      <div class="invite-url-section">
+        <label>Invitation Link</label>
+        <div class="invite-url-container">
+          <input
+            type="text"
+            readonly
+            [value]="inviteCreated()!.inviteUrl"
+            class="invite-url-input"
+          />
+          <button
+            type="button"
+            class="btn-copy"
+            (click)="copyInviteUrl()"
+            [class.copied]="copied()"
+          >
+            {{ copied() ? 'Copied!' : 'Copy' }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <div class="form-group">
-      <label class="section-label">Roles <span class="required">*</span></label>
-      <p class="helper-text">Select at least one role for this user</p>
-      <div class="checkbox-grid">
-        @for (role of availableRoles(); track role.id) {
-          <label class="checkbox-item">
-            <input
-              type="checkbox"
-              [checked]="isRoleSelected(role.id)"
-              (change)="toggleRole(role.id)"
-              [disabled]="isLoading()"
-            />
-            <span class="checkbox-label">
-              {{ role.name }}
-              @if (role.type === 'admin') {
-                <span class="role-description">Full access to all features</span>
-              } @else if (role.type === 'developer') {
-                <span class="role-description">Can manage flags and environments</span>
-              } @else if (role.type === 'viewer') {
-                <span class="role-description">Read-only access</span>
-              }
-            </span>
-          </label>
-        }
+      <div class="expiration-info">
+        Expires: {{ formatExpirationDate(inviteCreated()!.expiresAt) }}
       </div>
+
+      <button type="button" class="btn btn-primary btn-done" (click)="onDone()">
+        Done
+      </button>
     </div>
+  } @else {
+    <!-- Form State -->
+    <h2>Invite New User</h2>
+    <p class="form-description">
+      Invite a team member to your company. They will receive an invitation link
+      to join and access the applications based on their assigned role.
+    </p>
 
-    @if (error()) {
-      <div class="error-message">{{ error() }}</div>
-    }
+    <form (ngSubmit)="onSubmit()" class="user-form">
+      <div class="form-group">
+        <label for="userEmail">Email Address <span class="required">*</span></label>
+        <input
+          (ngModelChange)="email.set($event)"
+          [disabled]="isLoading()"
+          [ngModel]="email()"
+          autocomplete="email"
+          id="userEmail"
+          name="userEmail"
+          placeholder="colleague@example.com"
+          type="email"
+        />
+      </div>
 
-    <button [disabled]="isLoading()" class="btn btn-primary btn-submit" type="submit">
-      @if (isLoading()) {
-        <span class="spinner"></span>
-        <span>Sending Invitation...</span>
-      } @else {
-        <span>Invite User</span>
+      <div class="form-group">
+        <label class="section-label">Role <span class="required">*</span></label>
+        <p class="helper-text">Select a role for this user</p>
+        <div class="radio-grid">
+          @for (role of roleOptions; track role.value) {
+            <label
+              class="radio-item"
+              [class.selected]="selectedRole() === role.value"
+            >
+              <input
+                type="radio"
+                name="role"
+                [value]="role.value"
+                [checked]="selectedRole() === role.value"
+                (change)="selectRole(role.value)"
+                [disabled]="isLoading()"
+              />
+              <span class="radio-label">
+                {{ role.label }}
+                <span class="role-description">{{ role.description }}</span>
+              </span>
+            </label>
+          }
+        </div>
+      </div>
+
+      @if (applications().length > 0) {
+        <div class="form-group">
+          <label class="section-label">Application Access</label>
+          <p class="helper-text">Select which applications this user can access (optional)</p>
+          <div class="checkbox-grid">
+            @for (app of applications(); track app.id) {
+              <label class="checkbox-item">
+                <input
+                  type="checkbox"
+                  [checked]="isApplicationSelected(app.id!)"
+                  (change)="toggleApplication(app.id!)"
+                  [disabled]="isLoading()"
+                />
+                <span class="checkbox-label">{{ app.name }}</span>
+              </label>
+            }
+          </div>
+        </div>
       }
-    </button>
-  </form>
+
+      @if (error()) {
+        <div class="error-message">{{ error() }}</div>
+      }
+
+      <button [disabled]="isLoading()" class="btn btn-primary btn-submit" type="submit">
+        @if (isLoading()) {
+          <span class="spinner"></span>
+          <span>Sending Invitation...</span>
+        } @else {
+          <span>Send Invitation</span>
+        }
+      </button>
+    </form>
+  }
 </div>

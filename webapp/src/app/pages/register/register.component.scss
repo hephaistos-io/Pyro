@@ -307,6 +307,130 @@
   }
 }
 
+// Loading State
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba($pyro-red, 0.2);
+    border-top-color: $pyro-red;
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 1rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Invite Error State
+.invite-error {
+  background: rgba($pyro-red, 0.08);
+  padding: 2.5rem;
+  border-radius: 16px;
+  text-align: center;
+
+  @include dark-mode {
+    background: rgba($pyro-red, 0.15);
+  }
+
+  .error-icon {
+    width: 56px;
+    height: 56px;
+    background: $pyro-red;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0 auto 1.25rem;
+  }
+
+  h2 {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    color: $charcoal;
+    margin-bottom: 0.75rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  p {
+    color: $charcoal-light;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Invite Banner
+.invite-banner {
+  background: rgba($pyro-red, 0.08);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  @include dark-mode {
+    background: rgba($pyro-red, 0.15);
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}
+
+.invite-badge {
+  background: $pyro-red;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+// Email readonly style for invite flow
+.email-readonly {
+  background: rgba($charcoal, 0.05) !important;
+  cursor: not-allowed;
+
+  @include dark-mode {
+    background: rgba($white, 0.05) !important;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .register {
@@ -316,5 +440,11 @@
   .name-row {
     flex-direction: column;
     gap: 0;
+  }
+
+  .invite-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
   }
 }
