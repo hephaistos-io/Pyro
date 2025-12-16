@@ -3,6 +3,10 @@ import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {User, UsersService} from '../../services/users.service';
 import {UserTagComponent} from '../user-tag/user-tag.component';
+import {OverlayService} from '../../services/overlay.service';
+import {DeleteUserConfirmationComponent} from '../delete-user-confirmation/delete-user-confirmation.component';
+import {DeleteInviteConfirmationComponent} from '../delete-invite-confirmation/delete-invite-confirmation.component';
+import {RegenerateInviteSuccessComponent} from '../regenerate-invite-success/regenerate-invite-success.component';
 
 @Component({
   selector: 'app-users-table',
@@ -15,9 +19,7 @@ export class UsersTableComponent implements OnInit {
   searchQuery = signal('');
   addUserClick = output<void>();
   editUserClick = output<User>();
-  deleteUserClick = output<User>();
-  deleteInviteClick = output<User>();
-  regenerateInviteClick = output<User>();
+  private overlayService = inject(OverlayService);
   filteredUsers = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
     if (!query) return this.users();
@@ -70,15 +72,28 @@ export class UsersTableComponent implements OnInit {
   }
 
   onDeleteUserClick(user: User): void {
-    this.deleteUserClick.emit(user);
+    this.overlayService.open({
+      component: DeleteUserConfirmationComponent,
+      data: {user},
+      maxWidth: '440px'
+    });
   }
 
-  onRegenerateClick(user: User): void {
-    this.regenerateInviteClick.emit(user);
+  async onRegenerateClick(user: User): Promise<void> {
+    const response = await this.usersService.regenerateInvite(user.id);
+    this.overlayService.open({
+      component: RegenerateInviteSuccessComponent,
+      data: {invite: response},
+      maxWidth: '500px'
+    });
   }
 
   onDeleteInviteClick(user: User): void {
-    this.deleteInviteClick.emit(user);
+    this.overlayService.open({
+      component: DeleteInviteConfirmationComponent,
+      data: {user},
+      maxWidth: '440px'
+    });
   }
 
   isInvitedUser(user: User): boolean {

@@ -1,0 +1,13 @@
+<h3>Delete Invite</h3>
+<p>
+  Are you sure you want to delete the invite for <strong>{{ data().user.email }}</strong>?
+  The invite link will no longer work.
+</p>
+<div class="actions">
+  <button (click)="cancel()" class="btn-cancel" type="button">
+    Cancel
+  </button>
+  <button (click)="confirm()" class="btn-confirm-delete" type="button">
+    Delete Invite
+  </button>
+</div>

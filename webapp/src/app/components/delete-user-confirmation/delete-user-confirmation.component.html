@@ -1,0 +1,13 @@
+<h3>Remove User</h3>
+<p>
+  Are you sure you want to remove <strong>{{ data().user.firstName }} {{ data().user.lastName }}</strong>?
+  This action cannot be undone.
+</p>
+<div class="actions">
+  <button (click)="cancel()" class="btn-cancel" type="button">
+    Cancel
+  </button>
+  <button (click)="confirm()" class="btn-confirm-delete" type="button">
+    Remove User
+  </button>
+</div>

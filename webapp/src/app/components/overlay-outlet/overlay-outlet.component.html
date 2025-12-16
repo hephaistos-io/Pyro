@@ -1,0 +1,12 @@
+@if (overlayService.overlay(); as config) {
+  <div class="overlay-backdrop" (click)="onBackdropClick($event, config)">
+    <div class="overlay-content" [style.max-width]="config.maxWidth ?? '500px'" (click)="$event.stopPropagation()">
+      @if (config.closable !== false) {
+        <button class="overlay-close" (click)="overlayService.close()" aria-label="Close" type="button">
+          &times;
+        </button>
+      }
+      <ng-container *ngComponentOutlet="config.component; inputs: getInputs(config)"/>
+    </div>
+  </div>
+}
