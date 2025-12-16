@@ -1,0 +1,567 @@
+import {expect, Page, test} from '@playwright/test';
+
+/**
+ * Helper to generate unique test data
+ */
+function uniqueEmail(prefix: string): string {
+    return `${prefix}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}@example.com`;
+}
+
+/**
+ * Helper to register a new user
+ */
+async function registerUser(page: Page, email: string, firstName: string, lastName: string): Promise<void> {
+    const password = 'SecurePassword123!@#';
+
+    await page.goto('/register');
+    await page.getByLabel('First Name').fill(firstName);
+    await page.getByLabel('Last Name').fill(lastName);
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password', {exact: true}).fill(password);
+    await page.getByLabel('Confirm Password').fill(password);
+    await page.getByRole('button', {name: 'Create Account'}).click();
+
+    // Wait for redirect to login page after registration
+    await expect(page).toHaveURL('/login', {timeout: 15000});
+}
+
+/**
+ * Helper to login a user
+ */
+async function loginUser(page: Page, email: string): Promise<void> {
+    const password = 'SecurePassword123!@#';
+
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill(password);
+    await page.getByRole('button', {name: 'Log In'}).click();
+
+    // Wait for dashboard
+    await expect(page).toHaveURL('/dashboard', {timeout: 15000});
+}
+
+/**
+ * Helper to create a company (during onboarding)
+ */
+async function createCompany(page: Page, companyName: string): Promise<void> {
+    // Onboarding overlay should appear
+    await expect(page.getByText('Create Your Company')).toBeVisible({timeout: 10000});
+    await page.getByLabel('Company Name').fill(companyName);
+    await page.getByRole('button', {name: 'Create Company'}).click();
+
+    // Wait for company to be created and overlay to close
+    await expect(page.getByText('Create Your Company')).not.toBeVisible({timeout: 10000});
+}
+
+/**
+ * Helper to navigate to the Users tab
+ */
+async function navigateToUsersTab(page: Page): Promise<void> {
+    // Click on Users tab
+    await page.getByRole('button', {name: 'Users'}).click();
+
+    // Wait for users table to be visible
+    await expect(page.locator('.users-table')).toBeVisible({timeout: 10000});
+}
+
+/**
+ * Helper to get all user emails displayed in the users table
+ */
+async function getDisplayedUserEmails(page: Page): Promise<string[]> {
+    // Wait for any loading to complete
+    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
+
+    // Get all email elements
+    const emailElements = page.locator('.user-identity__email');
+    const count = await emailElements.count();
+
+    const emails: string[] = [];
+    for (let i = 0; i < count; i++) {
+        const email = await emailElements.nth(i).textContent();
+        if (email) {
+            emails.push(email.trim());
+        }
+    }
+    return emails;
+}
+
+/**
+ * Helper to get user status badges from the table
+ */
+async function getUserStatuses(page: Page): Promise<{ email: string; status: string }[]> {
+    // Wait for any loading to complete
+    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
+
+    const rows = page.locator('.users-table__row');
+    const count = await rows.count();
+
+    const users: { email: string; status: string }[] = [];
+    for (let i = 0; i < count; i++) {
+        const row = rows.nth(i);
+        const email = await row.locator('.user-identity__email').textContent();
+        const statusBadge = row.locator('.status-badge');
+        const status = await statusBadge.textContent();
+
+        if (email && status) {
+            users.push({
+                email: email.trim(),
+                status: status.trim().toLowerCase()
+            });
+        }
+    }
+    return users;
+}
+
+/**
+ * Helper to create an invite via the UI
+ */
+async function createInvite(page: Page, email: string, role: 'Admin' | 'Developer' | 'Viewer' = 'Developer'): Promise<void> {
+    // Click the invite button
+    await page.getByRole('button', {name: '+ Invite User'}).click();
+
+    // Wait for the invite form/modal
+    await expect(page.getByLabel('Email')).toBeVisible({timeout: 5000});
+
+    // Fill the form
+    await page.getByLabel('Email').fill(email);
+
+    // Select role if there's a role selector
+    const roleSelect = page.locator('select, [role="listbox"]').first();
+    if (await roleSelect.isVisible()) {
+        await roleSelect.selectOption({label: role});
+    }
+
+    // Submit the invite
+    await page.getByRole('button', {name: /send invite|create invite|invite/i}).click();
+
+    // Wait for success (form closes or success message)
+    await expect(page.getByLabel('Email')).not.toBeVisible({timeout: 10000});
+}
+
+test.describe('Invite Display in Users Table', () => {
+    test('pending invite appears in users table with invited status', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Register and setup admin user with company
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+
+        // Navigate to Users tab
+        await navigateToUsersTab(page);
+
+        // Verify only admin is shown initially
+        let emails = await getDisplayedUserEmails(page);
+        expect(emails).toHaveLength(1);
+        expect(emails).toContain(adminEmail);
+
+        // Create an invite
+        await createInvite(page, invitedEmail);
+
+        // Wait for the table to update
+        await page.waitForTimeout(1000);
+
+        // Verify the invited user appears in the table
+        emails = await getDisplayedUserEmails(page);
+        expect(emails).toHaveLength(2);
+        expect(emails).toContain(adminEmail);
+        expect(emails).toContain(invitedEmail);
+
+        // Verify the status badges
+        const statuses = await getUserStatuses(page);
+        const adminStatus = statuses.find(s => s.email === adminEmail);
+        const invitedStatus = statuses.find(s => s.email === invitedEmail);
+
+        expect(adminStatus?.status).toBe('active');
+        expect(invitedStatus?.status).toBe('invited');
+    });
+
+    test('invited user disappears from pending after registration', async ({browser}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+        const password = 'SecurePassword123!@#';
+
+        // ============================================
+        // Step 1: Admin creates an invite
+        // ============================================
+        const adminPage = await browser.newPage();
+        await registerUser(adminPage, adminEmail, 'Admin', 'User');
+        await loginUser(adminPage, adminEmail);
+        await createCompany(adminPage, 'Test Company');
+
+        await navigateToUsersTab(adminPage);
+        await createInvite(adminPage, invitedEmail);
+
+        // Verify invite appears
+        await adminPage.waitForTimeout(1000);
+        let emails = await getDisplayedUserEmails(adminPage);
+        expect(emails).toContain(invitedEmail);
+
+        let statuses = await getUserStatuses(adminPage);
+        expect(statuses.find(s => s.email === invitedEmail)?.status).toBe('invited');
+
+        // ============================================
+        // Step 2: Get the invite URL by regenerating (shows the URL in overlay)
+        // ============================================
+        const inviteRow = adminPage.locator('.users-table__row').filter({hasText: invitedEmail});
+        await inviteRow.locator('.btn-regenerate-user').click();
+
+        // Wait for regenerate overlay to appear
+        await expect(adminPage.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+
+        // Get the invite URL from the input field
+        const urlInput = adminPage.locator('.invite-url-input input');
+        const inviteUrl = await urlInput.inputValue();
+        expect(inviteUrl).toContain('/register?invite=');
+
+        // Close the overlay
+        await adminPage.getByRole('button', {name: 'Done'}).click();
+
+        // ============================================
+        // Step 3: Invited user registers using the invite link
+        // ============================================
+        const invitedPage = await browser.newPage();
+
+        // Navigate to the invite URL
+        await invitedPage.goto(inviteUrl);
+
+        // Wait for the invite banner to appear (validates invite is valid)
+        await expect(invitedPage.locator('.invite-banner')).toBeVisible({timeout: 10000});
+        await expect(invitedPage.getByText('Test Company')).toBeVisible();
+
+        // Email should be pre-filled and read-only
+        const emailInput = invitedPage.locator('input#email');
+        await expect(emailInput).toBeDisabled();
+        await expect(emailInput).toHaveValue(invitedEmail);
+
+        // Fill in the registration form (only first name, last name, password needed)
+        await invitedPage.getByLabel('First Name').fill('Invited');
+        await invitedPage.getByLabel('Last Name').fill('User');
+        await invitedPage.getByLabel('Password', {exact: true}).fill(password);
+        await invitedPage.getByLabel('Confirm Password').fill(password);
+
+        // Submit the registration
+        await invitedPage.getByRole('button', {name: /Join Test Company/i}).click();
+
+        // Wait for redirect to login page
+        await expect(invitedPage).toHaveURL('/login', {timeout: 15000});
+
+        await invitedPage.close();
+
+        // ============================================
+        // Step 4: Verify the user now shows as active (not invited)
+        // ============================================
+        await adminPage.reload();
+        await navigateToUsersTab(adminPage);
+
+        // The user should now be active since they registered
+        statuses = await getUserStatuses(adminPage);
+        const invitedUserStatus = statuses.find(s => s.email === invitedEmail);
+        expect(invitedUserStatus?.status).toBe('active');
+
+        await adminPage.close();
+    });
+
+    test('multiple pending invites are displayed correctly', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invite1Email = uniqueEmail('invite1');
+        const invite2Email = uniqueEmail('invite2');
+        const invite3Email = uniqueEmail('invite3');
+
+        // Setup admin with company
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+
+        await navigateToUsersTab(page);
+
+        // Create multiple invites
+        await createInvite(page, invite1Email);
+        await page.waitForTimeout(500);
+        await createInvite(page, invite2Email);
+        await page.waitForTimeout(500);
+        await createInvite(page, invite3Email);
+
+        // Wait for table to update
+        await page.waitForTimeout(1000);
+
+        // Verify all invites appear
+        const emails = await getDisplayedUserEmails(page);
+        expect(emails).toHaveLength(4); // admin + 3 invites
+        expect(emails).toContain(adminEmail);
+        expect(emails).toContain(invite1Email);
+        expect(emails).toContain(invite2Email);
+        expect(emails).toContain(invite3Email);
+
+        // Verify statuses
+        const statuses = await getUserStatuses(page);
+        expect(statuses.find(s => s.email === adminEmail)?.status).toBe('active');
+        expect(statuses.find(s => s.email === invite1Email)?.status).toBe('invited');
+        expect(statuses.find(s => s.email === invite2Email)?.status).toBe('invited');
+        expect(statuses.find(s => s.email === invite3Email)?.status).toBe('invited');
+    });
+
+    test('pending invites are filtered by company (multi-tenancy)', async ({browser}) => {
+        const adminAEmail = uniqueEmail('admin-a');
+        const adminBEmail = uniqueEmail('admin-b');
+        const inviteAEmail = uniqueEmail('invite-a');
+        const inviteBEmail = uniqueEmail('invite-b');
+
+        // ============================================
+        // Setup Company A with an invite
+        // ============================================
+        const pageA = await browser.newPage();
+        await registerUser(pageA, adminAEmail, 'Admin', 'CompanyA');
+        await loginUser(pageA, adminAEmail);
+        await createCompany(pageA, 'Company Alpha');
+
+        await navigateToUsersTab(pageA);
+        await createInvite(pageA, inviteAEmail);
+
+        // ============================================
+        // Setup Company B with an invite
+        // ============================================
+        const pageB = await browser.newPage();
+        await registerUser(pageB, adminBEmail, 'Admin', 'CompanyB');
+        await loginUser(pageB, adminBEmail);
+        await createCompany(pageB, 'Company Beta');
+
+        await navigateToUsersTab(pageB);
+        await createInvite(pageB, inviteBEmail);
+
+        // ============================================
+        // Verify Company A only sees their invite
+        // ============================================
+        await pageA.reload();
+        await navigateToUsersTab(pageA);
+
+        let emailsA = await getDisplayedUserEmails(pageA);
+        expect(emailsA).toHaveLength(2); // admin + invite
+        expect(emailsA).toContain(adminAEmail);
+        expect(emailsA).toContain(inviteAEmail);
+        expect(emailsA).not.toContain(adminBEmail);
+        expect(emailsA).not.toContain(inviteBEmail);
+
+        // ============================================
+        // Verify Company B only sees their invite
+        // ============================================
+        await pageB.reload();
+        await navigateToUsersTab(pageB);
+
+        let emailsB = await getDisplayedUserEmails(pageB);
+        expect(emailsB).toHaveLength(2); // admin + invite
+        expect(emailsB).toContain(adminBEmail);
+        expect(emailsB).toContain(inviteBEmail);
+        expect(emailsB).not.toContain(adminAEmail);
+        expect(emailsB).not.toContain(inviteAEmail);
+
+        await pageA.close();
+        await pageB.close();
+    });
+});
+
+test.describe('Invite Regenerate and Delete', () => {
+    test('regenerate invite shows new link with 7-day expiration', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Setup admin with company and create invite
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+        await navigateToUsersTab(page);
+        await createInvite(page, invitedEmail);
+
+        // Wait for table to update
+        await page.waitForTimeout(1000);
+
+        // Find the row with the invited user
+        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        await expect(inviteRow).toBeVisible();
+
+        // Click the regenerate button
+        const regenerateButton = inviteRow.locator('.btn-regenerate-user');
+        await expect(regenerateButton).toBeVisible();
+        await regenerateButton.click();
+
+        // Verify the regenerate success overlay appears
+        await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+        await expect(page.getByText(`A new invitation link has been created for`)).toBeVisible();
+        await expect(page.getByText(invitedEmail)).toBeVisible();
+
+        // Verify the invite URL input is present
+        const urlInput = page.locator('.invite-url-input input');
+        await expect(urlInput).toBeVisible();
+        const inviteUrl = await urlInput.inputValue();
+        expect(inviteUrl).toContain('/invite/');
+
+        // Verify expiration notice
+        await expect(page.getByText('This link expires in 7 days')).toBeVisible();
+
+        // Close the overlay
+        await page.getByRole('button', {name: 'Done'}).click();
+        await expect(page.getByText('Invite Regenerated')).not.toBeVisible();
+    });
+
+    test('regenerate invite copy button works', async ({page, context}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Grant clipboard permissions
+        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+        // Setup
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+        await navigateToUsersTab(page);
+        await createInvite(page, invitedEmail);
+        await page.waitForTimeout(1000);
+
+        // Regenerate the invite
+        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        await inviteRow.locator('.btn-regenerate-user').click();
+        await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+
+        // Get the URL before copying
+        const urlInput = page.locator('.invite-url-input input');
+        const inviteUrl = await urlInput.inputValue();
+
+        // Click copy button
+        await page.getByRole('button', {name: 'Copy'}).click();
+
+        // Verify "Copied!" feedback appears
+        await expect(page.getByRole('button', {name: 'Copied!'})).toBeVisible();
+
+        // Verify clipboard contains the URL
+        const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+        expect(clipboardText).toBe(inviteUrl);
+
+        // Close the overlay
+        await page.getByRole('button', {name: 'Done'}).click();
+    });
+
+    test('delete invite removes it from the table', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Setup
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+        await navigateToUsersTab(page);
+        await createInvite(page, invitedEmail);
+        await page.waitForTimeout(1000);
+
+        // Verify invite is in the table
+        let emails = await getDisplayedUserEmails(page);
+        expect(emails).toContain(invitedEmail);
+
+        // Find the invite row and click delete
+        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        await inviteRow.locator('.btn-delete-user').click();
+
+        // Verify confirmation dialog appears
+        await expect(page.getByText('Delete Invite')).toBeVisible({timeout: 5000});
+        await expect(page.getByText(`delete the invite for`)).toBeVisible();
+
+        // Confirm deletion
+        await page.getByRole('button', {name: 'Delete Invite'}).click();
+
+        // Wait for deletion to complete
+        await page.waitForTimeout(1000);
+
+        // Verify invite is removed from table
+        emails = await getDisplayedUserEmails(page);
+        expect(emails).not.toContain(invitedEmail);
+        expect(emails).toHaveLength(1); // Only admin remains
+    });
+
+    test('cancel delete invite keeps invite in table', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Setup
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+        await navigateToUsersTab(page);
+        await createInvite(page, invitedEmail);
+        await page.waitForTimeout(1000);
+
+        // Find the invite row and click delete
+        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        await inviteRow.locator('.btn-delete-user').click();
+
+        // Verify confirmation dialog appears
+        await expect(page.getByText('Delete Invite')).toBeVisible({timeout: 5000});
+
+        // Cancel deletion
+        await page.getByRole('button', {name: 'Cancel'}).click();
+
+        // Verify dialog closes
+        await expect(page.getByText('Delete Invite')).not.toBeVisible();
+
+        // Verify invite is still in table
+        const emails = await getDisplayedUserEmails(page);
+        expect(emails).toContain(invitedEmail);
+    });
+
+    test('regenerate button only shows for invited/expired users, not active', async ({page}) => {
+        const adminEmail = uniqueEmail('admin');
+        const invitedEmail = uniqueEmail('invited');
+
+        // Setup
+        await registerUser(page, adminEmail, 'Admin', 'User');
+        await loginUser(page, adminEmail);
+        await createCompany(page, 'Test Company');
+        await navigateToUsersTab(page);
+        await createInvite(page, invitedEmail);
+        await page.waitForTimeout(1000);
+
+        // Admin row should have edit button but NOT regenerate button
+        const adminRow = page.locator('.users-table__row').filter({hasText: adminEmail});
+        await expect(adminRow.locator('.btn-edit-user')).toBeVisible();
+        await expect(adminRow.locator('.btn-regenerate-user')).not.toBeVisible();
+
+        // Invited row should have regenerate button but NOT edit button
+        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        await expect(inviteRow.locator('.btn-regenerate-user')).toBeVisible();
+        await expect(inviteRow.locator('.btn-edit-user')).not.toBeVisible();
+    });
+
+    test('invite cannot be regenerated from another company', async ({browser}) => {
+        const adminAEmail = uniqueEmail('admin-a');
+        const adminBEmail = uniqueEmail('admin-b');
+        const inviteAEmail = uniqueEmail('invite-a');
+
+        // Setup Company A with an invite
+        const pageA = await browser.newPage();
+        await registerUser(pageA, adminAEmail, 'Admin', 'CompanyA');
+        await loginUser(pageA, adminAEmail);
+        await createCompany(pageA, 'Company Alpha');
+        await navigateToUsersTab(pageA);
+        await createInvite(pageA, inviteAEmail);
+        await pageA.waitForTimeout(1000);
+
+        // Verify invite exists in Company A
+        let emailsA = await getDisplayedUserEmails(pageA);
+        expect(emailsA).toContain(inviteAEmail);
+
+        // Setup Company B
+        const pageB = await browser.newPage();
+        await registerUser(pageB, adminBEmail, 'Admin', 'CompanyB');
+        await loginUser(pageB, adminBEmail);
+        await createCompany(pageB, 'Company Beta');
+        await navigateToUsersTab(pageB);
+
+        // Company B should not see Company A's invite
+        const emailsB = await getDisplayedUserEmails(pageB);
+        expect(emailsB).not.toContain(inviteAEmail);
+        expect(emailsB).toHaveLength(1); // Only admin B
+
+        await pageA.close();
+        await pageB.close();
+    });
+});

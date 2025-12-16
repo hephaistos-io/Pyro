@@ -7,13 +7,13 @@ import {filter, map} from 'rxjs/operators';
 import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
-import {CustomerResponse} from '../../models/customer-response';
+import {TeamResponse} from '../../models/team-response';
 
-export interface GetCustomers$Params {
+export interface GetTeam$Params {
 }
 
-export function getCustomers(http: HttpClient, rootUrl: string, params?: GetCustomers$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CustomerResponse>>> {
-  const rb = new RequestBuilder(rootUrl, getCustomers.PATH, 'get');
+export function getTeam(http: HttpClient, rootUrl: string, params?: GetTeam$Params, context?: HttpContext): Observable<StrictHttpResponse<TeamResponse>> {
+  const rb = new RequestBuilder(rootUrl, getTeam.PATH, 'get');
   if (params) {
   }
 
@@ -22,9 +22,9 @@ export function getCustomers(http: HttpClient, rootUrl: string, params?: GetCust
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<CustomerResponse>>;
+      return r as StrictHttpResponse<TeamResponse>;
     })
   );
 }
 
-getCustomers.PATH = '/v1/customer/all';
+getTeam.PATH = '/v1/customer/all';

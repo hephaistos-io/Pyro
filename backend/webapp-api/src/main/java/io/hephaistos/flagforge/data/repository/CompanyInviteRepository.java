@@ -16,6 +16,9 @@ public interface CompanyInviteRepository extends JpaRepository<CompanyInviteEnti
     @Query("SELECT i FROM CompanyInviteEntity i LEFT JOIN FETCH i.preAssignedApplications WHERE i.token = :token")
     Optional<CompanyInviteEntity> findByToken(@Param("token") String token);
 
+    @Query("SELECT i FROM CompanyInviteEntity i LEFT JOIN FETCH i.preAssignedApplications WHERE i.id = :id")
+    Optional<CompanyInviteEntity> findByIdWithApplications(@Param("id") UUID id);
+
     @Query("SELECT i FROM CompanyInviteEntity i WHERE i.usedAt IS NULL")
     List<CompanyInviteEntity> findPending();
 }

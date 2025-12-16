@@ -95,6 +95,39 @@
         }
       }
     },
+    "/v1/company/invite/{id}/regenerate": {
+      "post": {
+        "tags": [
+          "invite",
+          "v1"
+        ],
+        "summary": "Regenerate an invite link with a new token",
+        "operationId": "regenerateInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteCreationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/auth/register": {
       "post": {
         "tags": [
@@ -497,6 +530,32 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/company/invite/{id}": {
+      "delete": {
+        "tags": [
+          "invite",
+          "v1"
+        ],
+        "summary": "Delete an invite",
+        "operationId": "deleteInvite",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
           }
         }
       }

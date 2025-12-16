@@ -1,9 +1,10 @@
 import {Component, inject, OnInit, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Api} from '../../api/generated/api';
 import {register} from '../../api/generated/fn/authorization/register';
-import {CustomerRegistrationRequest} from '../../api/generated/models';
+import {validateInvite} from '../../api/generated/fn/invite/validate-invite';
+import {CustomerRegistrationRequest, InviteValidationResponse} from '../../api/generated/models';
 import zxcvbn from 'zxcvbn';
 import {handleApiError} from '../../utils/error-handler.util';
 import {isValidEmail} from '../../utils/validators.util';
@@ -25,14 +26,74 @@ export class RegisterComponent implements OnInit {
   submitted = signal(false);
   error = signal('');
   isLoading = signal(false);
+
+  // Invite-related state
+  inviteToken = signal<string | null>(null);
+  inviteData = signal<InviteValidationResponse | null>(null);
+  isValidatingInvite = signal(false);
+  inviteError = signal<string | null>(null);
+
   private api = inject(Api);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     // Redirect to dashboard if already authenticated
     if (this.authService.isAuthenticated()) {
       this.router.navigateByUrl('/dashboard');
+      return;
+    }
+
+    // Check for invite token in query params
+    const token = this.route.snapshot.queryParamMap.get('invite');
+    if (token) {
+      this.inviteToken.set(token);
+      await this.validateInviteToken(token);
+    }
+  }
+
+  isInviteFlow(): boolean {
+    return this.inviteToken() !== null && this.inviteData() !== null;
+  }
+
+  async onSubmit(): Promise<void> {
+    // Validate form
+    const validationError = this.validateForm();
+    if (validationError) {
+      this.error.set(validationError);
+      return;
+    }
+
+    // Set loading state
+    this.isLoading.set(true);
+    this.error.set('');
+    try {
+      // Build registration request
+      const registrationRequest: CustomerRegistrationRequest = {
+        firstName: this.firstName,
+        lastName: this.lastName,
+        password: this.password
+      };
+
+      // Include invite token or email depending on flow
+      if (this.isInviteFlow()) {
+        registrationRequest.inviteToken = this.inviteToken()!;
+      } else {
+        registrationRequest.email = this.email;
+      }
+
+      await this.api.invoke(register, {body: registrationRequest});
+
+      // Handle success
+      this.submitted.set(true);
+      this.isLoading.set(false);
+      await this.router.navigate(['/login']);
+    } catch (err: unknown) {
+      // Handle error
+      this.submitted.set(false);
+      this.isLoading.set(false);
+      this.error.set(handleApiError(err, 'registration'));
     }
   }
 
@@ -56,43 +117,50 @@ export class RegisterComponent implements OnInit {
     };
   }
 
-  async onSubmit(): Promise<void> {
-    // Validate form
-    const validationError = this.validateForm();
-    if (validationError) {
-      this.error.set(validationError);
-      return;
-    }
+  private async validateInviteToken(token: string): Promise<void> {
+    this.isValidatingInvite.set(true);
+    this.inviteError.set(null);
 
-    // Set loading state
-    this.isLoading.set(true);
-    this.error.set('');
     try {
-      // Call API
-      const registrationRequest: CustomerRegistrationRequest = {
-        email: this.email,
-        firstName: this.firstName,
-        lastName: this.lastName,
-        password: this.password
-      };
-
-      await this.api.invoke(register, {body: registrationRequest});
-
-      // Handle success
-      this.submitted.set(true);
-      this.isLoading.set(false);
-      await this.router.navigate(['/login']);
-    } catch (err: unknown) {
-      // Handle error
-      this.submitted.set(false);
-      this.isLoading.set(false);
-      this.error.set(handleApiError(err, 'registration'));
+      const response = await this.api.invoke(validateInvite, {token});
+      if (response.valid) {
+        this.inviteData.set(response);
+        // Pre-fill email from invite
+        this.email = response.email ?? '';
+      } else {
+        // Handle invalid invite
+        const reason = response.reason;
+        if (reason === 'NOT_FOUND') {
+          this.inviteError.set('This invitation link is invalid.');
+        } else if (reason === 'EXPIRED') {
+          this.inviteError.set('This invitation has expired. Please ask for a new invite.');
+        } else if (reason === 'ALREADY_USED') {
+          this.inviteError.set('This invitation has already been used.');
+        } else {
+          this.inviteError.set('This invitation is not valid.');
+        }
+      }
+    } catch {
+      this.inviteError.set('Failed to validate invitation. Please try again.');
+    } finally {
+      this.isValidatingInvite.set(false);
     }
   }
 
   private validateForm(): string | null {
-    if (!this.firstName || !this.lastName || !this.email || !this.password || !this.confirmPassword) {
-      return 'All fields are required';
+    // For invite flow, we only need name and password
+    if (this.isInviteFlow()) {
+      if (!this.firstName || !this.lastName || !this.password || !this.confirmPassword) {
+        return 'All fields are required';
+      }
+    } else {
+      if (!this.firstName || !this.lastName || !this.email || !this.password || !this.confirmPassword) {
+        return 'All fields are required';
+      }
+
+      if (!isValidEmail(this.email)) {
+        return 'Please enter a valid email address';
+      }
     }
 
     if (!this.isValidName(this.firstName)) {
@@ -101,10 +169,6 @@ export class RegisterComponent implements OnInit {
 
     if (!this.isValidName(this.lastName)) {
       return 'Last name must be 2-50 characters and contain only letters';
-    }
-
-    if (!isValidEmail(this.email)) {
-      return 'Please enter a valid email address';
     }
 
     const passwordValidation = this.isValidPassword(this.password);

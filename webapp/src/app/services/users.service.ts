@@ -1,7 +1,11 @@
 import {inject, Injectable, signal} from '@angular/core';
 import {Api} from '../api/generated/api';
-import {getCustomers} from '../api/generated/functions';
+import {getTeam} from '../api/generated/functions';
+import {regenerateInvite} from '../api/generated/fn/invite/regenerate-invite';
+import {deleteInvite} from '../api/generated/fn/invite/delete-invite';
 import {CustomerResponse} from '../api/generated/models/customer-response';
+import {PendingInviteResponse} from '../api/generated/models/pending-invite-response';
+import {InviteCreationResponse} from '../api/generated/models/invite-creation-response';
 
 export interface User {
   id: string;
@@ -11,7 +15,7 @@ export interface User {
   applications: Application[];
   roles: Role[];
   lastActive: Date | null;
-  status: 'active' | 'inactive' | 'invited';
+  status: 'active' | 'inactive' | 'invited' | 'expired';
 }
 
 export interface Application {
@@ -55,9 +59,10 @@ export class UsersService {
   async fetchUsers(): Promise<void> {
     this.isLoading.set(true);
     try {
-      const customers = await this.api.invoke(getCustomers);
-      const users = customers.map(customer => this.mapCustomerToUser(customer));
-      this.usersData.set(users);
+      const team = await this.api.invoke(getTeam);
+      const members = (team.members ?? []).map(customer => this.mapCustomerToUser(customer));
+      const invites = (team.pendingInvites ?? []).map(invite => this.mapInviteToUser(invite));
+      this.usersData.set([...members, ...invites]);
     } finally {
       this.isLoading.set(false);
     }
@@ -84,6 +89,10 @@ export class UsersService {
       'READ_ONLY': {id: 'role3', name: 'Viewer', type: 'viewer'}
     };
     return roleMap[role] ? [roleMap[role]] : [];
+  }
+
+  async regenerateInvite(inviteId: string): Promise<InviteCreationResponse> {
+    return this.api.invoke(regenerateInvite, {id: inviteId});
   }
 
   createUser(email: string, applicationIds: string[], roleIds: string[]): User {
@@ -123,6 +132,29 @@ export class UsersService {
 
   removeUser(userId: string): void {
     this.usersData.update(users => users.filter(u => u.id !== userId));
+  }
+
+  async deleteInvite(inviteId: string): Promise<void> {
+    await this.api.invoke(deleteInvite, {id: inviteId});
+    this.usersData.update(users => users.filter(u => u.id !== inviteId));
+  }
+
+  private mapInviteToUser(invite: PendingInviteResponse): User {
+    const isExpired = invite.expiresAt ? new Date(invite.expiresAt) < new Date() : false;
+    const emailParts = invite.email?.split('@')[0]?.split('.') ?? ['Invited', 'User'];
+    const firstName = emailParts[0] ? emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1) : 'Invited';
+    const lastName = emailParts[1] ? emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1) : 'User';
+
+    return {
+      id: invite.id ?? crypto.randomUUID(),
+      firstName,
+      lastName,
+      email: invite.email ?? '',
+      applications: [],
+      roles: this.mapRole(invite.role),
+      lastActive: null,
+      status: isExpired ? 'expired' : 'invited'
+    };
   }
 
   updateUser(userId: string, applicationIds: string[], roleIds: string[]): User | null {
