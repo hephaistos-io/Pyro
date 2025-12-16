@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
+import io.hephaistos.flagforge.controller.dto.TeamResponse;
 import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
@@ -60,9 +61,9 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
 
         createCompany(token, "TestCompanyPleaseIgnore");
 
-        var allCustomersResponse = get("/v1/customer/all", token, CustomerResponse[].class);
-        assertThat(allCustomersResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(allCustomersResponse.getBody()).hasSize(1);
+        var response = get("/v1/customer/all", token, TeamResponse.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().members()).hasSize(1);
     }
 
     @Test
@@ -80,9 +81,9 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
         createUserForCompany(companyId);
         createUserForCompany(companyId);
 
-        var allCustomersResponse = get("/v1/customer/all", token, CustomerResponse[].class);
-        assertThat(allCustomersResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(allCustomersResponse.getBody()).hasSize(4);
+        var response = get("/v1/customer/all", token, TeamResponse.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().members()).hasSize(4);
     }
 
     @Test
@@ -103,18 +104,18 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
         createUserForCompany(companyB.id());
 
         // User A should only see users from company A (themselves + 2 created)
-        var responseA = get("/v1/customer/all", tokenA, CustomerResponse[].class);
+        var responseA = get("/v1/customer/all", tokenA, TeamResponse.class);
         assertThat(responseA.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseA.getBody()).hasSize(3);
-        for (CustomerResponse customer : responseA.getBody()) {
+        assertThat(responseA.getBody().members()).hasSize(3);
+        for (CustomerResponse customer : responseA.getBody().members()) {
             assertThat(customer.companyId()).hasValue(companyA.id());
         }
 
         // User B should only see users from company B (themselves + 1 created)
-        var responseB = get("/v1/customer/all", tokenB, CustomerResponse[].class);
+        var responseB = get("/v1/customer/all", tokenB, TeamResponse.class);
         assertThat(responseB.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(responseB.getBody()).hasSize(2);
-        for (CustomerResponse customer : responseB.getBody()) {
+        assertThat(responseB.getBody().members()).hasSize(2);
+        for (CustomerResponse customer : responseB.getBody().members()) {
             assertThat(customer.companyId()).hasValue(companyB.id());
         }
     }

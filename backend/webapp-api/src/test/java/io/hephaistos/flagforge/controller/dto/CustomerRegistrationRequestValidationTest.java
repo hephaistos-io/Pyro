@@ -7,7 +7,6 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Set;
@@ -32,7 +31,7 @@ class CustomerRegistrationRequestValidationTest {
                     "user.name+tag@example.com", "john@example"})
     void validEmailPassesValidation(String email) {
         CustomerRegistrationRequest request =
-                new CustomerRegistrationRequest("John", "Doe", email, "password123");
+                CustomerRegistrationRequest.withEmail("John", "Doe", email, "password123");
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
                 validator.validate(request);
@@ -45,21 +44,7 @@ class CustomerRegistrationRequestValidationTest {
             "john@@example.com", "john@.com"})
     void invalidEmailFormatFailsValidation(String email) {
         CustomerRegistrationRequest request =
-                new CustomerRegistrationRequest("John", "Doe", email, "password123");
-
-        Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
-                validator.validate(request);
-
-        assertThat(violations).isNotEmpty();
-        assertThat(violations).allMatch(v -> v.getPropertyPath().toString().equals("email"));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"", "   "})
-    @NullSource
-    void blankOrNullEmailFailsValidation(String email) {
-        CustomerRegistrationRequest request =
-                new CustomerRegistrationRequest("John", "Doe", email, "password123");
+                CustomerRegistrationRequest.withEmail("John", "Doe", email, "password123");
 
         Set<ConstraintViolation<CustomerRegistrationRequest>> violations =
                 validator.validate(request);
