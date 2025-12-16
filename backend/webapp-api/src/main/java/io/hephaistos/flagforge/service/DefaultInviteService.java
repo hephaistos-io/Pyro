@@ -15,6 +15,7 @@ import io.hephaistos.flagforge.exception.InvalidInviteException.InvalidInviteRea
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.exception.OperationNotAllowedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.security.RequireAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,16 +51,12 @@ public class DefaultInviteService implements InviteService {
     }
 
     @Override
+    @RequireAdmin
     public InviteCreationResponse createInvite(InviteCreationRequest request, String baseUrl) {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         UUID companyId = securityContext.getCompanyId()
                 .orElseThrow(() -> new OperationNotAllowedException(
                         "Cannot create invite without a company"));
-
-        // Validate that the inviter has ADMIN role
-        if (!securityContext.hasMinimumRole(CustomerRole.ADMIN)) {
-            throw new OperationNotAllowedException("Only ADMIN users can create invites");
-        }
 
         // Validate that inviter is not assigning a role higher than their own
         CustomerRole inviterRole = securityContext.getRole();
@@ -153,6 +150,7 @@ public class DefaultInviteService implements InviteService {
     }
 
     @Override
+    @RequireAdmin
     @Transactional(readOnly = true)
     public List<PendingInviteResponse> getPendingInvitesForCompany() {
         return companyInviteRepository.findPending()
@@ -163,16 +161,12 @@ public class DefaultInviteService implements InviteService {
     }
 
     @Override
+    @RequireAdmin
     public InviteCreationResponse regenerateInvite(UUID inviteId, String baseUrl) {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         UUID companyId = securityContext.getCompanyId()
                 .orElseThrow(() -> new OperationNotAllowedException(
                         "Cannot regenerate invite without a company"));
-
-        // Validate that the user has ADMIN role
-        if (!securityContext.hasMinimumRole(CustomerRole.ADMIN)) {
-            throw new OperationNotAllowedException("Only ADMIN users can regenerate invites");
-        }
 
         var invite = companyInviteRepository.findByIdWithApplications(inviteId)
                 .orElseThrow(() -> new NotFoundException("Invite not found"));
@@ -199,16 +193,12 @@ public class DefaultInviteService implements InviteService {
     }
 
     @Override
+    @RequireAdmin
     public void deleteInvite(UUID inviteId) {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         UUID companyId = securityContext.getCompanyId()
                 .orElseThrow(() -> new OperationNotAllowedException(
                         "Cannot delete invite without a company"));
-
-        // Validate that the user has ADMIN role
-        if (!securityContext.hasMinimumRole(CustomerRole.ADMIN)) {
-            throw new OperationNotAllowedException("Only ADMIN users can delete invites");
-        }
 
         var invite = companyInviteRepository.findById(inviteId)
                 .orElseThrow(() -> new NotFoundException("Invite not found"));

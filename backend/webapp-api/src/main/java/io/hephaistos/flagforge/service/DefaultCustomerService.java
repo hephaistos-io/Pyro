@@ -9,6 +9,7 @@ import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.security.FlagForgeUserDetails;
+import io.hephaistos.flagforge.security.RequireAdmin;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -128,6 +129,7 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
     }
 
     @Override
+    @RequireAdmin
     public List<CustomerEntity> getAllCustomers() {
         return customerRepository.findAll();
     }
@@ -149,6 +151,6 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
 
         return new FlagForgeUserDetails(customer.getEmail(), customer.getPassword(),
                 customer.getId(), customer.getCompanyId().orElse(null), accessibleAppIds,
-                List.of(new SimpleGrantedAuthority(customer.getRole().name())));
+                List.of(new SimpleGrantedAuthority(customer.getRole().toAuthority())));
     }
 }

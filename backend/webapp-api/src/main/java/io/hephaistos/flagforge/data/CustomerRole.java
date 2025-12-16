@@ -10,5 +10,13 @@ package io.hephaistos.flagforge.data;
 public enum CustomerRole {
     READ_ONLY,
     DEV,
-    ADMIN
+    ADMIN;
+
+    /**
+     * Returns the Spring Security authority string for this role. Spring Security expects the ROLE_
+     * prefix for hasRole() checks.
+     */
+    public String toAuthority() {
+        return "ROLE_" + this.name();
+    }
 }

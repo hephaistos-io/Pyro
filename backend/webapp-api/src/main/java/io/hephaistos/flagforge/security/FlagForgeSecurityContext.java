@@ -83,6 +83,8 @@ public class FlagForgeSecurityContext implements SecurityContext {
         this.userId = userId;
     }
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
     /**
      * Returns the customer's role from the authentication authorities.
      *
@@ -95,9 +97,11 @@ public class FlagForgeSecurityContext implements SecurityContext {
         return authentication.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
-                .filter(auth -> {
+                .filter(auth -> auth.startsWith(ROLE_PREFIX))
+                .map(auth -> auth.substring(ROLE_PREFIX.length()))
+                .filter(roleName -> {
                     try {
-                        CustomerRole.valueOf(auth);
+                        CustomerRole.valueOf(roleName);
                         return true;
                     }
                     catch (IllegalArgumentException e) {
@@ -107,26 +111,5 @@ public class FlagForgeSecurityContext implements SecurityContext {
                 .findFirst()
                 .map(CustomerRole::valueOf)
                 .orElse(CustomerRole.READ_ONLY);
-    }
-
-    /**
-     * Checks if the customer has the specified role.
-     *
-     * @param role the role to check
-     * @return true if the customer has this role
-     */
-    public boolean hasRole(CustomerRole role) {
-        return getRole() == role;
-    }
-
-    /**
-     * Checks if the customer has at least the specified role level. Roles are hierarchical: ADMIN >
-     * DEV > READ_ONLY
-     *
-     * @param minimumRole the minimum role required
-     * @return true if the customer's role is at least this level
-     */
-    public boolean hasMinimumRole(CustomerRole minimumRole) {
-        return getRole().ordinal() >= minimumRole.ordinal();
     }
 }
