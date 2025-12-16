@@ -10,6 +10,8 @@ import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.security.RequireAdmin;
+import io.hephaistos.flagforge.security.RequireReadOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class DefaultApplicationService implements ApplicationService {
     }
 
     @Override
+    @RequireAdmin
     public ApplicationResponse createApplication(ApplicationCreationRequest request) {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         UUID companyId = securityContext.getCompanyId()
@@ -72,6 +75,7 @@ public class DefaultApplicationService implements ApplicationService {
     }
 
     @Override
+    @RequireReadOnly
     public List<ApplicationResponse> getApplications() {
         return applicationRepository.findAll()
                 .stream()

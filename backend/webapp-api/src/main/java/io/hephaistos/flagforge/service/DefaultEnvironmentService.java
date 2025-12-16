@@ -11,6 +11,8 @@ import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.exception.OperationNotAllowedException;
+import io.hephaistos.flagforge.security.RequireAdmin;
+import io.hephaistos.flagforge.security.RequireReadOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
     }
 
     @Override
+    @RequireAdmin
     public EnvironmentResponse createEnvironment(UUID applicationId,
             EnvironmentCreationRequest request) {
         var application = getApplicationOrThrow(applicationId);
@@ -76,6 +79,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
     }
 
     @Override
+    @RequireReadOnly
     @Transactional(readOnly = true)
     public List<EnvironmentResponse> getEnvironmentsForApplication(UUID applicationId) {
         if (!applicationRepository.existsByIdFiltered(applicationId)) {
@@ -89,6 +93,7 @@ public class DefaultEnvironmentService implements EnvironmentService {
     }
 
     @Override
+    @RequireAdmin
     public void deleteEnvironment(UUID applicationId, UUID environmentId) {
         // Verify application exists (with filter applied)
         if (!applicationRepository.existsByIdFiltered(applicationId)) {

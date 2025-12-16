@@ -10,7 +10,6 @@ import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.exception.InvalidInviteException;
 import io.hephaistos.flagforge.exception.InvalidInviteException.InvalidInviteReason;
-import io.hephaistos.flagforge.exception.OperationNotAllowedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -133,17 +132,9 @@ class DefaultInviteServiceTest {
                 org.assertj.core.api.Assertions.within(1, ChronoUnit.MINUTES));
     }
 
-    @Test
-    void createInviteRequiresAdminRole() {
-        setupSecurityContext(testCompanyId, testCustomerId, CustomerRole.DEV);
-
-        var request =
-                new InviteCreationRequest("test@example.com", CustomerRole.READ_ONLY, null, null);
-
-        assertThatThrownBy(
-                () -> inviteService.createInvite(request, "https://example.com")).isInstanceOf(
-                OperationNotAllowedException.class).hasMessageContaining("ADMIN");
-    }
+    // Note: The admin role requirement is now enforced via @RequireAdmin annotation
+    // which is tested in integration tests with Spring Security enabled.
+    // See integration tests for @PreAuthorize behavior verification.
 
     @Test
     void createInviteCannotAssignHigherRoleThanOwn() {
@@ -313,7 +304,7 @@ class DefaultInviteServiceTest {
         context.setCustomerId(customerId);
         context.setCompanyId(companyId.toString());
         context.setAuthentication(new UsernamePasswordAuthenticationToken("test@example.com", null,
-                List.of(new SimpleGrantedAuthority(role.name()))));
+                List.of(new SimpleGrantedAuthority(role.toAuthority()))));
         SecurityContextHolder.setContext(context);
     }
 }

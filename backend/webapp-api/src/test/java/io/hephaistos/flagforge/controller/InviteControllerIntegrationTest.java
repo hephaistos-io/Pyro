@@ -115,6 +115,34 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
+
+        @Test
+        void createInviteRequiresAdminRole() {
+            // Setup: admin creates invite for a DEV user
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            var devInviteRequest =
+                    new InviteCreationRequest("dev@example.com", CustomerRole.DEV, null, null);
+            var devInviteResponse = post("/v1/company/invite", devInviteRequest, adminToken,
+                    InviteCreationResponse.class);
+
+            // DEV user registers and authenticates
+            registerUserWithInvite("Dev", "User", "password123",
+                    devInviteResponse.getBody().token());
+            String devToken = authenticate("dev@example.com", "password123");
+
+            // DEV user tries to create an invite - should fail with 403
+            var request =
+                    new InviteCreationRequest("another@example.com", CustomerRole.READ_ONLY, null,
+                            null);
+
+            var response = post("/v1/company/invite", request, devToken,
+                    GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
+        }
     }
 
 

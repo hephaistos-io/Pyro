@@ -6,6 +6,7 @@ import io.hephaistos.flagforge.data.KeyType;
 import io.hephaistos.flagforge.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.exception.NotFoundException;
+import io.hephaistos.flagforge.security.RequireAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ public class DefaultApiKeyService implements ApiKeyService {
     }
 
     @Override
+    @RequireAdmin
     @Transactional(readOnly = true)
     public ApiKeyResponse getApiKeyByType(UUID applicationId, UUID environmentId, KeyType keyType) {
         if (!applicationRepository.existsById(applicationId)) {
@@ -61,6 +63,7 @@ public class DefaultApiKeyService implements ApiKeyService {
     }
 
     @Override
+    @RequireAdmin
     public ApiKeyResponse regenerateKey(UUID applicationId, UUID environmentId, KeyType keyType) {
         if (!applicationRepository.existsById(applicationId)) {
             throw new NotFoundException("Application not found");
