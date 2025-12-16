@@ -93,10 +93,7 @@
         <h2 class="section-title">Users of {{ companyName() }}:</h2>
         <app-users-table
           (addUserClick)="onAddUserClick()"
-          (editUserClick)="onEditUserClick($event)"
-          (deleteUserClick)="onDeleteUserClick($event)"
-          (deleteInviteClick)="onDeleteInviteClick($event)"
-          (regenerateInviteClick)="onRegenerateInviteClick($event)"/>
+          (editUserClick)="onEditUserClick($event)"/>
       }
     }
   </div>
@@ -132,81 +129,4 @@
   <app-form-overlay (closeOverlay)="onCloseUserEdit()">
     <app-user-edit-form [user]="userToEdit()!" (userUpdated)="onUserUpdated($event)"/>
   </app-form-overlay>
-}
-
-@if (userToDelete()) {
-  <div class="delete-confirmation-overlay" (click)="cancelDeleteUser()">
-    <div class="delete-confirmation-modal" (click)="$event.stopPropagation()">
-      <h3>Remove User</h3>
-      <p>
-        Are you sure you want to remove <strong>{{ userToDelete()!.firstName }} {{ userToDelete()!.lastName }}</strong>?
-        This action cannot be undone.
-      </p>
-      <div class="delete-confirmation-actions">
-        <button class="btn-cancel" (click)="cancelDeleteUser()" type="button">
-          Cancel
-        </button>
-        <button class="btn-confirm-delete" (click)="confirmDeleteUser()" type="button">
-          Remove User
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
-@if (inviteToDelete()) {
-  <div class="delete-confirmation-overlay" (click)="cancelDeleteInvite()">
-    <div class="delete-confirmation-modal" (click)="$event.stopPropagation()">
-      <h3>Delete Invite</h3>
-      <p>
-        Are you sure you want to delete the invite for <strong>{{ inviteToDelete()!.email }}</strong>?
-        The invite link will no longer work.
-      </p>
-      <div class="delete-confirmation-actions">
-        <button class="btn-cancel" (click)="cancelDeleteInvite()" type="button">
-          Cancel
-        </button>
-        <button class="btn-confirm-delete" (click)="confirmDeleteInvite()" type="button">
-          Delete Invite
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
-@if (regeneratedInvite()) {
-  <div class="regenerate-overlay" (click)="closeRegenerateOverlay()">
-    <div class="regenerate-modal" (click)="$event.stopPropagation()">
-      <div class="regenerate-success">
-        <div class="success-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="24" cy="24" r="24" fill="currentColor" opacity="0.1"/>
-            <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-                  stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <h2>Invite Regenerated</h2>
-        <p>A new invitation link has been created for <strong>{{ regeneratedInvite()!.email }}</strong></p>
-
-        <div class="invite-url-section">
-          <label>Invitation Link</label>
-          <div class="invite-url-input">
-            <input type="text" [value]="regeneratedInvite()!.inviteUrl" readonly/>
-            <button class="btn-copy" (click)="copyRegeneratedUrl()" type="button">
-              @if (urlCopied()) {
-                Copied!
-              } @else {
-                Copy
-              }
-            </button>
-          </div>
-          <p class="expiration-notice">This link expires in 7 days</p>
-        </div>
-
-        <button class="btn-done" (click)="closeRegenerateOverlay()" type="button">
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
 }

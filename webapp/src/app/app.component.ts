@@ -2,6 +2,7 @@ import {Component, inject} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {NavbarComponent} from './components/navbar/navbar.component';
 import {FooterComponent} from './components/footer/footer.component';
+import {OverlayOutletComponent} from './components/overlay-outlet/overlay-outlet.component';
 import {ThemeService} from './services/theme.service';
 
 @Component({
@@ -10,7 +11,8 @@ import {ThemeService} from './services/theme.service';
   imports: [
     RouterOutlet,
     NavbarComponent,
-    FooterComponent
+    FooterComponent,
+    OverlayOutletComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'

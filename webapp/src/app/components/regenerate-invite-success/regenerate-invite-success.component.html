@@ -1,0 +1,30 @@
+<div class="regenerate-success">
+  <div class="success-icon">
+    <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+      <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+            stroke-width="3"/>
+    </svg>
+  </div>
+  <h2>Invite Regenerated</h2>
+  <p>A new invitation link has been created for <strong>{{ data().invite.email }}</strong></p>
+
+  <div class="invite-url-section">
+    <label>Invitation Link</label>
+    <div class="invite-url-input">
+      <input [value]="data().invite.inviteUrl" readonly type="text"/>
+      <button (click)="copyUrl()" class="btn-copy" type="button">
+        @if (urlCopied()) {
+          Copied!
+        } @else {
+          Copy
+        }
+      </button>
+    </div>
+    <p class="expiration-notice">This link expires in 7 days</p>
+  </div>
+
+  <button (click)="done()" class="btn-done" type="button">
+    Done
+  </button>
+</div>

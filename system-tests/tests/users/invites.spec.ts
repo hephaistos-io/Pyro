@@ -123,19 +123,22 @@ async function createInvite(page: Page, email: string, role: 'Admin' | 'Develope
     await expect(page.getByLabel('Email')).toBeVisible({timeout: 5000});
 
     // Fill the form
-    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Email Address').fill(email);
 
-    // Select role if there's a role selector
-    const roleSelect = page.locator('select, [role="listbox"]').first();
-    if (await roleSelect.isVisible()) {
-        await roleSelect.selectOption({label: role});
-    }
+    // Select role using radio button
+    await page.getByRole('radio', {name: new RegExp(role, 'i')}).click();
 
     // Submit the invite
-    await page.getByRole('button', {name: /send invite|create invite|invite/i}).click();
+    await page.getByRole('button', {name: 'Send Invitation'}).click();
 
-    // Wait for success (form closes or success message)
-    await expect(page.getByLabel('Email')).not.toBeVisible({timeout: 10000});
+    // Wait for success state to appear
+    await expect(page.getByText('Invitation Created!')).toBeVisible({timeout: 10000});
+
+    // Close the success overlay
+    await page.getByRole('button', {name: 'Done'}).click();
+
+    // Wait for overlay to close
+    await expect(page.getByText('Invitation Created!')).not.toBeVisible({timeout: 5000});
 }
 
 test.describe('Invite Display in Users Table', () => {
@@ -228,7 +231,7 @@ test.describe('Invite Display in Users Table', () => {
 
         // Wait for the invite banner to appear (validates invite is valid)
         await expect(invitedPage.locator('.invite-banner')).toBeVisible({timeout: 10000});
-        await expect(invitedPage.getByText('Test Company')).toBeVisible();
+        await expect(invitedPage.locator('.invite-banner')).toContainText('Test Company');
 
         // Email should be pre-filled and read-only
         const emailInput = invitedPage.locator('input#email');
@@ -386,15 +389,15 @@ test.describe('Invite Regenerate and Delete', () => {
         await regenerateButton.click();
 
         // Verify the regenerate success overlay appears
-        await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+        await expect(page.getByRole('heading', {name: 'Invite Regenerated'})).toBeVisible({timeout: 10000});
         await expect(page.getByText(`A new invitation link has been created for`)).toBeVisible();
-        await expect(page.getByText(invitedEmail)).toBeVisible();
+        await expect(page.getByRole('strong')).toContainText(invitedEmail);
 
         // Verify the invite URL input is present
         const urlInput = page.locator('.invite-url-input input');
         await expect(urlInput).toBeVisible();
         const inviteUrl = await urlInput.inputValue();
-        expect(inviteUrl).toContain('/invite/');
+        expect(inviteUrl).toContain('/register?invite=');
 
         // Verify expiration notice
         await expect(page.getByText('This link expires in 7 days')).toBeVisible();
@@ -463,11 +466,11 @@ test.describe('Invite Regenerate and Delete', () => {
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
-        await expect(page.getByText('Delete Invite')).toBeVisible({timeout: 5000});
+        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible({timeout: 5000});
         await expect(page.getByText(`delete the invite for`)).toBeVisible();
 
         // Confirm deletion
-        await page.getByRole('button', {name: 'Delete Invite'}).click();
+        await page.getByRole('button', {name: 'Delete Invite', exact: true}).click();
 
         // Wait for deletion to complete
         await page.waitForTimeout(1000);
@@ -495,13 +498,13 @@ test.describe('Invite Regenerate and Delete', () => {
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
-        await expect(page.getByText('Delete Invite')).toBeVisible({timeout: 5000});
+        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible({timeout: 5000});
 
         // Cancel deletion
         await page.getByRole('button', {name: 'Cancel'}).click();
 
         // Verify dialog closes
-        await expect(page.getByText('Delete Invite')).not.toBeVisible();
+        await expect(page.getByRole('heading', {name: 'Delete Invite'})).not.toBeVisible();
 
         // Verify invite is still in table
         const emails = await getDisplayedUserEmails(page);
