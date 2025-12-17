@@ -21,7 +21,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v1/applications")
 @Tag(name = "application")
-@Tag(name = "v1")
 public class ApplicationController {
 
     private final ApplicationService applicationService;

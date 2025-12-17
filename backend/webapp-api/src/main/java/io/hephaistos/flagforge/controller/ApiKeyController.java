@@ -19,8 +19,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/v1/applications/{applicationId}/environments/{environmentId}/api-keys")
-@Tag(name = "api-keys")
-@Tag(name = "v1")
+@Tag(name = "apiKeys")
 public class ApiKeyController {
 
     private final ApiKeyService apiKeyService;

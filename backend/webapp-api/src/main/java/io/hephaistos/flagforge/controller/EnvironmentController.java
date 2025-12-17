@@ -24,7 +24,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v1/applications/{applicationId}/environments")
 @Tag(name = "environments")
-@Tag(name = "v1")
 public class EnvironmentController {
 
     private final EnvironmentService environmentService;

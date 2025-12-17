@@ -24,7 +24,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v1/company")
 @Tag(name = "company")
-@Tag(name = "v1")
 public class CompanyController {
 
     private final CompanyService companyService;

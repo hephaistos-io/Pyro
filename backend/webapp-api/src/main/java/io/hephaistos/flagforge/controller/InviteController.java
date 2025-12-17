@@ -23,7 +23,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @Tag(name = "invite")
-@Tag(name = "v1")
 public class InviteController {
 
     private final InviteService inviteService;
