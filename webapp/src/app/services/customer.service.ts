@@ -1,7 +1,7 @@
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {Api} from '../api/generated/api';
 import {getCompanyForCurrentCustomer} from '../api/generated/fn/company/get-company-for-current-customer';
-import {profile} from '../api/generated/fn/v-1/profile';
+import {profile} from '../api/generated/fn/customer/profile';
 import {CompanyResponse, CustomerResponse} from '../api/generated/models';
 
 @Injectable({providedIn: 'root'})

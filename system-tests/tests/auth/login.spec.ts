@@ -34,7 +34,7 @@ test.describe('User Login', () => {
         await page.getByRole('button', {name: 'Log In'}).click();
 
         // Wait for API response and error message
-        await expect(page.locator('.error-message')).toBeVisible({timeout: 10000});
+        await expect(page.locator('.error-message')).toBeVisible();
     });
 
     test('navigates to register page via link', async ({page}) => {
@@ -69,7 +69,7 @@ test.describe('User Login', () => {
         await page.getByRole('button', {name: 'Create Account'}).click();
 
         // Wait for redirect to login page after registration
-        await expect(page).toHaveURL('/login', {timeout: 15000});
+        await expect(page).toHaveURL('/login');
 
         // Wait for the login form to be ready
         await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
@@ -80,6 +80,6 @@ test.describe('User Login', () => {
         await page.getByRole('button', {name: 'Log In'}).click();
 
         // Verify redirect to dashboard
-        await expect(page).toHaveURL('/dashboard', {timeout: 15000});
+        await expect(page).toHaveURL('/dashboard');
     });
 });

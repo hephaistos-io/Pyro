@@ -90,7 +90,7 @@ test.describe('Invite Display in Users Table', () => {
         await invitedPage.goto(inviteUrl);
 
         // Wait for the invite banner to appear (validates invite is valid)
-        await expect(invitedPage.locator('.invite-banner')).toBeVisible({timeout: 10000});
+        await expect(invitedPage.locator('.invite-banner')).toBeVisible();
         await expect(invitedPage.locator('.invite-banner')).toContainText('Test Company');
 
         // Email should be pre-filled and read-only
@@ -108,7 +108,7 @@ test.describe('Invite Display in Users Table', () => {
         await invitedPage.getByRole('button', {name: /Join Test Company/i}).click();
 
         // Wait for redirect to login page
-        await expect(invitedPage).toHaveURL('/login', {timeout: 15000});
+        await expect(invitedPage).toHaveURL('/login');
 
         await invitedPage.close();
 
@@ -249,12 +249,12 @@ test.describe('Invite Regenerate and Delete', () => {
         await regenerateButton.click();
 
         // Verify the regenerate success overlay appears
-        await expect(page.getByRole('heading', {name: 'Invite Regenerated'})).toBeVisible({timeout: 10000});
+        await expect(page.getByRole('heading', {name: 'Invite Regenerated'})).toBeVisible();
         await expect(page.getByText(`A new invitation link has been created for`)).toBeVisible();
         await expect(page.getByRole('strong')).toContainText(invitedEmail);
 
         // Verify the invite URL input is present
-        const urlInput = page.locator('.invite-url-input input');
+        const urlInput = page.locator('input.invite-url-input');
         await expect(urlInput).toBeVisible();
         const inviteUrl = await urlInput.inputValue();
         expect(inviteUrl).toContain('/register?invite=');
@@ -267,12 +267,14 @@ test.describe('Invite Regenerate and Delete', () => {
         await expect(page.getByText('Invite Regenerated')).not.toBeVisible();
     });
 
-    test('regenerate invite copy button works', async ({page, context}) => {
+    test('regenerate invite copy button works', async ({page, context, browserName}) => {
         const adminEmail = uniqueEmail('admin');
         const invitedEmail = uniqueEmail('invited');
 
-        // Grant clipboard permissions
-        await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        // Grant clipboard permissions (only supported in Chromium via Playwright API)
+        if (browserName === 'chromium') {
+            await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+        }
 
         // Setup
         await registerUser(page, adminEmail, 'Admin', 'User');
@@ -285,10 +287,10 @@ test.describe('Invite Regenerate and Delete', () => {
         // Regenerate the invite
         const inviteRow = getUserRow(page, invitedEmail);
         await inviteRow.locator('.btn-regenerate-user').click();
-        await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+        await expect(page.getByText('Invite Regenerated')).toBeVisible();
 
         // Get the URL before copying
-        const urlInput = page.locator('.invite-url-input input');
+        const urlInput = page.locator('input.invite-url-input');
         const inviteUrl = await urlInput.inputValue();
 
         // Click copy button
@@ -297,9 +299,11 @@ test.describe('Invite Regenerate and Delete', () => {
         // Verify "Copied!" feedback appears
         await expect(page.getByRole('button', {name: 'Copied!'})).toBeVisible();
 
-        // Verify clipboard contains the URL
-        const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-        expect(clipboardText).toBe(inviteUrl);
+        // Verify clipboard contains the URL (only in Chromium where we can read clipboard)
+        if (browserName === 'chromium') {
+            const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
+            expect(clipboardText).toBe(inviteUrl);
+        }
 
         // Close the overlay
         await page.getByRole('button', {name: 'Done'}).click();
@@ -326,7 +330,7 @@ test.describe('Invite Regenerate and Delete', () => {
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
-        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible({timeout: 5000});
+        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible();
         await expect(page.getByText(`delete the invite for`)).toBeVisible();
 
         // Confirm deletion
@@ -358,7 +362,7 @@ test.describe('Invite Regenerate and Delete', () => {
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
-        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible({timeout: 5000});
+        await expect(page.getByRole('heading', {name: 'Delete Invite'})).toBeVisible();
 
         // Cancel deletion
         await page.getByRole('button', {name: 'Cancel'}).click();

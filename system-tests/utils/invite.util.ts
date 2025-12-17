@@ -3,19 +3,25 @@ import {DEFAULT_PASSWORD} from './test-data.util';
 
 export type InviteRole = 'Admin' | 'Developer' | 'Viewer';
 
+export interface CreateInviteOptions {
+    /** Application names to grant access to */
+    grantAccessToApps?: string[];
+}
+
 /**
  * Creates an invite via the UI and returns the invite URL
  */
 export async function createInvite(
     page: Page,
     email: string,
-    role: InviteRole = 'Developer'
+    role: InviteRole = 'Developer',
+    options: CreateInviteOptions = {}
 ): Promise<string> {
     // Click the invite button
     await page.getByRole('button', {name: '+ Invite User'}).click();
 
     // Wait for the invite form
-    await expect(page.getByLabel('Email')).toBeVisible({timeout: 5000});
+    await expect(page.getByLabel('Email')).toBeVisible();
 
     // Fill the form
     await page.getByLabel('Email Address').fill(email);
@@ -23,11 +29,18 @@ export async function createInvite(
     // Select role using radio button
     await page.getByRole('radio', {name: new RegExp(role, 'i')}).click();
 
+    // Select applications to grant access to
+    if (options.grantAccessToApps && options.grantAccessToApps.length > 0) {
+        for (const appName of options.grantAccessToApps) {
+            await page.getByRole('checkbox', {name: appName}).check();
+        }
+    }
+
     // Submit the invite
     await page.getByRole('button', {name: 'Send Invitation'}).click();
 
     // Wait for success state
-    await expect(page.getByText('Invitation Created!')).toBeVisible({timeout: 10000});
+    await expect(page.getByText('Invitation Created!')).toBeVisible();
 
     // Get the invite URL
     const urlInput = page.locator('input.invite-url-input');
@@ -35,7 +48,7 @@ export async function createInvite(
 
     // Close the success overlay
     await page.getByRole('button', {name: 'Done'}).click();
-    await expect(page.getByText('Invitation Created!')).not.toBeVisible({timeout: 5000});
+    await expect(page.getByText('Invitation Created!')).not.toBeVisible();
 
     return inviteUrl;
 }
@@ -64,7 +77,7 @@ export async function completeInviteRegistration(
     await page.goto(inviteUrl);
 
     // Wait for the invite banner
-    await expect(page.locator('.invite-banner')).toBeVisible({timeout: 10000});
+    await expect(page.locator('.invite-banner')).toBeVisible();
 
     // Fill registration form
     await page.getByLabel('First Name').fill(firstName);
@@ -76,7 +89,7 @@ export async function completeInviteRegistration(
     await page.getByRole('button', {name: /Join/i}).click();
 
     // Wait for redirect to login
-    await expect(page).toHaveURL('/login', {timeout: 15000});
+    await expect(page).toHaveURL('/login');
 }
 
 /**
@@ -87,10 +100,10 @@ export async function getInviteUrl(page: Page, invitedEmail: string): Promise<st
     await inviteRow.locator('.btn-regenerate-user').click();
 
     // Wait for regenerate overlay to appear
-    await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+    await expect(page.getByText('Invite Regenerated')).toBeVisible();
 
-    // Get the invite URL from the input field (in regenerate overlay, class is on container div)
-    const urlInput = page.locator('.invite-url-input input');
+    // Get the invite URL from the input field
+    const urlInput = page.locator('input.invite-url-input');
     const inviteUrl = await urlInput.inputValue();
 
     // Close the overlay

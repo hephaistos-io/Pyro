@@ -31,14 +31,14 @@ test.describe('Role-Based UI Visibility', () => {
         // ============================================
         // Step 2: Verify Admin sees Monthly Cost Breakdown
         // ============================================
-        await expect(adminPage.locator('.costs-overview')).toBeVisible({timeout: 5000});
+        await expect(adminPage.locator('.costs-overview')).toBeVisible();
         await expect(adminPage.getByText('Monthly Cost Breakdown')).toBeVisible();
 
         // ============================================
-        // Step 3: Invite a Developer user
+        // Step 3: Invite a Developer user (with access to the application)
         // ============================================
         await navigateToUsersTab(adminPage);
-        const inviteUrl = await createInvite(adminPage, devEmail, 'Developer');
+        const inviteUrl = await createInvite(adminPage, devEmail, 'Developer', {grantAccessToApps: [appName]});
 
         // ============================================
         // Step 4: Developer completes registration
@@ -51,7 +51,7 @@ test.describe('Role-Based UI Visibility', () => {
         // Step 5: Verify Developer does NOT see Monthly Cost Breakdown
         // ============================================
         // Wait for dashboard content to load
-        await expect(devPage.locator('.app-cards')).toBeVisible({timeout: 10000});
+        await expect(devPage.locator('.app-cards')).toBeVisible();
 
         // The application should be visible (DEV can see apps)
         await expect(devPage.locator('.app-card').filter({hasText: appName})).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('Role-Based UI Visibility', () => {
         await createApplication(adminPage, appName);
 
         // Verify admin sees cost breakdown
-        await expect(adminPage.locator('.costs-overview')).toBeVisible({timeout: 5000});
+        await expect(adminPage.locator('.costs-overview')).toBeVisible();
 
         // Invite a Viewer
         await navigateToUsersTab(adminPage);
@@ -90,7 +90,7 @@ test.describe('Role-Based UI Visibility', () => {
         await loginUser(viewerPage, viewerEmail);
 
         // Wait for dashboard content
-        await expect(viewerPage.locator('.app-cards')).toBeVisible({timeout: 10000});
+        await expect(viewerPage.locator('.app-cards')).toBeVisible();
 
         // Viewer should NOT see cost breakdown
         await expect(viewerPage.locator('.costs-overview')).not.toBeVisible();
@@ -114,11 +114,11 @@ test.describe('Role-Based UI Visibility', () => {
         await createApplication(admin1Page, appName);
 
         // Verify admin1 sees cost breakdown
-        await expect(admin1Page.locator('.costs-overview')).toBeVisible({timeout: 5000});
+        await expect(admin1Page.locator('.costs-overview')).toBeVisible();
 
-        // Invite a second Admin
+        // Invite a second Admin (with access to the application)
         await navigateToUsersTab(admin1Page);
-        const inviteUrl = await createInvite(admin1Page, admin2Email, 'Admin');
+        const inviteUrl = await createInvite(admin1Page, admin2Email, 'Admin', {grantAccessToApps: [appName]});
 
         // Admin2 completes registration
         const admin2Page = await browser.newPage();
@@ -126,10 +126,10 @@ test.describe('Role-Based UI Visibility', () => {
         await loginUser(admin2Page, admin2Email);
 
         // Wait for dashboard content
-        await expect(admin2Page.locator('.app-cards')).toBeVisible({timeout: 10000});
+        await expect(admin2Page.locator('.app-cards')).toBeVisible();
 
         // Admin2 should ALSO see cost breakdown
-        await expect(admin2Page.locator('.costs-overview')).toBeVisible({timeout: 5000});
+        await expect(admin2Page.locator('.costs-overview')).toBeVisible();
         await expect(admin2Page.getByText('Monthly Cost Breakdown')).toBeVisible();
 
         await admin1Page.close();

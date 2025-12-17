@@ -342,9 +342,9 @@ export class ApplicationOverview implements OnInit {
       this.showReadKey.set(false);
       this.readKey.set(null);
     } else {
-      // Show the key - fetch from backend
-      await this.fetchReadKey();
+      // Show the key - set flag before fetch to avoid race condition
       this.showReadKey.set(true);
+      await this.fetchReadKey();
     }
   }
 
@@ -354,9 +354,9 @@ export class ApplicationOverview implements OnInit {
       this.showWriteKey.set(false);
       this.writeKey.set(null);
     } else {
-      // Show the key - fetch from backend
-      await this.fetchWriteKey();
+      // Show the key - set flag before fetch to avoid race condition
       this.showWriteKey.set(true);
+      await this.fetchWriteKey();
     }
   }
 

@@ -51,14 +51,12 @@ test.describe('API Key Management', () => {
         // Click show button
         await showButton.click();
 
-        // Wait for loading to complete and key to appear
-        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
-
-        // The key should now be visible (64 hex characters)
+        // Wait for the actual key to appear (64 hex characters)
         const keyCode = readKeySection.locator('.stat__code--key');
-        const keyText = await keyCode.textContent();
+        await expect(keyCode).toContainText(/[a-f0-9]{64}/i);
 
         // Verify it's an actual key (64 hex chars), not placeholder
+        const keyText = await keyCode.textContent();
         expect(keyText?.trim()).toMatch(/^[a-f0-9]{64}$/i);
 
         // Button should now say "Hide key"
@@ -86,14 +84,12 @@ test.describe('API Key Management', () => {
         // Click show button
         await showButton.click();
 
-        // Wait for loading to complete
-        await expect(writeKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
-
-        // The key should now be visible (64 hex characters)
+        // Wait for the actual key to appear (64 hex characters)
         const keyCode = writeKeySection.locator('.stat__code--key');
-        const keyText = await keyCode.textContent();
+        await expect(keyCode).toContainText(/[a-f0-9]{64}/i);
 
         // Verify it's an actual key (64 hex chars), not placeholder
+        const keyText = await keyCode.textContent();
         expect(keyText?.trim()).toMatch(/^[a-f0-9]{64}$/i);
 
         // Button should now say "Hide key"
@@ -147,7 +143,7 @@ test.describe('API Key Management', () => {
 
         // Show the key for the next tests
         await readKeySection.getByRole('button', {name: 'Show key'}).click();
-        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
         await expect(readKeySection.getByRole('button', {name: 'Hide key'})).toBeVisible();
     });
 
@@ -193,10 +189,8 @@ test.describe('API Key Management', () => {
         if (await showButton.isVisible()) {
             await showButton.click();
         }
-        // Wait for loading to complete
-        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
         // Wait for key to appear (matches 64 hex chars)
-        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i, {timeout: 10000});
+        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
 
         // Get the current key value
         const keyBefore = await readKeySection.locator('.stat__code--key').textContent();
@@ -210,7 +204,7 @@ test.describe('API Key Management', () => {
         await sharedPage.getByRole('button', {name: 'I understand'}).click();
 
         // Wait for modal to close and key to be updated
-        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible({timeout: 10000});
+        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible();
 
         // Key should be different
         const keyAfter = await readKeySection.locator('.stat__code--key').textContent();
@@ -226,7 +220,7 @@ test.describe('API Key Management', () => {
         // Read key should already be shown from previous test
         // Show write key
         await writeKeySection.getByRole('button', {name: 'Show key'}).click();
-        await expect(writeKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        await expect(writeKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
 
         // Get both key values
         const readKey = await readKeySection.locator('.stat__code--key').textContent();
@@ -259,10 +253,8 @@ test.describe('API Key Management', () => {
         if (await showButton.isVisible()) {
             await showButton.click();
         }
-        // Wait for loading to complete
-        await expect(writeKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
         // Wait for key to appear (matches 64 hex chars)
-        await expect(writeKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i, {timeout: 10000});
+        await expect(writeKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
 
         // Get the current key value
         const keyBefore = await writeKeySection.locator('.stat__code--key').textContent();
@@ -276,7 +268,7 @@ test.describe('API Key Management', () => {
         await sharedPage.getByRole('button', {name: 'I understand'}).click();
 
         // Wait for modal to close and key to be updated
-        await expect(sharedPage.getByText('Refresh Write')).not.toBeVisible({timeout: 10000});
+        await expect(sharedPage.getByText('Refresh Write')).not.toBeVisible();
 
         // Key should be different
         const keyAfter = await writeKeySection.locator('.stat__code--key').textContent();
@@ -287,18 +279,28 @@ test.describe('API Key Management', () => {
     test('regenerated key persists after page refresh', async () => {
         const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
 
-        // Get current key value
+        // Ensure key is visible first
+        const showButton = readKeySection.getByRole('button', {name: 'Show key'});
+        if (await showButton.isVisible()) {
+            await showButton.click();
+            await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
+        }
+
+        // Get current key value (should be an actual key, not placeholder)
         const keyBeforeRefresh = await readKeySection.locator('.stat__code--key').textContent();
+        expect(keyBeforeRefresh?.trim()).toMatch(/^[a-f0-9]{64}$/i);
 
-        // Reload the page
-        await sharedPage.reload();
+        // Navigate to dashboard and back to app (more reliable across browsers)
+        await sharedPage.goto('/dashboard');
+        await expect(sharedPage.getByRole('button', {name: sharedAppName})).toBeVisible();
+        await sharedPage.getByRole('button', {name: sharedAppName}).click();
 
-        // Wait for page to load
-        await expect(sharedPage.getByRole('heading', {name: sharedAppName})).toBeVisible({timeout: 10000});
+        // Wait for app page to load
+        await expect(sharedPage.getByRole('heading', {name: sharedAppName})).toBeVisible();
 
         // Show the Read-Key again
         await readKeySection.getByRole('button', {name: 'Show key'}).click();
-        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
 
         // Key should be the same as before page refresh
         const keyAfterRefresh = await readKeySection.locator('.stat__code--key').textContent();
@@ -316,7 +318,7 @@ test.describe('API Key State Isolation', () => {
 
         // Show the read key
         await readKeySection.getByRole('button', {name: 'Show key'}).click();
-        await expect(readKeySection.getByText('Loading...')).not.toBeVisible({timeout: 10000});
+        await expect(readKeySection.locator('.stat__code--key')).toContainText(/[a-f0-9]{64}/i);
 
         // Verify key is shown
         await expect(readKeySection.getByRole('button', {name: 'Hide key'})).toBeVisible();
@@ -333,7 +335,7 @@ test.describe('API Key State Isolation', () => {
         await page.getByRole('button', {name: 'Create Environment'}).click();
 
         // Wait for environment to be created
-        await expect(page.getByText('Add New Environment')).not.toBeVisible({timeout: 10000});
+        await expect(page.getByText('Add New Environment')).not.toBeVisible();
 
         // The key should now be hidden (state cleared on environment change)
         await expect(readKeySection.locator('.stat__code--key')).toContainText('••••••••');

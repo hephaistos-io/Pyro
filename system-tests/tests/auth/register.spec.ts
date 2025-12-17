@@ -77,6 +77,6 @@ test.describe('User Registration', () => {
         await page.getByRole('button', {name: 'Create Account'}).click();
 
         // Wait for redirect to login page
-        await expect(page).toHaveURL('/login', {timeout: 10000});
+        await expect(page).toHaveURL('/login');
     });
 });

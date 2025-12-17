@@ -19,7 +19,7 @@ export async function registerUser(
     await page.getByLabel('Confirm Password').fill(password);
     await page.getByRole('button', {name: 'Create Account'}).click();
 
-    await expect(page).toHaveURL('/login', {timeout: 15000});
+    await expect(page).toHaveURL('/login');
 }
 
 /**
@@ -35,7 +35,7 @@ export async function loginUser(
     await page.getByLabel('Password').fill(password);
     await page.getByRole('button', {name: 'Log In'}).click();
 
-    await expect(page).toHaveURL('/dashboard', {timeout: 15000});
+    await expect(page).toHaveURL('/dashboard');
 }
 
 /**
