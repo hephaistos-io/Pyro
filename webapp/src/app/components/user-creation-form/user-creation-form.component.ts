@@ -1,23 +1,22 @@
 import {Component, inject, OnInit, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {Api} from '../../api/generated/api';
-import {createInvite} from '../../api/generated/functions';
+import {createInvite} from '../../api/generated/fn/invite/create-invite';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
 import {ApplicationResponse} from '../../api/generated/models/application-response';
 import {InviteCreationResponse} from '../../api/generated/models/invite-creation-response';
-
-type RoleType = 'READ_ONLY' | 'DEV' | 'ADMIN';
+import {CustomerRole} from '../../api/generated/models/customer-role';
 
 interface RoleOption {
-  value: RoleType;
+  value: CustomerRole;
   label: string;
   description: string;
 }
 
 const ROLE_OPTIONS: RoleOption[] = [
-  {value: 'ADMIN', label: 'Admin', description: 'Full access to all features'},
-  {value: 'DEV', label: 'Developer', description: 'Can manage flags and environments'},
-  {value: 'READ_ONLY', label: 'Viewer', description: 'Read-only access'}
+  {value: CustomerRole.Admin, label: 'Admin', description: 'Full access to all features'},
+  {value: CustomerRole.Dev, label: 'Developer', description: 'Can manage flags and environments'},
+  {value: CustomerRole.ReadOnly, label: 'Viewer', description: 'Read-only access'}
 ];
 
 @Component({
@@ -30,7 +29,7 @@ const ROLE_OPTIONS: RoleOption[] = [
 export class UserCreationFormComponent implements OnInit {
   // Form state
   email = signal('');
-  selectedRole = signal<RoleType | null>(null);
+  selectedRole = signal<CustomerRole | null>(null);
   // Data
   applications = signal<ApplicationResponse[]>([]);
   selectedApplicationIds = signal<Set<string>>(new Set());
@@ -75,7 +74,7 @@ export class UserCreationFormComponent implements OnInit {
     }
   }
 
-  selectRole(role: RoleType): void {
+  selectRole(role: CustomerRole): void {
     this.selectedRole.set(role);
   }
 

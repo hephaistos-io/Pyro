@@ -1,145 +1,17 @@
-import {expect, Page, test} from '@playwright/test';
-
-/**
- * Helper to generate unique test data
- */
-function uniqueEmail(prefix: string): string {
-    return `${prefix}-${Date.now()}-${crypto.randomUUID().slice(0, 8)}@example.com`;
-}
-
-/**
- * Helper to register a new user
- */
-async function registerUser(page: Page, email: string, firstName: string, lastName: string): Promise<void> {
-    const password = 'SecurePassword123!@#';
-
-    await page.goto('/register');
-    await page.getByLabel('First Name').fill(firstName);
-    await page.getByLabel('Last Name').fill(lastName);
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password', {exact: true}).fill(password);
-    await page.getByLabel('Confirm Password').fill(password);
-    await page.getByRole('button', {name: 'Create Account'}).click();
-
-    // Wait for redirect to login page after registration
-    await expect(page).toHaveURL('/login', {timeout: 15000});
-}
-
-/**
- * Helper to login a user
- */
-async function loginUser(page: Page, email: string): Promise<void> {
-    const password = 'SecurePassword123!@#';
-
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
-    await page.getByRole('button', {name: 'Log In'}).click();
-
-    // Wait for dashboard
-    await expect(page).toHaveURL('/dashboard', {timeout: 15000});
-}
-
-/**
- * Helper to create a company (during onboarding)
- */
-async function createCompany(page: Page, companyName: string): Promise<void> {
-    // Onboarding overlay should appear
-    await expect(page.getByText('Create Your Company')).toBeVisible({timeout: 10000});
-    await page.getByLabel('Company Name').fill(companyName);
-    await page.getByRole('button', {name: 'Create Company'}).click();
-
-    // Wait for company to be created and overlay to close
-    await expect(page.getByText('Create Your Company')).not.toBeVisible({timeout: 10000});
-}
-
-/**
- * Helper to navigate to the Users tab
- */
-async function navigateToUsersTab(page: Page): Promise<void> {
-    // Click on Users tab
-    await page.getByRole('button', {name: 'Users'}).click();
-
-    // Wait for users table to be visible
-    await expect(page.locator('.users-table')).toBeVisible({timeout: 10000});
-}
-
-/**
- * Helper to get all user emails displayed in the users table
- */
-async function getDisplayedUserEmails(page: Page): Promise<string[]> {
-    // Wait for any loading to complete
-    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
-
-    // Get all email elements
-    const emailElements = page.locator('.user-identity__email');
-    const count = await emailElements.count();
-
-    const emails: string[] = [];
-    for (let i = 0; i < count; i++) {
-        const email = await emailElements.nth(i).textContent();
-        if (email) {
-            emails.push(email.trim());
-        }
-    }
-    return emails;
-}
-
-/**
- * Helper to get user status badges from the table
- */
-async function getUserStatuses(page: Page): Promise<{ email: string; status: string }[]> {
-    // Wait for any loading to complete
-    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
-
-    const rows = page.locator('.users-table__row');
-    const count = await rows.count();
-
-    const users: { email: string; status: string }[] = [];
-    for (let i = 0; i < count; i++) {
-        const row = rows.nth(i);
-        const email = await row.locator('.user-identity__email').textContent();
-        const statusBadge = row.locator('.status-badge');
-        const status = await statusBadge.textContent();
-
-        if (email && status) {
-            users.push({
-                email: email.trim(),
-                status: status.trim().toLowerCase()
-            });
-        }
-    }
-    return users;
-}
-
-/**
- * Helper to create an invite via the UI
- */
-async function createInvite(page: Page, email: string, role: 'Admin' | 'Developer' | 'Viewer' = 'Developer'): Promise<void> {
-    // Click the invite button
-    await page.getByRole('button', {name: '+ Invite User'}).click();
-
-    // Wait for the invite form/modal
-    await expect(page.getByLabel('Email')).toBeVisible({timeout: 5000});
-
-    // Fill the form
-    await page.getByLabel('Email Address').fill(email);
-
-    // Select role using radio button
-    await page.getByRole('radio', {name: new RegExp(role, 'i')}).click();
-
-    // Submit the invite
-    await page.getByRole('button', {name: 'Send Invitation'}).click();
-
-    // Wait for success state to appear
-    await expect(page.getByText('Invitation Created!')).toBeVisible({timeout: 10000});
-
-    // Close the success overlay
-    await page.getByRole('button', {name: 'Done'}).click();
-
-    // Wait for overlay to close
-    await expect(page.getByText('Invitation Created!')).not.toBeVisible({timeout: 5000});
-}
+import {expect, test} from '@playwright/test';
+import {
+    createCompany,
+    createInviteSimple,
+    DEFAULT_PASSWORD,
+    getDisplayedUserEmails,
+    getInviteUrl,
+    getUserRow,
+    getUserStatuses,
+    loginUser,
+    navigateToUsersTab,
+    registerUser,
+    uniqueEmail
+} from '../../utils';
 
 test.describe('Invite Display in Users Table', () => {
     test('pending invite appears in users table with invited status', async ({page}) => {
@@ -160,7 +32,7 @@ test.describe('Invite Display in Users Table', () => {
         expect(emails).toContain(adminEmail);
 
         // Create an invite
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
 
         // Wait for the table to update
         await page.waitForTimeout(1000);
@@ -183,7 +55,6 @@ test.describe('Invite Display in Users Table', () => {
     test('invited user disappears from pending after registration', async ({browser}) => {
         const adminEmail = uniqueEmail('admin');
         const invitedEmail = uniqueEmail('invited');
-        const password = 'SecurePassword123!@#';
 
         // ============================================
         // Step 1: Admin creates an invite
@@ -194,7 +65,7 @@ test.describe('Invite Display in Users Table', () => {
         await createCompany(adminPage, 'Test Company');
 
         await navigateToUsersTab(adminPage);
-        await createInvite(adminPage, invitedEmail);
+        await createInviteSimple(adminPage, invitedEmail);
 
         // Verify invite appears
         await adminPage.waitForTimeout(1000);
@@ -205,21 +76,10 @@ test.describe('Invite Display in Users Table', () => {
         expect(statuses.find(s => s.email === invitedEmail)?.status).toBe('invited');
 
         // ============================================
-        // Step 2: Get the invite URL by regenerating (shows the URL in overlay)
+        // Step 2: Get the invite URL by regenerating
         // ============================================
-        const inviteRow = adminPage.locator('.users-table__row').filter({hasText: invitedEmail});
-        await inviteRow.locator('.btn-regenerate-user').click();
-
-        // Wait for regenerate overlay to appear
-        await expect(adminPage.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
-
-        // Get the invite URL from the input field
-        const urlInput = adminPage.locator('.invite-url-input input');
-        const inviteUrl = await urlInput.inputValue();
+        const inviteUrl = await getInviteUrl(adminPage, invitedEmail);
         expect(inviteUrl).toContain('/register?invite=');
-
-        // Close the overlay
-        await adminPage.getByRole('button', {name: 'Done'}).click();
 
         // ============================================
         // Step 3: Invited user registers using the invite link
@@ -241,8 +101,8 @@ test.describe('Invite Display in Users Table', () => {
         // Fill in the registration form (only first name, last name, password needed)
         await invitedPage.getByLabel('First Name').fill('Invited');
         await invitedPage.getByLabel('Last Name').fill('User');
-        await invitedPage.getByLabel('Password', {exact: true}).fill(password);
-        await invitedPage.getByLabel('Confirm Password').fill(password);
+        await invitedPage.getByLabel('Password', {exact: true}).fill(DEFAULT_PASSWORD);
+        await invitedPage.getByLabel('Confirm Password').fill(DEFAULT_PASSWORD);
 
         // Submit the registration
         await invitedPage.getByRole('button', {name: /Join Test Company/i}).click();
@@ -280,11 +140,11 @@ test.describe('Invite Display in Users Table', () => {
         await navigateToUsersTab(page);
 
         // Create multiple invites
-        await createInvite(page, invite1Email);
+        await createInviteSimple(page, invite1Email);
         await page.waitForTimeout(500);
-        await createInvite(page, invite2Email);
+        await createInviteSimple(page, invite2Email);
         await page.waitForTimeout(500);
-        await createInvite(page, invite3Email);
+        await createInviteSimple(page, invite3Email);
 
         // Wait for table to update
         await page.waitForTimeout(1000);
@@ -320,7 +180,7 @@ test.describe('Invite Display in Users Table', () => {
         await createCompany(pageA, 'Company Alpha');
 
         await navigateToUsersTab(pageA);
-        await createInvite(pageA, inviteAEmail);
+        await createInviteSimple(pageA, inviteAEmail);
 
         // ============================================
         // Setup Company B with an invite
@@ -331,7 +191,7 @@ test.describe('Invite Display in Users Table', () => {
         await createCompany(pageB, 'Company Beta');
 
         await navigateToUsersTab(pageB);
-        await createInvite(pageB, inviteBEmail);
+        await createInviteSimple(pageB, inviteBEmail);
 
         // ============================================
         // Verify Company A only sees their invite
@@ -374,13 +234,13 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(page, adminEmail);
         await createCompany(page, 'Test Company');
         await navigateToUsersTab(page);
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
 
         // Wait for table to update
         await page.waitForTimeout(1000);
 
         // Find the row with the invited user
-        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        const inviteRow = getUserRow(page, invitedEmail);
         await expect(inviteRow).toBeVisible();
 
         // Click the regenerate button
@@ -419,11 +279,11 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(page, adminEmail);
         await createCompany(page, 'Test Company');
         await navigateToUsersTab(page);
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
         await page.waitForTimeout(1000);
 
         // Regenerate the invite
-        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        const inviteRow = getUserRow(page, invitedEmail);
         await inviteRow.locator('.btn-regenerate-user').click();
         await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
 
@@ -454,7 +314,7 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(page, adminEmail);
         await createCompany(page, 'Test Company');
         await navigateToUsersTab(page);
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
         await page.waitForTimeout(1000);
 
         // Verify invite is in the table
@@ -462,7 +322,7 @@ test.describe('Invite Regenerate and Delete', () => {
         expect(emails).toContain(invitedEmail);
 
         // Find the invite row and click delete
-        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        const inviteRow = getUserRow(page, invitedEmail);
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
@@ -490,11 +350,11 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(page, adminEmail);
         await createCompany(page, 'Test Company');
         await navigateToUsersTab(page);
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
         await page.waitForTimeout(1000);
 
         // Find the invite row and click delete
-        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        const inviteRow = getUserRow(page, invitedEmail);
         await inviteRow.locator('.btn-delete-user').click();
 
         // Verify confirmation dialog appears
@@ -520,16 +380,16 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(page, adminEmail);
         await createCompany(page, 'Test Company');
         await navigateToUsersTab(page);
-        await createInvite(page, invitedEmail);
+        await createInviteSimple(page, invitedEmail);
         await page.waitForTimeout(1000);
 
         // Admin row should have edit button but NOT regenerate button
-        const adminRow = page.locator('.users-table__row').filter({hasText: adminEmail});
+        const adminRow = getUserRow(page, adminEmail);
         await expect(adminRow.locator('.btn-edit-user')).toBeVisible();
         await expect(adminRow.locator('.btn-regenerate-user')).not.toBeVisible();
 
         // Invited row should have regenerate button but NOT edit button
-        const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+        const inviteRow = getUserRow(page, invitedEmail);
         await expect(inviteRow.locator('.btn-regenerate-user')).toBeVisible();
         await expect(inviteRow.locator('.btn-edit-user')).not.toBeVisible();
     });
@@ -545,7 +405,7 @@ test.describe('Invite Regenerate and Delete', () => {
         await loginUser(pageA, adminAEmail);
         await createCompany(pageA, 'Company Alpha');
         await navigateToUsersTab(pageA);
-        await createInvite(pageA, inviteAEmail);
+        await createInviteSimple(pageA, inviteAEmail);
         await pageA.waitForTimeout(1000);
 
         // Verify invite exists in Company A

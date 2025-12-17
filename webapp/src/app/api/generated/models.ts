@@ -10,6 +10,7 @@ export type {CompanyResponse} from './models/company-response';
 export type {CustomerAuthenticationRequest} from './models/customer-authentication-request';
 export type {CustomerRegistrationRequest} from './models/customer-registration-request';
 export type {CustomerResponse} from './models/customer-response';
+export {CustomerRole} from './models/customer-role';
 export type {EnvironmentCreationRequest} from './models/environment-creation-request';
 export type {EnvironmentResponse} from './models/environment-response';
 export type {InviteCreationRequest} from './models/invite-creation-request';

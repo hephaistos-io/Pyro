@@ -1,6 +1,6 @@
 import {inject, Injectable, signal} from '@angular/core';
 import {Api} from '../api/generated/api';
-import {getTeam} from '../api/generated/functions';
+import {getTeam} from '../api/generated/fn/v-1/get-team';
 import {regenerateInvite} from '../api/generated/fn/invite/regenerate-invite';
 import {deleteInvite} from '../api/generated/fn/invite/delete-invite';
 import {CustomerResponse} from '../api/generated/models/customer-response';

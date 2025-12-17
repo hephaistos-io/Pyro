@@ -33,9 +33,10 @@
           }
         </div>
 
-        <!-- Costs Overview Section -->
-        @if (applications().length > 0) {
-          <div class="costs-overview">
+        <!-- Costs Overview Section (Admin only) -->
+        <ng-container *hasRole="CustomerRole.Admin">
+          @if (applications().length > 0) {
+            <div class="costs-overview">
             <div class="costs-overview__header">
               <h3 class="costs-overview__title">Monthly Cost Breakdown</h3>
               <span class="costs-overview__total">
@@ -88,7 +89,8 @@
               </div>
             </div>
           </div>
-        }
+          }
+        </ng-container>
       } @else if (activeTab() === 'users') {
         <h2 class="section-title">Users of {{ companyName() }}:</h2>
         <app-users-table

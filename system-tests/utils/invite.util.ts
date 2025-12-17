@@ -1,0 +1,100 @@
+import {expect, Page} from '@playwright/test';
+import {DEFAULT_PASSWORD} from './test-data.util';
+
+export type InviteRole = 'Admin' | 'Developer' | 'Viewer';
+
+/**
+ * Creates an invite via the UI and returns the invite URL
+ */
+export async function createInvite(
+    page: Page,
+    email: string,
+    role: InviteRole = 'Developer'
+): Promise<string> {
+    // Click the invite button
+    await page.getByRole('button', {name: '+ Invite User'}).click();
+
+    // Wait for the invite form
+    await expect(page.getByLabel('Email')).toBeVisible({timeout: 5000});
+
+    // Fill the form
+    await page.getByLabel('Email Address').fill(email);
+
+    // Select role using radio button
+    await page.getByRole('radio', {name: new RegExp(role, 'i')}).click();
+
+    // Submit the invite
+    await page.getByRole('button', {name: 'Send Invitation'}).click();
+
+    // Wait for success state
+    await expect(page.getByText('Invitation Created!')).toBeVisible({timeout: 10000});
+
+    // Get the invite URL
+    const urlInput = page.locator('input.invite-url-input');
+    const inviteUrl = await urlInput.inputValue();
+
+    // Close the success overlay
+    await page.getByRole('button', {name: 'Done'}).click();
+    await expect(page.getByText('Invitation Created!')).not.toBeVisible({timeout: 5000});
+
+    return inviteUrl;
+}
+
+/**
+ * Creates an invite without returning the URL (for simpler test cases)
+ */
+export async function createInviteSimple(
+    page: Page,
+    email: string,
+    role: InviteRole = 'Developer'
+): Promise<void> {
+    await createInvite(page, email, role);
+}
+
+/**
+ * Completes registration via an invite link
+ */
+export async function completeInviteRegistration(
+    page: Page,
+    inviteUrl: string,
+    firstName: string,
+    lastName: string,
+    password: string = DEFAULT_PASSWORD
+): Promise<void> {
+    await page.goto(inviteUrl);
+
+    // Wait for the invite banner
+    await expect(page.locator('.invite-banner')).toBeVisible({timeout: 10000});
+
+    // Fill registration form
+    await page.getByLabel('First Name').fill(firstName);
+    await page.getByLabel('Last Name').fill(lastName);
+    await page.getByLabel('Password', {exact: true}).fill(password);
+    await page.getByLabel('Confirm Password').fill(password);
+
+    // Submit registration (button text includes company name)
+    await page.getByRole('button', {name: /Join/i}).click();
+
+    // Wait for redirect to login
+    await expect(page).toHaveURL('/login', {timeout: 15000});
+}
+
+/**
+ * Gets an invite URL by regenerating the invite from the users table
+ */
+export async function getInviteUrl(page: Page, invitedEmail: string): Promise<string> {
+    const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
+    await inviteRow.locator('.btn-regenerate-user').click();
+
+    // Wait for regenerate overlay to appear
+    await expect(page.getByText('Invite Regenerated')).toBeVisible({timeout: 10000});
+
+    // Get the invite URL from the input field (in regenerate overlay, class is on container div)
+    const urlInput = page.locator('.invite-url-input input');
+    const inviteUrl = await urlInput.inputValue();
+
+    // Close the overlay
+    await page.getByRole('button', {name: 'Done'}).click();
+
+    return inviteUrl;
+}
