@@ -14,8 +14,7 @@
     "/v1/company": {
       "get": {
         "tags": [
-          "company",
-          "v1"
+          "company"
         ],
         "summary": "Retrieve company for current customer",
         "operationId": "getCompanyForCurrentCustomer",
@@ -34,8 +33,7 @@
       },
       "post": {
         "tags": [
-          "company",
-          "v1"
+          "company"
         ],
         "summary": "Create company for current customer",
         "operationId": "createCompanyForCurrentCustomer",
@@ -66,8 +64,7 @@
     "/v1/company/invite": {
       "post": {
         "tags": [
-          "invite",
-          "v1"
+          "invite"
         ],
         "summary": "Create an invite link for a new team member",
         "operationId": "createInvite",
@@ -98,8 +95,7 @@
     "/v1/company/invite/{id}/regenerate": {
       "post": {
         "tags": [
-          "invite",
-          "v1"
+          "invite"
         ],
         "summary": "Regenerate an invite link with a new token",
         "operationId": "regenerateInvite",
@@ -131,8 +127,7 @@
     "/v1/auth/register": {
       "post": {
         "tags": [
-          "authorization",
-          "v1"
+          "authorization"
         ],
         "summary": "Send registration request",
         "operationId": "register",
@@ -156,8 +151,7 @@
     "/v1/auth/authenticate": {
       "post": {
         "tags": [
-          "authorization",
-          "v1"
+          "authorization"
         ],
         "summary": "Authenticate customer",
         "operationId": "authenticate",
@@ -188,8 +182,7 @@
     "/v1/applications": {
       "get": {
         "tags": [
-          "application",
-          "v1"
+          "application"
         ],
         "summary": "Get all applications for current customers\u0027s company",
         "operationId": "getApplications",
@@ -211,8 +204,7 @@
       },
       "post": {
         "tags": [
-          "application",
-          "v1"
+          "application"
         ],
         "summary": "Create application for current customers\u0027s company",
         "operationId": "createApplication",
@@ -243,8 +235,7 @@
     "/v1/applications/{applicationId}/environments": {
       "get": {
         "tags": [
-          "environments",
-          "v1"
+          "environments"
         ],
         "summary": "List all environments for an application",
         "operationId": "getEnvironments",
@@ -277,8 +268,7 @@
       },
       "post": {
         "tags": [
-          "environments",
-          "v1"
+          "environments"
         ],
         "summary": "Create a new environment for an application",
         "operationId": "createEnvironment",
@@ -320,8 +310,7 @@
     "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}/regenerate": {
       "post": {
         "tags": [
-          "api-keys",
-          "v1"
+          "apiKeys"
         ],
         "summary": "Regenerate an API key by type and return the new key",
         "operationId": "regenerateApiKey",
@@ -374,8 +363,7 @@
     "/v1/invite/{token}": {
       "get": {
         "tags": [
-          "invite",
-          "v1"
+          "invite"
         ],
         "summary": "Validate an invite token (public endpoint)",
         "operationId": "validateInvite",
@@ -406,7 +394,6 @@
     "/v1/customer/profile": {
       "get": {
         "tags": [
-          "v1",
           "customer"
         ],
         "summary": "Retrieve profile of customer",
@@ -428,7 +415,6 @@
     "/v1/customer/all": {
       "get": {
         "tags": [
-          "v1",
           "customer"
         ],
         "summary": "Retrieve all team members and pending invites for the assigned company",
@@ -450,8 +436,7 @@
     "/v1/company/{companyId}": {
       "get": {
         "tags": [
-          "company",
-          "v1"
+          "company"
         ],
         "summary": "Retrieve company with id",
         "operationId": "getCompanyById",
@@ -483,8 +468,7 @@
     "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}": {
       "get": {
         "tags": [
-          "api-keys",
-          "v1"
+          "apiKeys"
         ],
         "summary": "Get an API key by type for an application and environment",
         "operationId": "getApiKeyByType",
@@ -537,8 +521,7 @@
     "/v1/company/invite/{id}": {
       "delete": {
         "tags": [
-          "invite",
-          "v1"
+          "invite"
         ],
         "summary": "Delete an invite",
         "operationId": "deleteInvite",
@@ -563,8 +546,7 @@
     "/v1/applications/{applicationId}/environments/{environmentId}": {
       "delete": {
         "tags": [
-          "environments",
-          "v1"
+          "environments"
         ],
         "summary": "Delete an environment. FREE tier environments cannot be deleted.",
         "operationId": "deleteEnvironment",

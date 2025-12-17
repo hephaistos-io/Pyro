@@ -20,7 +20,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v1/customer")
 @Tag(name = "customer")
-@Tag(name = "v1")
 public class CustomerController {
 
     private final CustomerService customerService;

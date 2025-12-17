@@ -19,7 +19,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping("/v1/auth")
 @Tag(name = "authorization")
-@Tag(name = "v1")
 public class AuthorizationController {
 
     private final AuthenticationService authenticationService;
