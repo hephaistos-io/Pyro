@@ -10,7 +10,7 @@ export interface UserStatus {
  */
 export async function getDisplayedUserEmails(page: Page): Promise<string[]> {
     // Wait for any loading to complete
-    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
+    await expect(page.getByText('Loading users...')).not.toBeVisible();
 
     // Get all email elements
     const emailElements = page.locator('.user-identity__email');
@@ -31,7 +31,7 @@ export async function getDisplayedUserEmails(page: Page): Promise<string[]> {
  */
 export async function getUserStatuses(page: Page): Promise<UserStatus[]> {
     // Wait for any loading to complete
-    await expect(page.getByText('Loading users...')).not.toBeVisible({timeout: 10000});
+    await expect(page.getByText('Loading users...')).not.toBeVisible();
 
     const rows = page.locator('.users-table__row');
     const count = await rows.count();

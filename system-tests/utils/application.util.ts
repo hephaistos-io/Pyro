@@ -8,7 +8,7 @@ export async function createApplication(page: Page, appName: string): Promise<vo
     await page.locator('.app-card--add').click();
 
     // Wait for application creation form
-    await expect(page.getByLabel('Application Name')).toBeVisible({timeout: 5000});
+    await expect(page.getByLabel('Application Name')).toBeVisible();
 
     // Fill in the application name
     await page.getByLabel('Application Name').fill(appName);
@@ -17,8 +17,8 @@ export async function createApplication(page: Page, appName: string): Promise<vo
     await page.getByRole('button', {name: 'Create Application'}).click();
 
     // Wait for the overlay to close and app to appear
-    await expect(page.getByLabel('Application Name')).not.toBeVisible({timeout: 10000});
-    await expect(page.locator('.app-card').filter({hasText: appName})).toBeVisible({timeout: 5000});
+    await expect(page.getByLabel('Application Name')).not.toBeVisible();
+    await expect(page.locator('.app-card').filter({hasText: appName})).toBeVisible();
 }
 
 /**
@@ -26,5 +26,5 @@ export async function createApplication(page: Page, appName: string): Promise<vo
  */
 export async function openApplication(page: Page, appName: string): Promise<void> {
     await page.getByRole('button', {name: appName}).click();
-    await expect(page.getByRole('heading', {name: appName})).toBeVisible({timeout: 10000});
+    await expect(page.getByRole('heading', {name: appName})).toBeVisible();
 }

@@ -5,7 +5,7 @@ import {expect, Page} from '@playwright/test';
  */
 export async function navigateToUsersTab(page: Page): Promise<void> {
     await page.getByRole('button', {name: 'Users'}).click();
-    await expect(page.locator('.users-table')).toBeVisible({timeout: 10000});
+    await expect(page.locator('.users-table')).toBeVisible();
 }
 
 /**
@@ -13,5 +13,5 @@ export async function navigateToUsersTab(page: Page): Promise<void> {
  */
 export async function navigateToApplicationsTab(page: Page): Promise<void> {
     await page.getByRole('button', {name: 'Applications'}).click();
-    await expect(page.locator('.app-cards')).toBeVisible({timeout: 10000});
+    await expect(page.locator('.app-cards')).toBeVisible();
 }
