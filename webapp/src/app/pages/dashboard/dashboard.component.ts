@@ -13,9 +13,10 @@ import {UsersTableComponent} from '../../components/users-table/users-table.comp
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
-import {ApplicationResponse, CompanyResponse} from '../../api/generated/models';
+import {ApplicationResponse, CompanyResponse, CustomerRole} from '../../api/generated/models';
 import {User, UsersService} from '../../services/users.service';
 import {CommonModule} from '@angular/common';
+import {HasRoleDirective} from '../../directives/has-role.directive';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
 const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
@@ -23,11 +24,13 @@ const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent],
+  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent, HasRoleDirective],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
+  protected readonly CustomerRole = CustomerRole;
+
   private customerService = inject(CustomerService);
   private router = inject(Router);
   showApplicationCreation = signal(false);

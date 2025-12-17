@@ -3,10 +3,10 @@ tasks.register<Exec>("generateTypeScriptClient") {
   group = "openapi"
   description = "Generate TypeScript API client from OpenAPI spec"
 
-  workingDir = file("${project.rootDir}")  // Run from project root
+  workingDir = file("${project.projectDir}")  // Run from webapp directory
   commandLine(
     "bash", "-c",
-    "npx ng-openapi-gen --input contracts/webapp_api.json --output webapp/src/app/api/generated"
+    "npx ng-openapi-gen --config ng-openapi-gen.json"
   )
 
   inputs.file("${project.rootDir}/contracts/webapp_api.json")

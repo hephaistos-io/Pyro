@@ -622,6 +622,14 @@
           }
         }
       },
+      "CustomerRole": {
+        "type": "string",
+        "enum": [
+          "READ_ONLY",
+          "DEV",
+          "ADMIN"
+        ]
+      },
       "InviteCreationRequest": {
         "required": [
           "email",
@@ -636,12 +644,7 @@
             "example": "newuser@example.com"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "READ_ONLY",
-              "DEV",
-              "ADMIN"
-            ]
+            "$ref": "#/components/schemas/CustomerRole"
           },
           "applicationIds": {
             "uniqueItems": true,
@@ -677,12 +680,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "READ_ONLY",
-              "DEV",
-              "ADMIN"
-            ]
+            "$ref": "#/components/schemas/CustomerRole"
           },
           "applicationIds": {
             "uniqueItems": true,
@@ -887,12 +885,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "READ_ONLY",
-              "DEV",
-              "ADMIN"
-            ]
+            "$ref": "#/components/schemas/CustomerRole"
           },
           "applicationNames": {
             "type": "array",
@@ -927,12 +920,7 @@
             "format": "uuid"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "READ_ONLY",
-              "DEV",
-              "ADMIN"
-            ]
+            "$ref": "#/components/schemas/CustomerRole"
           }
         }
       },
@@ -947,12 +935,7 @@
             "type": "string"
           },
           "role": {
-            "type": "string",
-            "enum": [
-              "READ_ONLY",
-              "DEV",
-              "ADMIN"
-            ]
+            "$ref": "#/components/schemas/CustomerRole"
           },
           "applicationIds": {
             "uniqueItems": true,

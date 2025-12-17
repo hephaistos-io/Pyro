@@ -1,66 +1,5 @@
 import {expect, Page, test} from '@playwright/test';
-
-/**
- * Helper to generate unique test data
- */
-function uniqueEmail(): string {
-    return `apikey-test-${Date.now()}-${crypto.randomUUID()}@example.com`;
-}
-
-/**
- * Helper to set up a complete user with company and application
- */
-async function setupUserWithApplication(page: Page): Promise<{ email: string; appName: string }> {
-    const email = uniqueEmail();
-    const password = 'SecurePassword123!@#';
-    const companyName = `TestCo-${Date.now()}`;
-    const appName = `TestApp-${Date.now()}`;
-
-    // Register
-    await page.goto('/register');
-    await page.getByLabel('First Name').fill('Test');
-    await page.getByLabel('Last Name').fill('User');
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password', {exact: true}).fill(password);
-    await page.getByLabel('Confirm Password').fill(password);
-    await page.getByRole('button', {name: 'Create Account'}).click();
-
-    // Wait for redirect to login
-    await expect(page).toHaveURL('/login', {timeout: 15000});
-
-    // Login
-    await page.getByLabel('Email').fill(email);
-    await page.getByLabel('Password').fill(password);
-    await page.getByRole('button', {name: 'Log In'}).click();
-
-    // Wait for dashboard
-    await expect(page).toHaveURL('/dashboard', {timeout: 15000});
-
-    // Create company (onboarding overlay should appear)
-    await expect(page.getByText('Create Your Company')).toBeVisible({timeout: 10000});
-    await page.getByLabel('Company Name').fill(companyName);
-    await page.getByRole('button', {name: 'Create Company'}).click();
-
-    // Wait for company to be created and overlay to close
-    await expect(page.getByText('Create Your Company')).not.toBeVisible({timeout: 10000});
-
-    // Create application
-    await page.getByRole('button', {name: 'New Application'}).click();
-    await expect(page.getByText('Create New Application')).toBeVisible({timeout: 5000});
-    await page.getByLabel('Application Name').fill(appName);
-    await page.getByRole('button', {name: 'Create Application'}).click();
-
-    // Wait for application to be created
-    await expect(page.getByText('Create New Application')).not.toBeVisible({timeout: 10000});
-
-    // Click on the application to navigate to overview
-    await page.getByRole('button', {name: appName}).click();
-
-    // Wait for application overview page
-    await expect(page.getByRole('heading', {name: appName})).toBeVisible({timeout: 10000});
-
-    return {email, appName};
-}
+import {setupUserWithApplication, uniqueName} from '../../utils';
 
 test.describe('API Key Management', () => {
     test.describe.configure({mode: 'serial'});
@@ -389,7 +328,7 @@ test.describe('API Key State Isolation', () => {
 
         // Fill in environment form
         await expect(page.getByText('Add New Environment')).toBeVisible();
-        await page.getByLabel('Environment Name').fill(`Staging-${Date.now()}`);
+        await page.getByLabel('Environment Name').fill(uniqueName('Staging'));
         await page.getByLabel('Description').fill('Test environment');
         await page.getByRole('button', {name: 'Create Environment'}).click();
 

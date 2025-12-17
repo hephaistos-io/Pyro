@@ -2,7 +2,10 @@ import {Component, computed, effect, inject, OnInit, signal} from '@angular/core
 import {Router} from '@angular/router';
 import {ApiKeyResponse, ApplicationResponse, EnvironmentResponse} from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
-import {createEnvironment, deleteEnvironment, getApiKeyByType, regenerateApiKey} from '../../api/generated/functions';
+import {createEnvironment} from '../../api/generated/fn/environments/create-environment';
+import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
+import {getApiKeyByType} from '../../api/generated/fn/api-keys/get-api-key-by-type';
+import {regenerateApiKey} from '../../api/generated/fn/api-keys/regenerate-api-key';
 
 interface RequestTier {
     id: string;
