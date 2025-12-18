@@ -807,6 +807,7 @@
                   <tr>
                     <th class="template-matrix-table__header template-matrix-table__header--sticky">Field</th>
                     <th class="template-matrix-table__header">Type</th>
+                    <th class="template-matrix-table__header template-matrix-table__header--editable">Editable</th>
                     <th class="template-matrix-table__header">Default</th>
                     <th class="template-matrix-table__header">Description</th>
                     <th class="template-matrix-table__header">Constraints</th>
@@ -851,6 +852,26 @@
                                                         {{ field.type }}
                                                     </span>
                           }
+                        </td>
+                        <!-- Editable -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--editable">
+                          <button class="template-matrix-table__toggle"
+                                  [class.template-matrix-table__toggle--active]="field.editable"
+                                  (click)="toggleUserFieldEditable(field.key)"
+                                  [attr.aria-pressed]="field.editable"
+                                  title="Toggle editable">
+                            @if (field.editable) {
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                              </svg>
+                            } @else {
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2"
+                                      stroke-linecap="round"/>
+                              </svg>
+                            }
+                          </button>
                         </td>
                         <!-- Default Value -->
                         <td class="template-matrix-table__cell"
