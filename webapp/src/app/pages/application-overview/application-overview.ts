@@ -40,6 +40,7 @@ interface UserFieldSchema {
   key: string;
   type: FieldType;
   description?: string;
+  editable?: boolean;    // Whether this field can be edited by users (included in API response)
   constraints?: {
     min?: number;        // For number type
     max?: number;        // For number type
@@ -269,16 +270,35 @@ export class ApplicationOverview implements OnInit {
 
   // APPLICATION-LEVEL: User template schema (same across all environments)
   userTemplateSchema = signal<UserFieldSchema[]>([
-    {key: 'city', type: 'string', description: 'User\'s city of residence', constraints: {maxLength: 100}},
+    {
+      key: 'city',
+      type: 'string',
+      description: 'User\'s city of residence',
+      editable: true,
+      constraints: {maxLength: 100}
+    },
     {
       key: 'language',
       type: 'enum',
       description: 'Preferred language for UI',
+      editable: true,
       constraints: {options: ['french', 'german', 'english', 'spanish']}
     },
-    {key: 'age', type: 'number', description: 'User age for age-gated features', constraints: {min: 0, max: 120}},
-    {key: 'notifications_enabled', type: 'boolean', description: 'Enable push notifications'},
-    {key: 'max_items', type: 'number', description: 'Maximum items per page', constraints: {min: 1, max: 100}}
+    {
+      key: 'age',
+      type: 'number',
+      description: 'User age for age-gated features',
+      editable: false,
+      constraints: {min: 0, max: 120}
+    },
+    {key: 'notifications_enabled', type: 'boolean', description: 'Enable push notifications', editable: true},
+    {
+      key: 'max_items',
+      type: 'number',
+      description: 'Maximum items per page',
+      editable: false,
+      constraints: {min: 1, max: 100}
+    }
   ]);
 
   // ENVIRONMENT-LEVEL: Template data by environment name
@@ -1570,5 +1590,12 @@ export class ApplicationOverview implements OnInit {
     } else {
       return override.userOverrides.find(o => o.key === fieldKey)?.value ?? '';
     }
+  }
+
+  // Toggle editable property for a user field
+  toggleUserFieldEditable(key: string): void {
+    this.userTemplateSchema.update(schema =>
+      schema.map(f => f.key === key ? {...f, editable: !f.editable} : f)
+    );
   }
 }

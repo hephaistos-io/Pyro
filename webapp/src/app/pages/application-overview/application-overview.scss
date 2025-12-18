@@ -4094,6 +4094,52 @@
     }
   }
 
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba($charcoal, 0.08);
+    border: none;
+    border-radius: 6px;
+    color: $charcoal-light;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: rgba($charcoal, 0.12);
+    }
+
+    &--active {
+      background: rgba(#059669, 0.15);
+      color: #059669;
+
+      &:hover {
+        background: rgba(#059669, 0.25);
+      }
+    }
+
+    @include dark-mode {
+      background: rgba($white, 0.08);
+      color: $dark-text-muted;
+
+      &:hover {
+        background: rgba($white, 0.12);
+      }
+
+      &--active {
+        background: rgba(#34d399, 0.2);
+        color: #34d399;
+
+        &:hover {
+          background: rgba(#34d399, 0.3);
+        }
+      }
+    }
+  }
+
 }
 
 // ===== TEMPLATE EMPTY STATE =====
