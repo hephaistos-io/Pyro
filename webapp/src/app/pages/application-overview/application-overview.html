@@ -238,12 +238,44 @@
 
     <!-- Environment Details -->
     @if (selectedEnvironment()) {
+      <!-- Tab Navigation -->
+      <div class="tab-bar">
+        <button class="tab-bar__tab"
+                [class.tab-bar__tab--active]="activeTab() === 'overview'"
+                (click)="setActiveTab('overview')">
+          Overview
+        </button>
+        <button class="tab-bar__tab"
+                [class.tab-bar__tab--active]="activeTab() === 'configuration'"
+                (click)="setActiveTab('configuration')">
+          Template
+        </button>
+        <button class="tab-bar__tab"
+                [class.tab-bar__tab--active]="activeTab() === 'overrides'"
+                (click)="setActiveTab('overrides')">
+          Overrides
+          @if (hasIdentifierOverrides()) {
+            <span class="tab-bar__badge">{{ matrixIdentifiers().length }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- Overview Tab Content -->
+      @if (activeTab() === 'overview') {
         <div class="content">
             <div class="overview-cards">
-                <div class="overview-card">
-                    <div class="overview-card__header">
-                        <h3 class="overview-card__title">API Attributes</h3>
-                    </div>
+              <div class="overview-card template-card" [class.template-card--collapsed]="!apiAttributesExpanded()">
+                <button class="overview-card__header template-card__header" (click)="toggleApiAttributesCard()">
+                  <div class="template-card__header-left">
+                    <svg class="template-card__chevron" [class.template-card__chevron--open]="apiAttributesExpanded()"
+                         width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"/>
+                    </svg>
+                    <h3 class="overview-card__title">API Attributes</h3>
+                  </div>
+                </button>
+                @if (apiAttributesExpanded()) {
                     <div class="overview-card__content">
                         <div class="stat">
                             <span class="stat__label">Identifier</span>
@@ -432,13 +464,22 @@
                             </div>
                         </div>
                     </div>
+                }
                 </div>
 
-                <div class="overview-card">
-                    <div class="overview-card__header">
-                        <h3 class="overview-card__title">Usage Overview</h3>
+              <div class="overview-card template-card" [class.template-card--collapsed]="!usageOverviewExpanded()">
+                <button class="overview-card__header template-card__header" (click)="toggleUsageOverviewCard()">
+                  <div class="template-card__header-left">
+                    <svg class="template-card__chevron" [class.template-card__chevron--open]="usageOverviewExpanded()"
+                         width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"/>
+                    </svg>
+                    <h3 class="overview-card__title">Usage Overview</h3>
+                  </div>
                         <span class="overview-card__period">Last 7 days</span>
-                    </div>
+                </button>
+                @if (usageOverviewExpanded()) {
                     <div class="overview-card__content">
                         <!-- Usage Chart -->
                         <div class="usage-chart">
@@ -532,9 +573,567 @@
                             </div>
                         }
                     </div>
-                </div>
+                }
+              </div>
             </div>
         </div>
+      }
+
+      <!-- Configuration Tab Content -->
+      @if (activeTab() === 'configuration') {
+        <div class="template-tab">
+          <!-- Controls Bar -->
+          <div class="template-controls">
+            <div class="template-controls__left">
+              <!-- Template Type Toggle -->
+              <div class="template-toggle">
+                <button class="template-toggle__btn"
+                        [class.template-toggle__btn--active]="templateTemplateType() === 'system'"
+                        (click)="templateTemplateType.set('system')">
+                  System
+                  <span
+                    class="template-toggle__count">{{ currentTemplateData()?.systemTemplate?.fields?.length ?? 0 }}</span>
+                </button>
+                <button class="template-toggle__btn"
+                        [class.template-toggle__btn--active]="templateTemplateType() === 'user'"
+                        (click)="templateTemplateType.set('user')">
+                  User
+                  <span class="template-toggle__count">{{ currentUserTemplateFields().length }}</span>
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div class="template-search">
+                <svg class="template-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text"
+                       class="template-search__input"
+                       placeholder="Search fields..."
+                       [ngModel]="templateSearchQuery()"
+                       (ngModelChange)="templateSearchQuery.set($event)">
+              </div>
+            </div>
+
+            <div class="template-controls__right">
+              <!-- Filter: Show fields with defaults -->
+              <label class="template-checkbox">
+                <input type="checkbox"
+                       [checked]="showFieldsWithDefaults()"
+                       (change)="showFieldsWithDefaults.set($any($event.target).checked)">
+                <span class="template-checkbox__label">With values only</span>
+              </label>
+
+              <!-- Add Field Button -->
+              <button class="btn btn-primary btn-sm btn-icon"
+                      (click)="templateTemplateType() === 'system' ? showAddSystemField.set(true) : showAddUserField.set(true)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Add Field
+              </button>
+            </div>
+          </div>
+
+          <!-- System Template Table -->
+          @if (templateTemplateType() === 'system') {
+            @if (filteredSystemTemplateFields().length > 0) {
+              <div class="template-matrix-wrapper">
+                <table class="template-matrix-table">
+                  <thead>
+                  <tr>
+                    <th class="template-matrix-table__header template-matrix-table__header--sticky">Field</th>
+                    <th class="template-matrix-table__header">Value</th>
+                    <th class="template-matrix-table__header">Description</th>
+                    <th class="template-matrix-table__header template-matrix-table__header--actions"></th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    @for (field of filteredSystemTemplateFields(); track field.key) {
+                      <tr class="template-matrix-table__row">
+                        <!-- Field Key (sticky) -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--sticky">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'key') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <code class="template-matrix-table__field-name"
+                                  (click)="startEditTemplateCell(field.key, 'key', field.key)">
+                              {{ field.key }}
+                            </code>
+                          }
+                        </td>
+                        <!-- Value -->
+                        <td class="template-matrix-table__cell"
+                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'value'">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'value') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <span class="template-matrix-table__value"
+                                  (click)="startEditTemplateCell(field.key, 'value', field.value)">
+                                                        {{ field.value || '—' }}
+                                                    </span>
+                          }
+                        </td>
+                        <!-- Description -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--description"
+                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description'">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <span class="template-matrix-table__description"
+                                  (click)="startEditTemplateCell(field.key, 'description', field.description ?? '')">
+                                                        {{ field.description || '—' }}
+                                                    </span>
+                          }
+                        </td>
+                        <!-- Actions -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--actions">
+                          <button class="template-matrix-table__delete-btn"
+                                  (click)="deleteSystemField(field.key)"
+                                  title="Delete field">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Add System Field Form (inline) -->
+              @if (showAddSystemField()) {
+                <div class="template-add-form-inline">
+                  <input type="text"
+                         class="template-add-form-inline__input"
+                         placeholder="Key"
+                         [ngModel]="newSystemFieldKey()"
+                         (ngModelChange)="newSystemFieldKey.set($event)">
+                  <input type="text"
+                         class="template-add-form-inline__input"
+                         placeholder="Value"
+                         [ngModel]="newSystemFieldValue()"
+                         (ngModelChange)="newSystemFieldValue.set($event)"
+                         (keydown.enter)="addSystemField()">
+                  <button class="template-add-form-inline__save" (click)="addSystemField()">Add</button>
+                  <button class="template-add-form-inline__cancel"
+                          (click)="showAddSystemField.set(false); newSystemFieldKey.set(''); newSystemFieldValue.set('')">
+                    Cancel
+                  </button>
+                </div>
+              }
+            } @else {
+              <div class="template-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"
+                    fill="currentColor" opacity="0.3"/>
+                </svg>
+                @if (templateSearchQuery()) {
+                  <p>No matching system fields found.</p>
+                  <p class="template-empty__hint">Try adjusting your search criteria.</p>
+                } @else {
+                  <p>No system template fields configured.</p>
+                  <p class="template-empty__hint">Add fields to define system-level configuration.</p>
+                }
+
+                <!-- Add System Field Form (for empty state) -->
+                @if (showAddSystemField()) {
+                  <div class="template-add-form-inline">
+                    <input type="text"
+                           class="template-add-form-inline__input"
+                           placeholder="Key"
+                           [ngModel]="newSystemFieldKey()"
+                           (ngModelChange)="newSystemFieldKey.set($event)">
+                    <input type="text"
+                           class="template-add-form-inline__input"
+                           placeholder="Value"
+                           [ngModel]="newSystemFieldValue()"
+                           (ngModelChange)="newSystemFieldValue.set($event)"
+                           (keydown.enter)="addSystemField()">
+                    <button class="template-add-form-inline__save" (click)="addSystemField()">Add</button>
+                    <button class="template-add-form-inline__cancel"
+                            (click)="showAddSystemField.set(false); newSystemFieldKey.set(''); newSystemFieldValue.set('')">
+                      Cancel
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Link to Overrides -->
+            @if (hasIdentifierOverrides() && systemOverrideCount() > 0) {
+              <div class="template-overrides-link">
+                <button class="template-overrides-link__btn"
+                        (click)="setActiveTab('overrides'); overridesTemplateType.set('system')">
+                                <span class="template-overrides-link__text">
+                                    {{ systemOverrideCount() }} identifier(s) with system overrides
+                                </span>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          }
+
+          <!-- User Template Table -->
+          @if (templateTemplateType() === 'user') {
+            @if (filteredUserTemplateFields().length > 0) {
+              <div class="template-matrix-wrapper">
+                <table class="template-matrix-table template-matrix-table--user">
+                  <thead>
+                  <tr>
+                    <th class="template-matrix-table__header template-matrix-table__header--sticky">Field</th>
+                    <th class="template-matrix-table__header">Type</th>
+                    <th class="template-matrix-table__header">Default</th>
+                    <th class="template-matrix-table__header">Description</th>
+                    <th class="template-matrix-table__header">Constraints</th>
+                    <th class="template-matrix-table__header template-matrix-table__header--actions"></th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                    @for (field of filteredUserTemplateFields(); track field.key) {
+                      <tr class="template-matrix-table__row">
+                        <!-- Field Key (sticky) -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--sticky">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'key') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <code class="template-matrix-table__field-name"
+                                  (click)="startEditTemplateCell(field.key, 'key', field.key)">
+                              {{ field.key }}
+                            </code>
+                          }
+                        </td>
+                        <!-- Type -->
+                        <td class="template-matrix-table__cell"
+                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'type'">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'type') {
+                            <select class="template-matrix-table__select"
+                                    [value]="editValue()"
+                                    (change)="editValue.set($any($event.target).value); saveTemplateCellEdit()">
+                              <option value="string">string</option>
+                              <option value="number">number</option>
+                              <option value="boolean">boolean</option>
+                              <option value="enum">enum</option>
+                            </select>
+                          } @else {
+                            <span class="template-matrix-table__type template-matrix-table__type--{{ field.type }}"
+                                  (click)="startEditTemplateCell(field.key, 'type', field.type)">
+                                                        {{ field.type }}
+                                                    </span>
+                          }
+                        </td>
+                        <!-- Default Value -->
+                        <td class="template-matrix-table__cell"
+                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'defaultValue'">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'defaultValue') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <span class="template-matrix-table__value"
+                                  (click)="startEditTemplateCell(field.key, 'defaultValue', field.defaultValue)">
+                                                        {{ field.defaultValue || '—' }}
+                                                    </span>
+                          }
+                        </td>
+                        <!-- Description -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--description"
+                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description'">
+                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description') {
+                            <input type="text"
+                                   class="template-matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveTemplateCellEdit()"
+                                   (keydown.escape)="cancelTemplateCellEdit()"
+                                   (blur)="saveTemplateCellEdit()">
+                          } @else {
+                            <span class="template-matrix-table__description"
+                                  (click)="startEditTemplateCell(field.key, 'description', field.description ?? '')">
+                                                        {{ field.description || '—' }}
+                                                    </span>
+                          }
+                        </td>
+                        <!-- Constraints (read-only) -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--constraints">
+                          {{ formatConstraints(field) || '—' }}
+                        </td>
+                        <!-- Actions -->
+                        <td class="template-matrix-table__cell template-matrix-table__cell--actions">
+                          <button class="template-matrix-table__delete-btn"
+                                  (click)="deleteUserField(field.key)"
+                                  title="Delete field">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Add User Field Form (inline) -->
+              @if (showAddUserField()) {
+                <div class="template-add-form-inline template-add-form-inline--user">
+                  <input type="text"
+                         class="template-add-form-inline__input"
+                         placeholder="Field name"
+                         [ngModel]="newUserFieldKey()"
+                         (ngModelChange)="newUserFieldKey.set($event)">
+                  <select class="template-add-form-inline__select"
+                          [ngModel]="newUserFieldType()"
+                          (ngModelChange)="newUserFieldType.set($event)">
+                    <option value="string">string</option>
+                    <option value="number">number</option>
+                    <option value="boolean">boolean</option>
+                    <option value="enum">enum</option>
+                  </select>
+                  <button class="template-add-form-inline__save" (click)="addUserField()">Add</button>
+                  <button class="template-add-form-inline__cancel"
+                          (click)="showAddUserField.set(false); newUserFieldKey.set('')">Cancel
+                  </button>
+                </div>
+              }
+            } @else {
+              <div class="template-empty">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"
+                    fill="currentColor" opacity="0.3"/>
+                </svg>
+                @if (templateSearchQuery()) {
+                  <p>No matching user fields found.</p>
+                  <p class="template-empty__hint">Try adjusting your search criteria.</p>
+                } @else {
+                  <p>No user template fields configured.</p>
+                  <p class="template-empty__hint">Add fields to define user-level configuration.</p>
+                }
+
+                <!-- Add User Field Form (for empty state) -->
+                @if (showAddUserField()) {
+                  <div class="template-add-form-inline template-add-form-inline--user">
+                    <input type="text"
+                           class="template-add-form-inline__input"
+                           placeholder="Field name"
+                           [ngModel]="newUserFieldKey()"
+                           (ngModelChange)="newUserFieldKey.set($event)">
+                    <select class="template-add-form-inline__select"
+                            [ngModel]="newUserFieldType()"
+                            (ngModelChange)="newUserFieldType.set($event)">
+                      <option value="string">string</option>
+                      <option value="number">number</option>
+                      <option value="boolean">boolean</option>
+                      <option value="enum">enum</option>
+                    </select>
+                    <button class="template-add-form-inline__save" (click)="addUserField()">Add</button>
+                    <button class="template-add-form-inline__cancel"
+                            (click)="showAddUserField.set(false); newUserFieldKey.set('')">Cancel
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Link to Overrides -->
+            @if (hasIdentifierOverrides() && userOverrideCount() > 0) {
+              <div class="template-overrides-link">
+                <button class="template-overrides-link__btn"
+                        (click)="setActiveTab('overrides'); overridesTemplateType.set('user')">
+                                <span class="template-overrides-link__text">
+                                    {{ userOverrideCount() }} identifier(s) with user overrides
+                                </span>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- Overrides Tab Content -->
+      @if (activeTab() === 'overrides') {
+        <div class="overrides-tab">
+          <!-- Controls Bar -->
+          <div class="overrides-controls">
+            <div class="overrides-controls__left">
+              <!-- Template Type Toggle -->
+              <div class="overrides-toggle">
+                <button class="overrides-toggle__btn"
+                        [class.overrides-toggle__btn--active]="overridesTemplateType() === 'system'"
+                        (click)="overridesTemplateType.set('system')">
+                  System
+                </button>
+                <button class="overrides-toggle__btn"
+                        [class.overrides-toggle__btn--active]="overridesTemplateType() === 'user'"
+                        (click)="overridesTemplateType.set('user')">
+                  User
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div class="overrides-search">
+                <svg class="overrides-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <input type="text"
+                       class="overrides-search__input"
+                       placeholder="Search attributes..."
+                       [ngModel]="overridesSearchQuery()"
+                       (ngModelChange)="overridesSearchQuery.set($event)">
+              </div>
+            </div>
+
+            <div class="overrides-controls__right">
+              <!-- Show Only Overrides Toggle -->
+              <label class="overrides-checkbox">
+                <input type="checkbox"
+                       [checked]="showOnlyOverrides()"
+                       (change)="showOnlyOverrides.set($any($event.target).checked)">
+                <span class="overrides-checkbox__label">Show only overrides</span>
+              </label>
+
+              <!-- Add Identifier Button -->
+              <button class="btn btn-primary btn-sm btn-icon" (click)="showAddIdentifier.set(true)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Add Identifier
+              </button>
+            </div>
+          </div>
+
+          <!-- Add Identifier Form -->
+          @if (showAddIdentifier()) {
+            <div class="overrides-add-form">
+              <input type="text"
+                     class="overrides-add-form__input"
+                     placeholder="Enter identifier name..."
+                     [ngModel]="newIdentifierName()"
+                     (ngModelChange)="newIdentifierName.set($event)"
+                     (keydown.enter)="addIdentifier()"
+                     (keydown.escape)="showAddIdentifier.set(false); newIdentifierName.set('')">
+              <button class="overrides-add-form__btn overrides-add-form__btn--save" (click)="addIdentifier()">Add
+              </button>
+              <button class="overrides-add-form__btn overrides-add-form__btn--cancel"
+                      (click)="showAddIdentifier.set(false); newIdentifierName.set('')">Cancel
+              </button>
+            </div>
+          }
+
+          <!-- Matrix Table -->
+          @if (matrixIdentifiers().length > 0 && matrixAttributeKeys().length > 0) {
+            <div class="matrix-wrapper">
+              <table class="matrix-table">
+                <thead>
+                <tr>
+                  <th class="matrix-table__header matrix-table__header--sticky">Field</th>
+                  @for (identifier of matrixIdentifiers(); track identifier) {
+                    <th class="matrix-table__header">
+                      <code class="matrix-table__identifier-header">{{ identifier }}</code>
+                    </th>
+                  }
+                </tr>
+                </thead>
+                <tbody>
+                  @for (attr of matrixAttributeKeys(); track attr) {
+                    <tr class="matrix-table__row">
+                      <td class="matrix-table__cell matrix-table__cell--sticky">
+                        <code class="matrix-table__field-name">{{ attr }}</code>
+                        <span class="matrix-table__default">{{ getDefaultValue(attr) }}</span>
+                      </td>
+                      @for (identifier of matrixIdentifiers(); track identifier) {
+                        <td class="matrix-table__cell"
+                            [class.matrix-table__cell--override]="getMatrixCellValue(identifier, attr) !== null"
+                            [class.matrix-table__cell--editing]="editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr">
+                          @if (editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr) {
+                            <input type="text"
+                                   class="matrix-table__input"
+                                   [value]="editValue()"
+                                   (input)="editValue.set($any($event.target).value)"
+                                   (keydown.enter)="saveMatrixCellEdit()"
+                                   (keydown.escape)="cancelMatrixCellEdit()"
+                                   (blur)="saveMatrixCellEdit()">
+                          } @else {
+                            <span class="matrix-table__value"
+                                  [class.matrix-table__value--default]="getMatrixCellValue(identifier, attr) === null"
+                                  (click)="startEditMatrixCell(identifier, attr, getMatrixCellValue(identifier, attr))">
+                                                        @if (getMatrixCellValue(identifier, attr) !== null) {
+                                                          {{ getMatrixCellValue(identifier, attr) }}
+                                                        } @else {
+                                                          <span class="matrix-table__dash">—</span>
+                                                        }
+                                                    </span>
+                          }
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else if (matrixIdentifiers().length === 0) {
+            <div class="overrides-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"
+                  fill="currentColor" opacity="0.3"/>
+              </svg>
+              <p>No identifiers configured for this environment.</p>
+              <p class="overrides-empty__hint">Add identifiers in the Configuration tab to define overrides.</p>
+            </div>
+          } @else {
+            <div class="overrides-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      opacity="0.3"/>
+              </svg>
+              <p>No matching attributes found.</p>
+              <p class="overrides-empty__hint">Try adjusting your search or filter criteria.</p>
+            </div>
+          }
+        </div>
+      }
     }
 </section>
 
