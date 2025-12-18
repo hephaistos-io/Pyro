@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: flagforge
       POSTGRES_PASSWORD: flagforge
     volumes:
-      - pgdata:/var/lib/postgresql
+      - ff-pgdata:/var/lib/postgresql
       - ./deployment/local/postgres/init-users.sql:/docker-entrypoint-initdb.d/init-users.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U flagforge -d flagforge" ]
@@ -115,5 +115,5 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
+  ff-pgdata:
     name: flagforge-pgdata
