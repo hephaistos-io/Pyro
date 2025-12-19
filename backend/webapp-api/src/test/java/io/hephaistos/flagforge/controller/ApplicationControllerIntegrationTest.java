@@ -5,6 +5,7 @@ import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.PricingTier;
+import io.hephaistos.flagforge.data.TemplateType;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
@@ -248,6 +249,52 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         var listAfterCreateResponse = get("/v1/applications", token, ApplicationResponse[].class);
         assertThat(listAfterCreateResponse.getBody()).hasSize(1);
         assertThat(listAfterCreateResponse.getBody()[0].name()).isEqualTo("New App");
+    }
+
+    // ========== Template Auto-Creation Tests ==========
+
+    @Test
+    void createApplicationReturnsWithBothTemplates() {
+        String token = registerAndAuthenticateWithCompany();
+
+        var response = post("/v1/applications", new ApplicationCreationRequest("My App"), token,
+                ApplicationResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().templates()).hasSize(2);
+        assertThat(response.getBody().templates()).extracting("type")
+                .containsExactlyInAnyOrder(TemplateType.USER, TemplateType.SYSTEM);
+    }
+
+    @Test
+    void getApplicationsReturnsBothTemplatesForEachApp() {
+        String token = registerAndAuthenticateWithCompany();
+        createApplication(token, "App 1");
+        createApplication(token, "App 2");
+
+        var response = get("/v1/applications", token, ApplicationResponse[].class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).hasSize(2);
+
+        for (var app : response.getBody()) {
+            assertThat(app.templates()).hasSize(2);
+            assertThat(app.templates()).extracting("type")
+                    .containsExactlyInAnyOrder(TemplateType.USER, TemplateType.SYSTEM);
+        }
+    }
+
+    @Test
+    void autoCreatedTemplatesHaveEmptySchema() {
+        String token = registerAndAuthenticateWithCompany();
+
+        var response = post("/v1/applications", new ApplicationCreationRequest("My App"), token,
+                ApplicationResponse.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        for (var template : response.getBody().templates()) {
+            assertThat(template.schema().fields()).isEmpty();
+        }
     }
 
     @Test
