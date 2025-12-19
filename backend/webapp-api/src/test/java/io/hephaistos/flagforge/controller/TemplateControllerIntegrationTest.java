@@ -11,8 +11,7 @@ import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
-import io.hephaistos.flagforge.data.FieldType;
-import io.hephaistos.flagforge.data.TemplateField;
+import io.hephaistos.flagforge.data.BooleanTemplateField;
 import io.hephaistos.flagforge.data.TemplateSchema;
 import io.hephaistos.flagforge.data.TemplateType;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
@@ -393,7 +392,7 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
 
     private TemplateSchema createTestSchema() {
         return new TemplateSchema(
-                List.of(new TemplateField("night_mode", FieldType.BOOLEAN, "Dark theme preference",
-                        true, false, null)));
+                List.of(new BooleanTemplateField("night_mode", "Dark theme preference", true,
+                        false)));
     }
 }

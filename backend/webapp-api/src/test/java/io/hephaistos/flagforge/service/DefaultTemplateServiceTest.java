@@ -3,9 +3,8 @@ package io.hephaistos.flagforge.service;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.FieldType;
+import io.hephaistos.flagforge.data.StringTemplateField;
 import io.hephaistos.flagforge.data.TemplateEntity;
-import io.hephaistos.flagforge.data.TemplateField;
 import io.hephaistos.flagforge.data.TemplateSchema;
 import io.hephaistos.flagforge.data.TemplateType;
 import io.hephaistos.flagforge.data.TemplateValuesEntity;
@@ -151,8 +150,8 @@ class DefaultTemplateServiceTest {
     void updateTemplateSuccessfully() {
         var existingTemplate = createTemplateEntity(TemplateType.USER);
         var newSchema = new TemplateSchema(
-                List.of(new TemplateField("updated_field", FieldType.STRING, "Updated", true,
-                        "default", Map.of("minLength", 0, "maxLength", 255))));
+                List.of(new StringTemplateField("updated_field", "Updated", true, "default", 0,
+                        255)));
         var request = new TemplateUpdateRequest(newSchema);
 
         when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
@@ -345,8 +344,8 @@ class DefaultTemplateServiceTest {
 
     private TemplateSchema createTestSchema() {
         return new TemplateSchema(
-                List.of(new TemplateField("test_key", FieldType.STRING, "Test field", true,
-                        "test_default", Map.of("minLength", 0, "maxLength", 100))));
+                List.of(new StringTemplateField("test_key", "Test field", true, "test_default", 0,
+                        100)));
     }
 
     private ApplicationEntity createApplicationEntity() {

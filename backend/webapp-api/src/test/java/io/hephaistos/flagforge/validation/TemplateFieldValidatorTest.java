@@ -1,7 +1,10 @@
 package io.hephaistos.flagforge.validation;
 
+import io.hephaistos.flagforge.data.BooleanTemplateField;
+import io.hephaistos.flagforge.data.EnumTemplateField;
 import io.hephaistos.flagforge.data.FieldType;
-import io.hephaistos.flagforge.data.TemplateField;
+import io.hephaistos.flagforge.data.NumberTemplateField;
+import io.hephaistos.flagforge.data.StringTemplateField;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -10,11 +13,16 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+/**
+ * Tests for polymorphic TemplateField validation using Jakarta Bean Validation. Each type-specific
+ * record (StringTemplateField, NumberTemplateField, etc.) is validated using its own bean
+ * validation annotations.
+ */
 @Tag("unit")
 class TemplateFieldValidatorTest {
 
@@ -29,217 +37,246 @@ class TemplateFieldValidatorTest {
 
     @Test
     void stringFieldWithValidConstraintsIsValid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default",
-                Map.of("minLength", 0, "maxLength", 100));
+        var field = new StringTemplateField("name", "User name", true, "default", 0, 100);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).isEmpty();
+        assertThat(field.type()).isEqualTo(FieldType.STRING);
     }
 
     @Test
-    void stringFieldWithoutConstraintsIsInvalid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default", null);
+    void stringFieldWithNullMinLengthIsInvalid() {
+        var field = new StringTemplateField("name", FieldType.STRING, "User name", true, "default",
+                null, 100);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).hasSize(1);
-        assertThat(violations.iterator().next().getMessage()).contains("STRING")
-                .contains("minLength")
-                .contains("maxLength");
-    }
-
-    @Test
-    void stringFieldWithoutMinLengthIsInvalid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default",
-                Map.of("maxLength", 100));
-
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
-
-        assertThat(violations).isNotEmpty();
         assertThat(violations.iterator().next().getMessage()).contains("minLength");
     }
 
     @Test
-    void stringFieldWithoutMaxLengthIsInvalid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default",
-                Map.of("minLength", 0));
+    void stringFieldWithNullMaxLengthIsInvalid() {
+        var field =
+                new StringTemplateField("name", FieldType.STRING, "User name", true, "default", 0,
+                        null);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
+        assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage()).contains("maxLength");
     }
 
     @Test
     void stringFieldWithNegativeMinLengthIsInvalid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default",
-                Map.of("minLength", -1, "maxLength", 100));
+        var field =
+                new StringTemplateField("name", FieldType.STRING, "User name", true, "default", -1,
+                        100);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("minLength")
-                .contains("non-negative");
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("non-negative");
     }
 
     @Test
-    void stringFieldWithMinLengthGreaterThanMaxLengthIsInvalid() {
-        var field = new TemplateField("name", FieldType.STRING, "User name", true, "default",
-                Map.of("minLength", 100, "maxLength", 50));
+    void stringFieldWithZeroMaxLengthIsInvalid() {
+        var field =
+                new StringTemplateField("name", FieldType.STRING, "User name", true, "default", 0,
+                        0);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("less than or equal");
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("positive");
+    }
+
+    @Test
+    void stringFieldWithMinLengthGreaterThanMaxLengthThrowsException() {
+        assertThatThrownBy(() -> new StringTemplateField("name", "User name", true, "default", 100,
+                50)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("minLength")
+                .hasMessageContaining("less than or equal");
+    }
+
+    @Test
+    void stringFieldWithBlankKeyIsInvalid() {
+        var field =
+                new StringTemplateField("", FieldType.STRING, "User name", true, "default", 0, 100);
+
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("key");
     }
 
     // ========== NUMBER Type Tests ==========
 
     @Test
     void numberFieldWithValidConstraintsIsValid() {
-        var field = new TemplateField("amount", FieldType.NUMBER, "Amount", true, 10,
-                Map.of("minValue", 0, "maxValue", 100, "incrementAmount", 1));
+        var field = new NumberTemplateField("amount", "Amount", true, 10, 0.0, 100.0, 1.0);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).isEmpty();
+        assertThat(field.type()).isEqualTo(FieldType.NUMBER);
     }
 
     @Test
     void numberFieldWithDecimalConstraintsIsValid() {
-        var field = new TemplateField("price", FieldType.NUMBER, "Price", true, 9.99,
-                Map.of("minValue", 0.0, "maxValue", 999.99, "incrementAmount", 0.01));
+        var field = new NumberTemplateField("price", "Price", true, 9.99, 0.0, 999.99, 0.01);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).isEmpty();
     }
 
     @Test
-    void numberFieldWithoutConstraintsIsInvalid() {
-        var field = new TemplateField("amount", FieldType.NUMBER, "Amount", true, 10, null);
+    void numberFieldWithNullMinValueIsInvalid() {
+        var field =
+                new NumberTemplateField("amount", FieldType.NUMBER, "Amount", true, 10, null, 100.0,
+                        1.0);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).hasSize(1);
-        assertThat(violations.iterator().next().getMessage()).contains("NUMBER")
-                .contains("minValue")
-                .contains("maxValue")
-                .contains("incrementAmount");
-    }
-
-    @Test
-    void numberFieldWithoutMinValueIsInvalid() {
-        var field = new TemplateField("amount", FieldType.NUMBER, "Amount", true, 10,
-                Map.of("maxValue", 100, "incrementAmount", 1));
-
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
-
-        assertThat(violations).isNotEmpty();
         assertThat(violations.iterator().next().getMessage()).contains("minValue");
     }
 
     @Test
+    void numberFieldWithNullMaxValueIsInvalid() {
+        var field =
+                new NumberTemplateField("amount", FieldType.NUMBER, "Amount", true, 10, 0.0, null,
+                        1.0);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("maxValue");
+    }
+
+    @Test
+    void numberFieldWithNullIncrementAmountIsInvalid() {
+        var field =
+                new NumberTemplateField("amount", FieldType.NUMBER, "Amount", true, 10, 0.0, 100.0,
+                        null);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("incrementAmount");
+    }
+
+    @Test
     void numberFieldWithZeroIncrementAmountIsInvalid() {
-        var field = new TemplateField("amount", FieldType.NUMBER, "Amount", true, 10,
-                Map.of("minValue", 0, "maxValue", 100, "incrementAmount", 0));
+        var field =
+                new NumberTemplateField("amount", FieldType.NUMBER, "Amount", true, 10, 0.0, 100.0,
+                        0.0);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
+        assertThat(violations).hasSize(1);
         assertThat(violations.iterator().next().getMessage()).contains("incrementAmount")
                 .contains("positive");
     }
 
     @Test
-    void numberFieldWithMinValueGreaterThanMaxValueIsInvalid() {
-        var field = new TemplateField("amount", FieldType.NUMBER, "Amount", true, 10,
-                Map.of("minValue", 100, "maxValue", 0, "incrementAmount", 1));
+    void numberFieldWithNegativeIncrementAmountIsInvalid() {
+        var field =
+                new NumberTemplateField("amount", FieldType.NUMBER, "Amount", true, 10, 0.0, 100.0,
+                        -1.0);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("less than or equal");
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("positive");
+    }
+
+    @Test
+    void numberFieldWithMinValueGreaterThanMaxValueThrowsException() {
+        assertThatThrownBy(() -> new NumberTemplateField("amount", "Amount", true, 10, 100.0, 0.0,
+                1.0)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("minValue")
+                .hasMessageContaining("less than or equal");
     }
 
     // ========== ENUM Type Tests ==========
 
     @Test
     void enumFieldWithValidOptionsIsValid() {
-        var field = new TemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
-                Map.of("options", List.of("free", "pro", "enterprise")));
+        var field = new EnumTemplateField("tier", "Subscription tier", false, "free",
+                List.of("free", "pro", "enterprise"));
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).isEmpty();
+        assertThat(field.type()).isEqualTo(FieldType.ENUM);
     }
 
     @Test
-    void enumFieldWithoutConstraintsIsInvalid() {
+    void enumFieldWithNullOptionsIsInvalid() {
         var field =
-                new TemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free", null);
+                new EnumTemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
+                        null);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).hasSize(1);
-        assertThat(violations.iterator().next().getMessage()).contains("ENUM").contains("options");
-    }
-
-    @Test
-    void enumFieldWithoutOptionsKeyIsInvalid() {
-        var field = new TemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
-                Map.of("other", "value"));
-
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
-
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("options");
+        // Both @NotNull and @NotEmpty trigger for null, so we get 2 violations
+        assertThat(violations).hasSizeGreaterThanOrEqualTo(1);
+        assertThat(violations).anyMatch(v -> v.getMessage().contains("options"));
     }
 
     @Test
     void enumFieldWithEmptyOptionsIsInvalid() {
-        var field = new TemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
-                Map.of("options", List.of()));
+        var field =
+                new EnumTemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
+                        List.of());
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("options")
-                .contains("not be empty");
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("not be empty");
     }
 
     @Test
-    void enumFieldWithNonStringOptionsIsInvalid() {
-        var field = new TemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
-                Map.of("options", List.of(1, 2, 3)));
+    void enumFieldOptionsAreImmutable() {
+        var options = new java.util.ArrayList<>(List.of("a", "b"));
+        var field = new EnumTemplateField("tier", "Tier", false, "a", options);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
-
-        assertThat(violations).isNotEmpty();
-        assertThat(violations.iterator().next().getMessage()).contains("options")
-                .contains("strings");
+        // Try to modify after creation
+        assertThatThrownBy(() -> field.options().add("c")).isInstanceOf(
+                UnsupportedOperationException.class);
     }
 
     // ========== BOOLEAN Type Tests ==========
 
     @Test
-    void booleanFieldWithoutConstraintsIsValid() {
-        var field =
-                new TemplateField("night_mode", FieldType.BOOLEAN, "Dark theme", true, false, null);
+    void booleanFieldIsValid() {
+        var field = new BooleanTemplateField("night_mode", "Dark theme", true, false);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<BooleanTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+        assertThat(field.type()).isEqualTo(FieldType.BOOLEAN);
+    }
+
+    @Test
+    void booleanFieldWithNullDefaultValueIsValid() {
+        var field = new BooleanTemplateField("night_mode", "Dark theme", true, null);
+
+        Set<ConstraintViolation<BooleanTemplateField>> violations = validator.validate(field);
 
         assertThat(violations).isEmpty();
     }
 
     @Test
-    void booleanFieldWithConstraintsIsStillValid() {
-        var field = new TemplateField("night_mode", FieldType.BOOLEAN, "Dark theme", true, false,
-                Map.of("extra", "ignored"));
+    void booleanFieldWithBlankKeyIsInvalid() {
+        var field = new BooleanTemplateField("", FieldType.BOOLEAN, "Dark theme", true, false);
 
-        Set<ConstraintViolation<TemplateField>> violations = validator.validate(field);
+        Set<ConstraintViolation<BooleanTemplateField>> violations = validator.validate(field);
 
-        assertThat(violations).isEmpty();
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("key");
     }
 }
