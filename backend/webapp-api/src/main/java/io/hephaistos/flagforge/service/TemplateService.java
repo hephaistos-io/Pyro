@@ -1,6 +1,8 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.MergedTemplateValuesResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
@@ -39,4 +41,6 @@ public interface TemplateService {
 
     void deleteOverride(UUID applicationId, UUID environmentId, TemplateType type,
             String identifier);
+
+    CopyOverridesResponse copyOverrides(UUID applicationId, CopyOverridesRequest request);
 }
