@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
+import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.TemplateType;
@@ -142,7 +143,8 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         createApplication(token, "App 1");
         createApplication(token, "App 2");
 
-        var listApplicationsResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        var listApplicationsResponse =
+                get("/v1/applications", token, ApplicationListResponse[].class);
 
         assertThat(listApplicationsResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listApplicationsResponse.getBody()).hasSize(2);
@@ -152,7 +154,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
     void getApplicationsReturnsEmptyListWhenNone() {
         String token = registerAndAuthenticateWithCompany();
 
-        var emptyListResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        var emptyListResponse = get("/v1/applications", token, ApplicationListResponse[].class);
 
         assertThat(emptyListResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(emptyListResponse.getBody()).isEmpty();
@@ -193,13 +195,13 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
 
         // User without access is in the same company but has no application access, so should see empty list
         var noAccessUserResponse =
-                get("/v1/applications", tokenUserWithoutAccess, ApplicationResponse[].class);
+                get("/v1/applications", tokenUserWithoutAccess, ApplicationListResponse[].class);
         assertThat(noAccessUserResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(noAccessUserResponse.getBody()).isEmpty();
 
         // User with access should still see both applications
         var accessUserResponse =
-                get("/v1/applications", tokenUserWithAccess, ApplicationResponse[].class);
+                get("/v1/applications", tokenUserWithAccess, ApplicationListResponse[].class);
         assertThat(accessUserResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(accessUserResponse.getBody()).hasSize(2);
     }
@@ -223,14 +225,14 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
 
         // User in company A should only see Company A's apps
         var companyAUserResponse =
-                get("/v1/applications", tokenCompanyA, ApplicationResponse[].class);
+                get("/v1/applications", tokenCompanyA, ApplicationListResponse[].class);
         assertThat(companyAUserResponse.getBody()).hasSize(2);
         assertThat(companyAUserResponse.getBody()).extracting("name")
                 .containsExactlyInAnyOrder("App A1", "App A2");
 
         // User in company B should only see Company B's apps
         var companyBUserResponse =
-                get("/v1/applications", tokenCompanyB, ApplicationResponse[].class);
+                get("/v1/applications", tokenCompanyB, ApplicationListResponse[].class);
         assertThat(companyBUserResponse.getBody()).hasSize(1);
         assertThat(companyBUserResponse.getBody()[0].name()).isEqualTo("App B1");
     }
@@ -246,7 +248,8 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(createAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // The application should be immediately visible without re-authentication
-        var listAfterCreateResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        var listAfterCreateResponse =
+                get("/v1/applications", token, ApplicationListResponse[].class);
         assertThat(listAfterCreateResponse.getBody()).hasSize(1);
         assertThat(listAfterCreateResponse.getBody()[0].name()).isEqualTo("New App");
     }
@@ -264,24 +267,6 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody().templates()).hasSize(2);
         assertThat(response.getBody().templates()).extracting("type")
                 .containsExactlyInAnyOrder(TemplateType.USER, TemplateType.SYSTEM);
-    }
-
-    @Test
-    void getApplicationsReturnsBothTemplatesForEachApp() {
-        String token = registerAndAuthenticateWithCompany();
-        createApplication(token, "App 1");
-        createApplication(token, "App 2");
-
-        var response = get("/v1/applications", token, ApplicationResponse[].class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2);
-
-        for (var app : response.getBody()) {
-            assertThat(app.templates()).hasSize(2);
-            assertThat(app.templates()).extracting("type")
-                    .containsExactlyInAnyOrder(TemplateType.USER, TemplateType.SYSTEM);
-        }
     }
 
     @Test
@@ -309,7 +294,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
                         ApplicationResponse.class);
 
         // Verify user can see both applications
-        var beforeRevokeResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        var beforeRevokeResponse = get("/v1/applications", token, ApplicationListResponse[].class);
         assertThat(beforeRevokeResponse.getBody()).hasSize(2);
 
         // Revoke access to App 2 directly in the database (without re-authentication)
@@ -327,7 +312,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(updatedCustomer.getAccessibleApplications()).hasSize(1);
 
         // Without re-authentication, user should only see App 1
-        var afterRevokeResponse = get("/v1/applications", token, ApplicationResponse[].class);
+        var afterRevokeResponse = get("/v1/applications", token, ApplicationListResponse[].class);
         assertThat(afterRevokeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(afterRevokeResponse.getBody()).hasSize(1);
         assertThat(afterRevokeResponse.getBody()[0].name()).isEqualTo("App 1");

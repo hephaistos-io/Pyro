@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost/api",
+      "url": "http://localhost:8080/api",
       "description": "Generated server url"
     }
   ],
@@ -16,7 +16,7 @@
         "tags": [
           "templates"
         ],
-        "summary": "Update a template's schema",
+        "summary": "Update a template\u0027s schema",
         "operationId": "updateTemplate",
         "parameters": [
           {
@@ -349,7 +349,7 @@
         "tags": [
           "application"
         ],
-        "summary": "Get all applications for current customers's company",
+        "summary": "Get all applications for current customers\u0027s company",
         "operationId": "getApplications",
         "responses": {
           "200": {
@@ -359,7 +359,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ApplicationResponse"
+                    "$ref": "#/components/schemas/ApplicationListResponse"
                   }
                 }
               }
@@ -371,7 +371,7 @@
         "tags": [
           "application"
         ],
-        "summary": "Create application for current customers's company",
+        "summary": "Create application for current customers\u0027s company",
         "operationId": "createApplication",
         "requestBody": {
           "content": {
@@ -951,79 +951,56 @@
         ]
       },
       "BooleanTemplateField": {
-        "required": [
-          "key"
-        ],
         "type": "object",
-        "description": "A boolean field with no additional constraints",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/TemplateField"
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "type": "string"
           },
-          {
-            "type": "object",
-            "properties": {
-              "key": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "type": {
-                "$ref": "#/components/schemas/FieldType"
-              },
-              "description": {
-                "type": "string"
-              },
-              "editable": {
-                "type": "boolean"
-              },
-              "defaultValue": {
-                "type": "boolean"
-              }
-            }
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "type": "boolean"
           }
-        ]
+        },
+        "description": "A boolean field with no additional constraints"
       },
       "EnumTemplateField": {
-        "required": [
-          "key",
-          "options"
-        ],
         "type": "object",
-        "description": "An enum field with a list of allowed options",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/TemplateField"
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "type": "string"
           },
-          {
-            "type": "object",
-            "properties": {
-              "key": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "type": {
-                "$ref": "#/components/schemas/FieldType"
-              },
-              "description": {
-                "type": "string"
-              },
-              "editable": {
-                "type": "boolean"
-              },
-              "defaultValue": {
-                "type": "string"
-              },
-              "options": {
-                "minItems": 1,
-                "type": "array",
-                "items": {
-                  "minLength": 1,
-                  "type": "string"
-                }
-              }
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "type": "string"
+          },
+          "options": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "minLength": 1,
+              "type": "string"
             }
           }
-        ]
+        },
+        "description": "An enum field with a list of allowed options"
       },
       "FieldType": {
         "type": "string",
@@ -1036,96 +1013,69 @@
         ]
       },
       "NumberTemplateField": {
-        "required": [
-          "incrementAmount",
-          "key",
-          "maxValue",
-          "minValue"
-        ],
         "type": "object",
-        "description": "A numeric field with range and increment constraints",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/TemplateField"
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "type": "string"
           },
-          {
-            "type": "object",
-            "properties": {
-              "key": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "type": {
-                "$ref": "#/components/schemas/FieldType"
-              },
-              "description": {
-                "type": "string"
-              },
-              "editable": {
-                "type": "boolean"
-              },
-              "defaultValue": {
-                "type": "number"
-              },
-              "minValue": {
-                "type": "number",
-                "format": "double"
-              },
-              "maxValue": {
-                "type": "number",
-                "format": "double"
-              },
-              "incrementAmount": {
-                "type": "number",
-                "format": "double"
-              }
-            }
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "type": "number"
+          },
+          "minValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "maxValue": {
+            "type": "number",
+            "format": "double"
+          },
+          "incrementAmount": {
+            "type": "number",
+            "format": "double"
           }
-        ]
+        },
+        "description": "A numeric field with range and increment constraints"
       },
       "StringTemplateField": {
-        "required": [
-          "key",
-          "maxLength",
-          "minLength"
-        ],
         "type": "object",
-        "description": "A string field with length constraints",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/TemplateField"
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "type": "string"
           },
-          {
-            "type": "object",
-            "properties": {
-              "key": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "type": {
-                "$ref": "#/components/schemas/FieldType"
-              },
-              "description": {
-                "type": "string"
-              },
-              "editable": {
-                "type": "boolean"
-              },
-              "defaultValue": {
-                "type": "string"
-              },
-              "minLength": {
-                "minimum": 0,
-                "type": "integer",
-                "format": "int32"
-              },
-              "maxLength": {
-                "type": "integer",
-                "format": "int32"
-              }
-            }
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "type": "string"
+          },
+          "minLength": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxLength": {
+            "type": "integer",
+            "format": "int32"
           }
-        ]
+        },
+        "description": "A string field with length constraints"
       },
       "TemplateField": {
         "required": [
@@ -1645,6 +1595,35 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PendingInviteResponse"
+            }
+          }
+        }
+      },
+      "ApplicationListResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pricingTier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "PAID"
+            ]
+          },
+          "environments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentResponse"
             }
           }
         }
