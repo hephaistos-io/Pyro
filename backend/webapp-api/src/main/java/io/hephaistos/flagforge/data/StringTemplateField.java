@@ -50,6 +50,17 @@ public record StringTemplateField(@NotBlank(message = "Field key is required") S
         if (minLength != null && maxLength != null && minLength > maxLength) {
             throw new IllegalArgumentException("minLength must be less than or equal to maxLength");
         }
+        // Validate default value against constraints
+        if (defaultValue != null && !defaultValue.isEmpty()) {
+            if (minLength != null && defaultValue.length() < minLength) {
+                throw new IllegalArgumentException(
+                        "defaultValue length (" + defaultValue.length() + ") must be at least minLength (" + minLength + ")");
+            }
+            if (maxLength != null && defaultValue.length() > maxLength) {
+                throw new IllegalArgumentException(
+                        "defaultValue length (" + defaultValue.length() + ") must be at most maxLength (" + maxLength + ")");
+            }
+        }
     }
 
     /**

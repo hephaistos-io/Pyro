@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
+import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.data.ApplicationEntity;
 import io.hephaistos.flagforge.data.CustomerEntity;
@@ -80,10 +81,9 @@ public class DefaultApplicationService implements ApplicationService {
 
     @Override
     @RequireReadOnly
-    public List<ApplicationResponse> getApplications() {
+    public List<ApplicationListResponse> getApplications() {
         return applicationRepository.findAll()
-                .stream()
-                .map(ApplicationResponse::fromEntity)
+                .stream().map(ApplicationListResponse::fromEntity)
                 .toList();
     }
 }

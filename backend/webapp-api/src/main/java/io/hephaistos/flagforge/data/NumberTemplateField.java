@@ -51,6 +51,28 @@ public record NumberTemplateField(@NotBlank(message = "Field key is required") S
         if (minValue != null && maxValue != null && minValue > maxValue) {
             throw new IllegalArgumentException("minValue must be less than or equal to maxValue");
         }
+        // Validate default value against constraints
+        if (defaultValue != null) {
+            double val = defaultValue.doubleValue();
+            if (minValue != null && val < minValue) {
+                throw new IllegalArgumentException(
+                        "defaultValue (" + val + ") must be at least minValue (" + minValue + ")");
+            }
+            if (maxValue != null && val > maxValue) {
+                throw new IllegalArgumentException(
+                        "defaultValue (" + val + ") must be at most maxValue (" + maxValue + ")");
+            }
+            // Validate increment alignment
+            if (incrementAmount != null && minValue != null) {
+                double diff = val - minValue;
+                double remainder = Math.abs(diff % incrementAmount);
+                double tolerance = incrementAmount * 1e-9;
+                if (remainder > tolerance && remainder < incrementAmount - tolerance) {
+                    throw new IllegalArgumentException(
+                            "defaultValue (" + val + ") must align with incrementAmount (" + incrementAmount + ") starting from minValue (" + minValue + ")");
+                }
+            }
+        }
     }
 
     /**

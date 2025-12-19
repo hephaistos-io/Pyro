@@ -82,8 +82,7 @@ class TemplateFieldValidatorTest {
 
     @Test
     void stringFieldWithZeroMaxLengthIsInvalid() {
-        var field =
-                new StringTemplateField("name", FieldType.STRING, "User name", true, "default", 0,
+        var field = new StringTemplateField("name", FieldType.STRING, "User name", true, null, 0,
                         0);
 
         Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
@@ -98,6 +97,44 @@ class TemplateFieldValidatorTest {
                 50)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("minLength")
                 .hasMessageContaining("less than or equal");
+    }
+
+    @Test
+    void stringFieldWithDefaultValueTooShortThrowsException() {
+        assertThatThrownBy(() -> new StringTemplateField("name", "User name", true, "ab", 5,
+                100)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("defaultValue")
+                .hasMessageContaining("at least")
+                .hasMessageContaining("5");
+    }
+
+    @Test
+    void stringFieldWithDefaultValueTooLongThrowsException() {
+        assertThatThrownBy(
+                () -> new StringTemplateField("name", "User name", true, "this is way too long", 0,
+                        10)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("defaultValue")
+                .hasMessageContaining("at most")
+                .hasMessageContaining("10");
+    }
+
+    @Test
+    void stringFieldWithDefaultValueWithinConstraintsIsValid() {
+        var field = new StringTemplateField("name", "User name", true, "hello", 3, 10);
+
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void stringFieldWithEmptyDefaultValueIsValidRegardlessOfMinLength() {
+        // Empty default value should be allowed (it means "no default")
+        var field = new StringTemplateField("name", "User name", true, "", 5, 100);
+
+        Set<ConstraintViolation<StringTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
     }
 
     @Test
@@ -199,6 +236,72 @@ class TemplateFieldValidatorTest {
                 1.0)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("minValue")
                 .hasMessageContaining("less than or equal");
+    }
+
+    @Test
+    void numberFieldWithDefaultValueBelowMinValueThrowsException() {
+        assertThatThrownBy(() -> new NumberTemplateField("amount", "Amount", true, -5, 0.0, 100.0,
+                1.0)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("defaultValue")
+                .hasMessageContaining("at least")
+                .hasMessageContaining("0.0");
+    }
+
+    @Test
+    void numberFieldWithDefaultValueAboveMaxValueThrowsException() {
+        assertThatThrownBy(() -> new NumberTemplateField("amount", "Amount", true, 150, 0.0, 100.0,
+                1.0)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("defaultValue")
+                .hasMessageContaining("at most")
+                .hasMessageContaining("100.0");
+    }
+
+    @Test
+    void numberFieldWithDefaultValueNotAlignedWithIncrementThrowsException() {
+        // minValue=0, increment=0.2, so valid values are 0, 0.2, 0.4, etc.
+        // 0.1 is not valid
+        assertThatThrownBy(() -> new NumberTemplateField("amount", "Amount", true, 0.1, 0.0, 10.0,
+                0.2)).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("defaultValue")
+                .hasMessageContaining("align")
+                .hasMessageContaining("incrementAmount");
+    }
+
+    @Test
+    void numberFieldWithDefaultValueAlignedWithIncrementIsValid() {
+        // minValue=0, increment=0.2, defaultValue=0.4 is valid
+        var field = new NumberTemplateField("amount", "Amount", true, 0.4, 0.0, 10.0, 0.2);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void numberFieldWithDefaultValueAtMinValueIsValid() {
+        var field = new NumberTemplateField("amount", "Amount", true, 0.0, 0.0, 100.0, 1.0);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void numberFieldWithDefaultValueAtMaxValueIsValid() {
+        var field = new NumberTemplateField("amount", "Amount", true, 100.0, 0.0, 100.0, 1.0);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void numberFieldWithNullDefaultValueIsValid() {
+        var field = new NumberTemplateField("amount", "Amount", true, null, 0.0, 100.0, 1.0);
+
+        Set<ConstraintViolation<NumberTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
     }
 
     // ========== ENUM Type Tests ==========

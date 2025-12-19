@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
+import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.service.ApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +41,7 @@ public class ApplicationController {
     @Operation(summary = "Get all applications for current customers's company")
     @GetMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<ApplicationResponse> getApplications() {
+    public List<ApplicationListResponse> getApplications() {
         return applicationService.getApplications();
     }
 }
