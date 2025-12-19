@@ -11,6 +11,171 @@
     }
   ],
   "paths": {
+    "/v1/applications/{applicationId}/templates/{type}": {
+      "put": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Update a template\u0027s schema",
+        "operationId": "updateTemplate",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/templates/{type}/environments/{environmentId}/overrides/{identifier}": {
+      "put": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Set or update override values for a specific identifier",
+        "operationId": "setOverride",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateValuesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateValuesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Delete an override for a specific identifier",
+        "operationId": "deleteOverride",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "identifier",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/v1/company": {
       "get": {
         "tags": [
@@ -465,6 +630,204 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/templates": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "List templates for an application, optionally filtered by type",
+        "operationId": "getTemplates",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by template type (USER or SYSTEM). If not provided, returns all templates.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/templates/{type}/environments/{environmentId}/values": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get merged values for a template (defaults + identifier overrides)",
+        "operationId": "getMergedValues",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "identifiers",
+            "in": "query",
+            "description": "Identifiers to merge, in order of precedence",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MergedTemplateValuesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/templates/{type}/environments/{environmentId}/overrides": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "List all overrides for a template in an environment",
+        "operationId": "listOverrides",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateValuesResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/applications/{applicationId}/templates/overrides": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "List all overrides for an application and environment, grouped by template type",
+        "operationId": "listAllOverrides",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllTemplateOverridesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}": {
       "get": {
         "tags": [
@@ -580,6 +943,161 @@
   },
   "components": {
     "schemas": {
+      "TemplateType": {
+        "type": "string",
+        "enum": [
+          "USER",
+          "SYSTEM"
+        ]
+      },
+      "FieldType": {
+        "type": "string",
+        "enum": [
+          "STRING",
+          "NUMBER",
+          "BOOLEAN",
+          "ENUM"
+        ]
+      },
+      "TemplateField": {
+        "required": [
+          "key",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "description": {
+            "type": "string"
+          },
+          "editable": {
+            "type": "boolean"
+          },
+          "defaultValue": {
+            "type": "object"
+          },
+          "constraints": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "TemplateSchema": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateField"
+            }
+          },
+          "defaultValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "TemplateUpdateRequest": {
+        "required": [
+          "schema"
+        ],
+        "type": "object",
+        "properties": {
+          "schema": {
+            "$ref": "#/components/schemas/TemplateSchema"
+          }
+        }
+      },
+      "TemplateResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TemplateType"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/TemplateSchema"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TemplateValuesRequest": {
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "description": "Key-value pairs for template fields"
+            },
+            "description": "Key-value pairs for template fields"
+          }
+        }
+      },
+      "TemplateValuesResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "environmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TemplateType"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CompanyCreationRequest": {
         "required": [
           "companyName"
@@ -780,6 +1298,12 @@
             "items": {
               "$ref": "#/components/schemas/EnvironmentResponse"
             }
+          },
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateResponse"
+            }
           }
         }
       },
@@ -950,6 +1474,54 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PendingInviteResponse"
+            }
+          }
+        }
+      },
+      "MergedTemplateValuesResponse": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "environmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TemplateType"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/TemplateSchema"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "appliedIdentifiers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AllTemplateOverridesResponse": {
+        "type": "object",
+        "properties": {
+          "userOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateValuesResponse"
+            }
+          },
+          "systemOverrides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateValuesResponse"
             }
           }
         }

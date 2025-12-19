@@ -42,6 +42,10 @@ public class ApplicationEntity extends CompanyOwnedEntity {
             orphanRemoval = true)
     private List<EnvironmentEntity> environments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "application", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<TemplateEntity> templates = new ArrayList<>();
+
     public UUID getId() {
         return id;
     }
@@ -64,6 +68,19 @@ public class ApplicationEntity extends CompanyOwnedEntity {
 
     public void setEnvironments(List<EnvironmentEntity> environments) {
         this.environments = environments;
+    }
+
+    public List<TemplateEntity> getTemplates() {
+        return templates;
+    }
+
+    /**
+     * Sync method for bidirectional relationship - adds template to collection and sets the
+     * back-reference on the template.
+     */
+    public void addTemplate(TemplateEntity template) {
+        templates.add(template);
+        template.setApplication(this);
     }
 
     public PricingTier getPricingTier() {

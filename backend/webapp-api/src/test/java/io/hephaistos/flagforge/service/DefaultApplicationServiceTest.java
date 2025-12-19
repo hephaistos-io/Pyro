@@ -41,6 +41,9 @@ class DefaultApplicationServiceTest {
     private EnvironmentService environmentService;
 
     @Mock
+    private TemplateService templateService;
+
+    @Mock
     private CustomerRepository customerRepository;
 
     private DefaultApplicationService applicationService;
@@ -51,7 +54,7 @@ class DefaultApplicationServiceTest {
     void setUp() {
         applicationService =
                 new DefaultApplicationService(applicationRepository, environmentService,
-                        customerRepository);
+                        templateService, customerRepository);
         testCompanyId = UUID.randomUUID();
         testCustomerId = UUID.randomUUID();
         setupSecurityContext(testCompanyId, testCustomerId);
@@ -83,6 +86,7 @@ class DefaultApplicationServiceTest {
         assertThat(response.companyId()).isEqualTo(testCompanyId);
         assertThat(response.pricingTier()).isEqualTo(PricingTier.FREE);
         verify(environmentService).createDefaultEnvironment(response.id());
+        verify(templateService).createDefaultTemplates(any(ApplicationEntity.class));
 
         // Verify the entity was saved with FREE tier
         ArgumentCaptor<ApplicationEntity> captor = ArgumentCaptor.forClass(ApplicationEntity.class);
@@ -111,6 +115,7 @@ class DefaultApplicationServiceTest {
         assertThat(response.companyId()).isEqualTo(testCompanyId);
         assertThat(response.pricingTier()).isEqualTo(PricingTier.PAID);
         verify(environmentService).createDefaultEnvironment(response.id());
+        verify(templateService).createDefaultTemplates(any(ApplicationEntity.class));
 
         // Verify the entity was saved with PAID tier
         ArgumentCaptor<ApplicationEntity> captor = ArgumentCaptor.forClass(ApplicationEntity.class);
@@ -202,13 +207,5 @@ class DefaultApplicationServiceTest {
         context.setCustomerName("test@example.com");
         context.setCustomerId(testCustomerId);
         SecurityContextHolder.setContext(context);
-    }
-
-    private ApplicationEntity createApplicationEntity(String name, UUID companyId) {
-        var entity = new ApplicationEntity();
-        entity.setId(UUID.randomUUID());
-        entity.setName(name);
-        entity.setCompanyId(companyId);
-        return entity;
     }
 }

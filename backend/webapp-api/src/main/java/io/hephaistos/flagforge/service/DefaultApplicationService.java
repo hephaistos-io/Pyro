@@ -26,12 +26,15 @@ public class DefaultApplicationService implements ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final EnvironmentService environmentService;
+    private final TemplateService templateService;
     private final CustomerRepository customerRepository;
 
     public DefaultApplicationService(ApplicationRepository applicationRepository,
-            EnvironmentService environmentService, CustomerRepository customerRepository) {
+            EnvironmentService environmentService, TemplateService templateService,
+            CustomerRepository customerRepository) {
         this.applicationRepository = applicationRepository;
         this.environmentService = environmentService;
+        this.templateService = templateService;
         this.customerRepository = customerRepository;
     }
 
@@ -70,6 +73,7 @@ public class DefaultApplicationService implements ApplicationService {
         securityContext.setAccessibleApplicationIds(updatedAppIds);
 
         environmentService.createDefaultEnvironment(application.getId());
+        templateService.createDefaultTemplates(application);
 
         return ApplicationResponse.fromEntity(application);
     }
