@@ -1,0 +1,86 @@
+<div class="delete-field-overlay">
+  <div class="delete-field-overlay__icon">
+    <svg fill="none" height="32" viewBox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      <path d="M10 11v6M14 11v6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <h2 class="delete-field-overlay__title">Delete Field "{{ data().fieldKey }}"?</h2>
+
+  <p class="delete-field-overlay__warning">
+    This action will permanently delete the <strong>{{ data().fieldKey }}</strong> field from the
+    <strong>{{ data().templateType }}</strong> template. This cannot be undone and may affect
+    existing configurations using this field.
+  </p>
+
+  <div class="delete-field-overlay__confirm">
+    <p class="delete-field-overlay__confirm-text">
+      To confirm, please type the following:
+    </p>
+
+    <div class="confirm-group">
+      <label class="confirm-label">Application Name</label>
+      <div class="confirm-hint">
+        Type: <code>{{ data().applicationName }}</code>
+      </div>
+      <div class="confirm-input-wrapper">
+        <input
+          (ngModelChange)="applicationNameInput.set($event)"
+          [class.confirm-input--match]="applicationNameInput() && applicationNameMatch()"
+          [class.confirm-input--mismatch]="applicationNameInput() && !applicationNameMatch()"
+          [ngModel]="applicationNameInput()"
+          autocomplete="off"
+          class="confirm-input"
+          placeholder="Enter application name"
+          type="text">
+        @if (applicationNameMatch()) {
+          <span class="confirm-check">
+            <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+              <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+            </svg>
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="confirm-group">
+      <label class="confirm-label">Field Name</label>
+      <div class="confirm-hint">
+        Type: <code>{{ data().fieldKey }}</code>
+      </div>
+      <div class="confirm-input-wrapper">
+        <input
+          (ngModelChange)="fieldKeyInput.set($event)"
+          [class.confirm-input--match]="fieldKeyInput() && fieldKeyMatch()"
+          [class.confirm-input--mismatch]="fieldKeyInput() && !fieldKeyMatch()"
+          [ngModel]="fieldKeyInput()"
+          autocomplete="off"
+          class="confirm-input"
+          placeholder="Enter field name"
+          type="text">
+        @if (fieldKeyMatch()) {
+          <span class="confirm-check">
+            <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+              <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+            </svg>
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="delete-field-overlay__actions">
+    <button (click)="onCancel()" class="btn btn--secondary" type="button">
+      Cancel
+    </button>
+    <button
+      (click)="onConfirm()"
+      [disabled]="!canConfirm()"
+      class="btn btn--danger"
+      type="button">
+      Delete Field
+    </button>
+  </div>
+</div>

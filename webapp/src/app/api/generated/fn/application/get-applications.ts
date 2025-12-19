@@ -7,12 +7,12 @@ import {filter, map} from 'rxjs/operators';
 import {StrictHttpResponse} from '../../strict-http-response';
 import {RequestBuilder} from '../../request-builder';
 
-import {ApplicationResponse} from '../../models/application-response';
+import {ApplicationListResponse} from '../../models/application-list-response';
 
 export interface GetApplications$Params {
 }
 
-export function getApplications(http: HttpClient, rootUrl: string, params?: GetApplications$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ApplicationResponse>>> {
+export function getApplications(http: HttpClient, rootUrl: string, params?: GetApplications$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<ApplicationListResponse>>> {
   const rb = new RequestBuilder(rootUrl, getApplications.PATH, 'get');
   if (params) {
   }
@@ -22,7 +22,7 @@ export function getApplications(http: HttpClient, rootUrl: string, params?: GetA
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<ApplicationResponse>>;
+      return r as StrictHttpResponse<Array<ApplicationListResponse>>;
     })
   );
 }

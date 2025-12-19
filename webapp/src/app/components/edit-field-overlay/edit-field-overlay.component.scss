@@ -1,0 +1,374 @@
+@use '../../../styles/index' as *;
+
+.edit-field-overlay {
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0 0 1.5rem 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($charcoal, 0.1);
+
+    @include dark-mode {
+      border-top-color: $dark-border;
+    }
+  }
+}
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  &--constraints {
+    padding: 1rem;
+    background: rgba($charcoal, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba($charcoal, 0.08);
+
+    @include dark-mode {
+      background: rgba($white, 0.03);
+      border-color: $dark-border;
+    }
+  }
+
+  &__title {
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba($charcoal, 0.6);
+    margin: 0 0 0.5rem 0;
+
+    @include dark-mode {
+      color: rgba($dark-text, 0.6);
+    }
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  .form-group {
+    min-width: 0; // Prevent grid blowout
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+
+  &--inline {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.form-label {
+  font-family: $font-sans;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: $charcoal;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.form-hint {
+  font-family: $font-sans;
+  font-size: 0.75rem;
+  color: rgba($charcoal, 0.5);
+  margin-top: 0.125rem;
+
+  @include dark-mode {
+    color: rgba($dark-text, 0.5);
+  }
+}
+
+.form-input {
+  width: 100%;
+  min-width: 0; // Prevent grid blowout
+  padding: 0.625rem 0.875rem;
+  border: 1px solid rgba($charcoal, 0.15);
+  border-radius: 6px;
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  color: $charcoal;
+  background: $white;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+
+  &::placeholder {
+    color: rgba($charcoal, 0.4);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $pyro-red;
+    box-shadow: 0 0 0 2px rgba($pyro-red, 0.1);
+  }
+
+  &--error {
+    border-color: $pyro-red;
+  }
+
+  &--readonly {
+    background: rgba($charcoal, 0.05);
+    color: rgba($charcoal, 0.7);
+    cursor: not-allowed;
+
+    @include dark-mode {
+      background: rgba($white, 0.05);
+      color: rgba($dark-text, 0.7);
+    }
+  }
+
+  @include dark-mode {
+    background: $dark-bg;
+    border-color: $dark-border;
+    color: $dark-text;
+
+    &::placeholder {
+      color: rgba($dark-text, 0.4);
+    }
+
+    &:focus {
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 2px rgba($pyro-red, 0.2);
+    }
+  }
+}
+
+.form-select {
+  @extend .form-input;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.form-error {
+  font-family: $font-sans;
+  font-size: 0.75rem;
+  color: $pyro-red;
+
+  &--section {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba($pyro-red, 0.1);
+    border-radius: 4px;
+  }
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: $pyro-red;
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.9rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    display: none;
+  }
+
+  &__track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: rgba($charcoal, 0.2);
+    border-radius: 12px;
+    transition: background 0.2s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: $white;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+      box-shadow: 0 1px 3px rgba($black, 0.2);
+    }
+  }
+
+  input:checked + &__track {
+    background: $pyro-red;
+
+    &::after {
+      transform: translateX(20px);
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.9rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.enum-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.enum-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  background: rgba($pyro-red, 0.1);
+  border: 1px solid rgba($pyro-red, 0.2);
+  border-radius: 4px;
+
+  &__text {
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: rgba($charcoal, 0.5);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba($pyro-red, 0.2);
+      color: $pyro-red;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.enum-add {
+  display: flex;
+  gap: 0.5rem;
+
+  .form-input {
+    flex: 1;
+  }
+}
+
+// Button styles
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-family: $font-sans;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    background: $pyro-red;
+    border: none;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: $pyro-red-deep;
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    border: 1px solid rgba($charcoal, 0.2);
+    color: $charcoal;
+
+    &:hover:not(:disabled) {
+      background: rgba($charcoal, 0.05);
+    }
+
+    @include dark-mode {
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &:hover:not(:disabled) {
+        background: rgba($white, 0.05);
+      }
+    }
+  }
+
+  &--sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}

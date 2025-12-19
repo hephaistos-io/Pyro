@@ -1,12 +1,42 @@
 import {Component, computed, effect, inject, OnInit, signal} from '@angular/core';
 import {Router} from '@angular/router';
-import {ApiKeyResponse, ApplicationResponse, EnvironmentResponse} from '../../api/generated/models';
+import {
+  ApiKeyResponse,
+  ApplicationResponse,
+  BooleanTemplateField,
+  EnumTemplateField,
+  EnvironmentResponse,
+  NumberTemplateField,
+  StringTemplateField,
+  TemplateField,
+  TemplateResponse,
+  TemplateType,
+  TemplateValuesResponse
+} from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
 import {createEnvironment} from '../../api/generated/fn/environments/create-environment';
 import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
 import {getApiKeyByType} from '../../api/generated/fn/api-keys/get-api-key-by-type';
 import {regenerateApiKey} from '../../api/generated/fn/api-keys/regenerate-api-key';
 import {FormsModule} from '@angular/forms';
+import {TemplateService} from '../../services/template.service';
+import {OverlayService} from '../../services/overlay.service';
+import {
+  AddFieldOverlayComponent,
+  AddFieldOverlayData
+} from '../../components/add-field-overlay/add-field-overlay.component';
+import {
+  DeleteFieldOverlayComponent,
+  DeleteFieldOverlayData
+} from '../../components/delete-field-overlay/delete-field-overlay.component';
+import {
+  EditFieldOverlayComponent,
+  EditFieldOverlayData
+} from '../../components/edit-field-overlay/edit-field-overlay.component';
+import {
+  CopyOverridesOverlayComponent,
+  CopyOverridesOverlayData
+} from '../../components/copy-overrides-overlay/copy-overrides-overlay.component';
 
 interface RequestTier {
     id: string;
@@ -26,45 +56,11 @@ interface UserTier {
 // TEMPLATE TYPES
 // ============================================================================
 
-// System Template: simple key-value pairs
-interface SystemTemplateField {
+// Helper type for displaying field values with their defaults
+interface FieldDisplayValue {
   key: string;
-  value: string;
-  description?: string;
-}
-
-// User Template: field schema (app-level) + default values (env-level)
-type FieldType = 'string' | 'number' | 'boolean' | 'enum';
-
-interface UserFieldSchema {
-  key: string;
-  type: FieldType;
-  description?: string;
-  editable?: boolean;    // Whether this field can be edited by users (included in API response)
-  constraints?: {
-    min?: number;        // For number type
-    max?: number;        // For number type
-    maxLength?: number;  // For string type
-    options?: string[];  // For enum type
-  };
-}
-
-// Combined view: schema + environment-specific default value
-interface UserTemplateField extends UserFieldSchema {
-  defaultValue: string;  // Environment-specific default
-}
-
-interface IdentifierOverride {
-  identifier: string;
-  systemOverrides: SystemTemplateField[];
-  userOverrides: { key: string; value: string }[];  // Override just the default value
-}
-
-// Environment-specific template data
-interface EnvironmentTemplateData {
-  systemTemplate: { fields: SystemTemplateField[] };
-  userTemplateDefaults: { key: string; value: string }[];  // Env-specific defaults
-  identifierOverrides: IdentifierOverride[];
+  value: unknown;
+  hasOverride: boolean;
 }
 
 @Component({
@@ -226,8 +222,12 @@ export class ApplicationOverview implements OnInit {
     ]);
 
   // ============================================================================
-  // TEMPLATE MOCK DATA - Replace with API calls when backend endpoints are available
+  // TEMPLATE STATE - API-backed
   // ============================================================================
+
+  templateService = inject(TemplateService); // Public so template can access type checking methods
+  // Copy overrides state
+  showCopyOverridesDialog = signal(false);
 
   // Card collapse state (expanded by default)
   apiAttributesExpanded = signal(true);
@@ -241,6 +241,10 @@ export class ApplicationOverview implements OnInit {
   overridesSearchQuery = signal('');
   showOnlyOverrides = signal(false);
   editingMatrixCell = signal<{ identifier: string; attribute: string } | null>(null);
+  copySourceEnvironmentId = signal<string | null>(null);
+  copyOverwriteExisting = signal(false);
+  isCopyingOverrides = signal(false);
+  editError = signal<string | null>(null);
 
   // Template (Configuration) tab state
   templateTemplateType = signal<'system' | 'user'>('system');
@@ -257,202 +261,98 @@ export class ApplicationOverview implements OnInit {
   editingUserField = signal<{ key: string; field: 'key' | 'type' | 'defaultValue' } | null>(null);
   editingIdentifier = signal<{ identifier: string; template: 'system' | 'user'; field: string } | null>(null);
   editValue = signal('');
-
-  // New field forms
-  showAddSystemField = signal(false);
-  showAddUserField = signal(false);
+  // New identifier form
   showAddIdentifier = signal(false);
-  newSystemFieldKey = signal('');
-  newSystemFieldValue = signal('');
-  newUserFieldKey = signal('');
-  newUserFieldType = signal<FieldType>('string');
+  // Loading states
+  isLoadingTemplates = signal(false);
   newIdentifierName = signal('');
-
-  // APPLICATION-LEVEL: User template schema (same across all environments)
-  userTemplateSchema = signal<UserFieldSchema[]>([
-    {
-      key: 'city',
-      type: 'string',
-      description: 'User\'s city of residence',
-      editable: true,
-      constraints: {maxLength: 100}
-    },
-    {
-      key: 'language',
-      type: 'enum',
-      description: 'Preferred language for UI',
-      editable: true,
-      constraints: {options: ['french', 'german', 'english', 'spanish']}
-    },
-    {
-      key: 'age',
-      type: 'number',
-      description: 'User age for age-gated features',
-      editable: false,
-      constraints: {min: 0, max: 120}
-    },
-    {key: 'notifications_enabled', type: 'boolean', description: 'Enable push notifications', editable: true},
-    {
-      key: 'max_items',
-      type: 'number',
-      description: 'Maximum items per page',
-      editable: false,
-      constraints: {min: 1, max: 100}
-    }
-  ]);
-
-  // ENVIRONMENT-LEVEL: Template data by environment name
-  templateData = signal<Record<string, EnvironmentTemplateData>>({
-    'Development': {
-      systemTemplate: {
-        fields: [
-          {key: 'name', value: 'dev', description: 'Environment name identifier'},
-          {key: 'country', value: 'france', description: 'Default country code'},
-          {key: 'region', value: 'eu-west', description: 'Cloud region for deployment'},
-          {key: 'api_version', value: 'v2', description: 'API version to use'}
-        ]
-      },
-      userTemplateDefaults: [
-        {key: 'city', value: 'paris'},
-        {key: 'language', value: 'french'},
-        {key: 'age', value: '18'},
-        {key: 'notifications_enabled', value: 'true'},
-        {key: 'max_items', value: '10'}
-      ],
-      identifierOverrides: [
-        {identifier: 'FR', systemOverrides: [], userOverrides: []},
-        {
-          identifier: 'DE',
-          systemOverrides: [{key: 'country', value: 'germany'}, {key: 'region', value: 'eu-central'}],
-          userOverrides: [{key: 'city', value: 'berlin'}, {key: 'language', value: 'german'}]
-        },
-        {
-          identifier: 'ES',
-          systemOverrides: [{key: 'country', value: 'spain'}],
-          userOverrides: [{key: 'city', value: 'madrid'}, {key: 'language', value: 'spanish'}]
-        }
-      ]
-    },
-    'Production': {
-      systemTemplate: {
-        fields: [
-          {key: 'name', value: 'prod', description: 'Environment name identifier'},
-          {key: 'country', value: 'usa', description: 'Default country code'},
-          {key: 'region', value: 'us-east', description: 'Cloud region for deployment'},
-          {key: 'api_version', value: 'v2', description: 'API version to use'}
-        ]
-      },
-      userTemplateDefaults: [
-        {key: 'city', value: 'new york'},
-        {key: 'language', value: 'english'},
-        {key: 'age', value: '21'},
-        {key: 'notifications_enabled', value: 'false'},
-        {key: 'max_items', value: '25'}
-      ],
-      identifierOverrides: [
-        {identifier: 'US-EAST', systemOverrides: [], userOverrides: []},
-        {
-          identifier: 'US-WEST',
-          systemOverrides: [{key: 'region', value: 'us-west'}],
-          userOverrides: [{key: 'city', value: 'los angeles'}]
-        }
-      ]
-    }
+  isLoadingOverrides = signal(false);
+  isSavingTemplate = signal(false);
+  // API-loaded templates (SYSTEM and USER)
+  systemTemplate = signal<TemplateResponse | null>(null);
+  userTemplate = signal<TemplateResponse | null>(null);
+  // API-loaded overrides per environment (keyed by environmentId)
+  systemOverrides = signal<TemplateValuesResponse[]>([]);
+  userOverrides = signal<TemplateValuesResponse[]>([]);
+  // Computed: System template fields
+  systemTemplateFields = computed<TemplateField[]>(() => {
+    return this.systemTemplate()?.schema?.fields ?? [];
   });
-
-  // Computed: current template data for selected environment
-  currentTemplateData = computed(() => {
-    const env = this.selectedEnvironment();
-    return env?.name ? this.templateData()[env.name] ?? null : null;
+  // Computed: User template fields
+  userTemplateFields = computed<TemplateField[]>(() => {
+    return this.userTemplate()?.schema?.fields ?? [];
   });
-
-  // Computed: merge schema with environment-specific defaults for display
-  currentUserTemplateFields = computed<UserTemplateField[]>(() => {
-    const schema = this.userTemplateSchema();
-    const data = this.currentTemplateData();
-    if (!data) return [];
-
-    const defaultsMap = new Map(data.userTemplateDefaults.map(d => [d.key, d.value]));
-    return schema.map(field => ({
-      ...field,
-      defaultValue: defaultsMap.get(field.key) ?? ''
-    }));
-  });
-
   // Computed: check if current environment has any identifier overrides
-  hasIdentifierOverrides = computed(() =>
-    (this.currentTemplateData()?.identifierOverrides?.length ?? 0) > 0
-  );
-
-  // Count of identifiers with system overrides
-  systemOverrideCount = computed(() =>
-    this.currentTemplateData()?.identifierOverrides.filter(o => o.systemOverrides.length > 0).length ?? 0
-  );
-
-  // Count of identifiers with user overrides
-  userOverrideCount = computed(() =>
-    this.currentTemplateData()?.identifierOverrides.filter(o => o.userOverrides.length > 0).length ?? 0
-  );
-
-  // ============================================================================
-  // TEMPLATE TAB FILTERED COMPUTED PROPERTIES
-  // ============================================================================
-
-  // Filtered system template fields (for Template tab)
-  filteredSystemTemplateFields = computed(() => {
-    const data = this.currentTemplateData();
-    if (!data) return [];
-
-    const query = this.templateSearchQuery().toLowerCase();
-    let fields = data.systemTemplate.fields;
-
-    if (query) {
-      fields = fields.filter(f => f.key.toLowerCase().includes(query));
-    }
-
-    if (this.showFieldsWithDefaults()) {
-      fields = fields.filter(f => f.value?.trim());
-    }
-
-    return fields;
+  hasIdentifierOverrides = computed(() => {
+    const systemOverrides = this.systemOverrides();
+    const userOverrides = this.userOverrides();
+    return systemOverrides.length > 0 || userOverrides.length > 0;
   });
-
-  // Filtered user template fields (for Template tab)
-  filteredUserTemplateFields = computed(() => {
-    const fields = this.currentUserTemplateFields();
+  // Count of identifiers with system overrides
+  systemOverrideCount = computed(() => this.systemOverrides().length);
+  // Count of identifiers with user overrides
+  userOverrideCount = computed(() => this.userOverrides().length);
+  // Get all unique identifiers from overrides
+  allIdentifiers = computed<string[]>(() => {
+    const systemIds = this.systemOverrides().map(o => o.identifier).filter((id): id is string => !!id);
+    const userIds = this.userOverrides().map(o => o.identifier).filter((id): id is string => !!id);
+    return [...new Set([...systemIds, ...userIds])];
+  });
+  // Filtered system template fields (for Template tab)
+  filteredSystemTemplateFields = computed<TemplateField[]>(() => {
+    const fields = this.systemTemplateFields();
     const query = this.templateSearchQuery().toLowerCase();
 
     let filtered = fields;
 
     if (query) {
-      filtered = filtered.filter(f => f.key.toLowerCase().includes(query));
+      filtered = filtered.filter(f => f.key?.toLowerCase().includes(query));
     }
 
     if (this.showFieldsWithDefaults()) {
-      filtered = filtered.filter(f => f.defaultValue?.trim());
+      filtered = filtered.filter(f => {
+        const defaultValue = this.templateService.getDefaultValue(f);
+        return defaultValue !== undefined && defaultValue !== null && defaultValue !== '';
+      });
     }
 
     return filtered;
   });
 
   // ============================================================================
-  // MATRIX VIEW COMPUTED PROPERTIES
+  // TEMPLATE TAB FILTERED COMPUTED PROPERTIES
   // ============================================================================
+  // Filtered user template fields (for Template tab)
+  filteredUserTemplateFields = computed<TemplateField[]>(() => {
+    const fields = this.userTemplateFields();
+    const query = this.templateSearchQuery().toLowerCase();
 
+    let filtered = fields;
+
+    if (query) {
+      filtered = filtered.filter(f => f.key?.toLowerCase().includes(query));
+    }
+
+    if (this.showFieldsWithDefaults()) {
+      filtered = filtered.filter(f => {
+        const defaultValue = this.templateService.getDefaultValue(f);
+        return defaultValue !== undefined && defaultValue !== null && defaultValue !== '';
+      });
+    }
+
+    return filtered;
+  });
   // Get all attribute keys for current template type
-  matrixAttributeKeys = computed(() => {
-    const data = this.currentTemplateData();
-    if (!data) return [];
-
+  matrixAttributeKeys = computed<string[]>(() => {
     const query = this.overridesSearchQuery().toLowerCase();
     const showOnlyOverrides = this.showOnlyOverrides();
     const templateType = this.overridesTemplateType();
 
     let keys: string[];
     if (templateType === 'system') {
-      keys = data.systemTemplate.fields.map(f => f.key);
+      keys = this.systemTemplateFields().map(f => f.key).filter((k): k is string => !!k);
     } else {
-      keys = this.userTemplateSchema().map(f => f.key);
+      keys = this.userTemplateFields().map(f => f.key).filter((k): k is string => !!k);
     }
 
     // Filter by search query
@@ -462,14 +362,11 @@ export class ApplicationOverview implements OnInit {
 
     // Filter to show only attributes that have at least one override
     if (showOnlyOverrides) {
-      const overrides = data.identifierOverrides;
+      const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
       keys = keys.filter(key => {
         return overrides.some(o => {
-          if (templateType === 'system') {
-            return o.systemOverrides.some(so => so.key === key);
-          } else {
-            return o.userOverrides.some(uo => uo.key === key);
-          }
+          const values = o.values as Record<string, unknown> | undefined;
+          return values && key in values;
         });
       });
     }
@@ -477,12 +374,14 @@ export class ApplicationOverview implements OnInit {
     return keys;
   });
 
+  // ============================================================================
+  // MATRIX VIEW COMPUTED PROPERTIES
+  // ============================================================================
   // Get all identifiers for matrix rows
-  matrixIdentifiers = computed(() => {
-    const data = this.currentTemplateData();
-    if (!data) return [];
-    return data.identifierOverrides.map(o => o.identifier);
+  matrixIdentifiers = computed<string[]>(() => {
+    return this.allIdentifiers();
   });
+  private overlayService = inject(OverlayService);
 
     constructor() {
         // Auto-select first environment when environments change
@@ -513,24 +412,55 @@ export class ApplicationOverview implements OnInit {
         this.showSystemOverrides.set(false);
         this.showUserOverrides.set(false);
       }, {allowSignalWrites: true});
+
+      // Load templates when application changes
+      effect(() => {
+        const app = this.application();
+        if (app?.id) {
+          this.loadTemplates(app.id);
+        }
+      }, {allowSignalWrites: true});
+
+      // Load overrides when environment changes
+      effect(() => {
+        const app = this.application();
+        const env = this.selectedEnvironment();
+        if (app?.id && env?.id) {
+          this.loadOverrides(app.id, env.id);
+        }
+      }, {allowSignalWrites: true});
     }
 
   // Get matrix cell value (override value or null if using default)
   getMatrixCellValue(identifier: string, attribute: string): string | null {
-    const data = this.currentTemplateData();
-    if (!data) return null;
-
-    const override = data.identifierOverrides.find(o => o.identifier === identifier);
-    if (!override) return null;
-
     const templateType = this.overridesTemplateType();
-    if (templateType === 'system') {
-      const field = override.systemOverrides.find(so => so.key === attribute);
-      return field?.value ?? null;
-    } else {
-      const field = override.userOverrides.find(uo => uo.key === attribute);
-      return field?.value ?? null;
-    }
+    const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
+
+    const override = overrides.find(o => o.identifier === identifier);
+    if (!override?.values) return null;
+
+    const values = override.values as Record<string, unknown>;
+    const value = values[attribute];
+    return value !== undefined ? String(value) : null;
+  }
+
+  // Get default value for an attribute (for overrides matrix view)
+  getDefaultValue(attribute: string): string {
+    const templateType = this.overridesTemplateType();
+    const fields = templateType === 'system' ? this.systemTemplateFields() : this.userTemplateFields();
+
+    const field = fields.find(f => f.key === attribute);
+    if (!field) return '';
+
+    const defaultValue = this.templateService.getDefaultValue(field);
+    return defaultValue !== undefined && defaultValue !== null ? String(defaultValue) : '';
+  }
+
+  // Matrix cell editing
+  startEditMatrixCell(identifier: string, attribute: string, currentValue: string | null): void {
+    this.editingMatrixCell.set({identifier, attribute});
+    this.editValue.set(currentValue ?? this.getDefaultValue(attribute));
+    this.editError.set(null); // Clear any previous errors
   }
 
     // Computed high risk alert based on leniency usage
@@ -575,19 +505,11 @@ export class ApplicationOverview implements OnInit {
     });
     private api = inject(Api);
 
-  // Get default value for an attribute
-  getDefaultValue(attribute: string): string {
-    const data = this.currentTemplateData();
-    if (!data) return '';
-
+  // Get the field definition for a matrix attribute
+  getMatrixField(attribute: string): TemplateField | undefined {
     const templateType = this.overridesTemplateType();
-    if (templateType === 'system') {
-      const field = data.systemTemplate.fields.find(f => f.key === attribute);
-      return field?.value ?? '';
-    } else {
-      const defaultField = data.userTemplateDefaults.find(d => d.key === attribute);
-      return defaultField?.value ?? '';
-    }
+    const fields = templateType === 'system' ? this.systemTemplateFields() : this.userTemplateFields();
+    return fields.find(f => f.key === attribute);
   }
 
     // Format number with commas
@@ -897,183 +819,188 @@ export class ApplicationOverview implements OnInit {
     this.activeTab.set(tab);
   }
 
-  // Matrix cell editing
-  startEditMatrixCell(identifier: string, attribute: string, currentValue: string | null): void {
-    this.editingMatrixCell.set({identifier, attribute});
-    this.editValue.set(currentValue ?? this.getDefaultValue(attribute));
-  }
+  // Validate matrix cell value on input change
+  onMatrixInputChange(newValue: string): void {
+    this.editValue.set(newValue);
 
-  saveMatrixCellEdit(): void {
     const editing = this.editingMatrixCell();
     if (!editing) return;
 
+    const field = this.getMatrixField(editing.attribute);
+    if (!field) return;
+
+    // Validate the new value
+    const validationError = this.validateDefaultValue(field, newValue.trim());
+    this.editError.set(validationError);
+  }
+
+  // Try to save matrix cell edit (used on blur)
+  tryToSaveMatrixCellEdit(): void {
+    // Don't auto-save if there's already a validation error
+    if (this.editError()) {
+      return;
+    }
+    this.saveMatrixCellEdit();
+  }
+
+  async saveMatrixCellEdit(): Promise<void> {
+    const editing = this.editingMatrixCell();
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!editing || !app?.id || !env?.id) return;
+
     const {identifier, attribute} = editing;
     const newValue = this.editValue().trim();
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
-
     const templateType = this.overridesTemplateType();
+
+    // Validate against field constraints
+    const field = this.getMatrixField(attribute);
+    if (field) {
+      const validationError = this.validateDefaultValue(field, newValue);
+      if (validationError) {
+        this.editError.set(validationError);
+        return;
+      }
+    }
+
+    // Clear error
+    this.editError.set(null);
+
+    const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
+    const existingOverride = overrides.find(o => o.identifier === identifier);
+    const currentValues = (existingOverride?.values as Record<string, unknown>) ?? {};
+
+    // Build updated values
+    const updatedValues: Record<string, unknown> = {...currentValues};
     const defaultValue = this.getDefaultValue(attribute);
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    // Convert value based on field type
+    let finalValue: unknown = newValue;
+    if (field && newValue !== defaultValue && newValue !== '') {
+      if (this.templateService.isNumberField(field)) {
+        finalValue = parseFloat(newValue);
+      } else if (this.templateService.isBooleanField(field)) {
+        finalValue = newValue.toLowerCase() === 'true';
+      }
+    }
 
-      const updatedOverrides = envData.identifierOverrides.map(override => {
-        if (override.identifier !== identifier) return override;
+    if (newValue === defaultValue || newValue === '') {
+      // Remove override if setting back to default or empty
+      delete updatedValues[attribute];
+    } else {
+      updatedValues[attribute] = finalValue;
+    }
 
-        if (templateType === 'system') {
-          // Check if we're setting to default (remove override) or different (add/update override)
-          if (newValue === defaultValue) {
-            // Remove override
-            return {
-              ...override,
-              systemOverrides: override.systemOverrides.filter(o => o.key !== attribute)
-            };
-          } else {
-            // Add or update override
-            const existing = override.systemOverrides.find(o => o.key === attribute);
-            if (existing) {
-              return {
-                ...override,
-                systemOverrides: override.systemOverrides.map(o =>
-                  o.key === attribute ? {...o, value: newValue} : o
-                )
-              };
-            } else {
-              return {
-                ...override,
-                systemOverrides: [...override.systemOverrides, {key: attribute, value: newValue}]
-              };
-            }
-          }
-        } else {
-          // User template
-          if (newValue === defaultValue) {
-            return {
-              ...override,
-              userOverrides: override.userOverrides.filter(o => o.key !== attribute)
-            };
-          } else {
-            const existing = override.userOverrides.find(o => o.key === attribute);
-            if (existing) {
-              return {
-                ...override,
-                userOverrides: override.userOverrides.map(o =>
-                  o.key === attribute ? {...o, value: newValue} : o
-                )
-              };
-            } else {
-              return {
-                ...override,
-                userOverrides: [...override.userOverrides, {key: attribute, value: newValue}]
-              };
-            }
-          }
-        }
-      });
-
-      return {
-        ...data,
-        [envName]: {...envData, identifierOverrides: updatedOverrides}
-      };
-    });
+    try {
+      if (Object.keys(updatedValues).length === 0) {
+        // No overrides left, delete the entire override
+        await this.templateService.deleteOverride(
+          app.id,
+          templateType === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          identifier
+        );
+      } else {
+        // Update the override
+        await this.templateService.setOverride(
+          app.id,
+          templateType === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          identifier,
+          updatedValues
+        );
+      }
+      // Reload overrides
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to save override:', error);
+    }
 
     this.editingMatrixCell.set(null);
     this.editValue.set('');
+    this.editError.set(null);
   }
 
   cancelMatrixCellEdit(): void {
     this.editingMatrixCell.set(null);
     this.editValue.set('');
+    this.editError.set(null);
   }
 
-  // Template tab cell editing
-  startEditTemplateCell(fieldKey: string, property: string, currentValue: string): void {
-    this.editingTemplateCell.set({fieldKey, property});
-    this.editValue.set(currentValue ?? '');
-  }
-
-  saveTemplateCellEdit(): void {
+  async saveTemplateCellEdit(): Promise<void> {
     const editing = this.editingTemplateCell();
-    if (!editing) return;
+    const app = this.application();
+    if (!editing || !app?.id) return;
 
     const {fieldKey, property} = editing;
     const newValue = this.editValue().trim();
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
-
     const templateType = this.templateTemplateType();
+    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
 
-    if (templateType === 'system') {
-      // Update system template field
-      this.templateData.update(data => {
-        const envData = data[envName];
-        if (!envData) return data;
+    if (!template?.schema?.fields) {
+      this.cancelTemplateCellEdit();
+      return;
+    }
 
-        const updatedFields = envData.systemTemplate.fields.map(f => {
-          if (f.key !== fieldKey) return f;
-          if (property === 'key') return {...f, key: newValue};
-          if (property === 'value') return {...f, value: newValue};
-          if (property === 'description') return {...f, description: newValue};
-          return f;
-        });
+    // Find the current field to validate against
+    const currentField = template.schema.fields.find(f => f.key === fieldKey);
+    if (!currentField) {
+      this.cancelTemplateCellEdit();
+      return;
+    }
 
-        return {
-          ...data,
-          [envName]: {
-            ...envData,
-            systemTemplate: {fields: updatedFields}
-          }
-        };
-      });
-    } else {
-      // Update user template field
-      if (property === 'key') {
-        // Update schema key across all environments
-        this.userTemplateSchema.update(schema =>
-          schema.map(f => f.key === fieldKey ? {...f, key: newValue} : f)
-        );
-        // Update key in all environment defaults
-        this.templateData.update(data => {
-          const updated = {...data};
-          for (const env of Object.keys(updated)) {
-            updated[env] = {
-              ...updated[env],
-              userTemplateDefaults: updated[env].userTemplateDefaults.map(d =>
-                d.key === fieldKey ? {...d, key: newValue} : d
-              )
-            };
-          }
-          return updated;
-        });
-      } else if (property === 'type') {
-        this.userTemplateSchema.update(schema =>
-          schema.map(f => f.key === fieldKey
-            ? {...f, type: newValue as FieldType, constraints: undefined}
-            : f
-          )
-        );
-      } else if (property === 'defaultValue') {
-        this.templateData.update(data => {
-          const envData = data[envName];
-          if (!envData) return data;
-
-          return {
-            ...data,
-            [envName]: {
-              ...envData,
-              userTemplateDefaults: envData.userTemplateDefaults.map(d =>
-                d.key === fieldKey ? {...d, value: newValue} : d
-              )
-            }
-          };
-        });
-      } else if (property === 'description') {
-        this.userTemplateSchema.update(schema =>
-          schema.map(f => f.key === fieldKey ? {...f, description: newValue} : f)
-        );
+    // Validate default value if editing defaultValue property
+    if (property === 'value' || property === 'defaultValue') {
+      const validationError = this.validateDefaultValue(currentField, newValue);
+      if (validationError) {
+        this.editError.set(validationError);
+        return;
       }
+    }
+
+    // Clear any previous error
+    this.editError.set(null);
+
+    // Update the field in the schema
+    const updatedFields = template.schema.fields.map(field => {
+      if (field.key !== fieldKey) return field;
+
+      // Clone the field and update the property
+      const updatedField = {...field};
+      if (property === 'description') {
+        updatedField.description = newValue;
+      } else if (property === 'value' || property === 'defaultValue') {
+        // 'value' is used for system template display, but it maps to defaultValue
+        // Type-aware default value update
+        if (this.templateService.isStringField(field)) {
+          (updatedField as StringTemplateField).defaultValue = newValue;
+        } else if (this.templateService.isNumberField(field)) {
+          (updatedField as NumberTemplateField).defaultValue = parseFloat(newValue) || 0;
+        } else if (this.templateService.isBooleanField(field)) {
+          (updatedField as BooleanTemplateField).defaultValue = newValue.toLowerCase() === 'true';
+        } else if (this.templateService.isEnumField(field)) {
+          (updatedField as EnumTemplateField).defaultValue = newValue;
+        }
+      }
+      return updatedField;
+    });
+
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(
+        app.id,
+        templateType === 'system' ? TemplateType.System : TemplateType.User,
+        {
+          fields: updatedFields,
+          defaultValues: template.schema.defaultValues
+        }
+      );
+      // Reload templates
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to save template:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
     }
 
     this.cancelTemplateCellEdit();
@@ -1082,6 +1009,30 @@ export class ApplicationOverview implements OnInit {
   cancelTemplateCellEdit(): void {
     this.editingTemplateCell.set(null);
     this.editValue.set('');
+    this.editError.set(null);
+  }
+
+  // Template tab cell editing
+  startEditTemplateCell(fieldKey: string, property: string, currentValue: string): void {
+    this.editingTemplateCell.set({fieldKey, property});
+    this.editValue.set(currentValue ?? '');
+  }
+
+  // Helper to format constraints for display
+  formatConstraints(field: TemplateField): string {
+    return this.templateService.formatConstraints(field);
+  }
+
+  // Helper to get default value as string (for templates)
+  getFieldDefaultValue(field: TemplateField): string {
+    const value = this.templateService.getDefaultValue(field);
+    return value !== undefined && value !== null ? String(value) : '';
+  }
+
+  async saveSystemFieldEdit(): Promise<void> {
+    // System field editing is handled via saveTemplateCellEdit now
+    // This method is kept for backward compatibility
+    this.cancelEdit();
   }
 
   // Override section toggles
@@ -1093,23 +1044,46 @@ export class ApplicationOverview implements OnInit {
     this.showUserOverrides.update(show => !show);
   }
 
-  // Helper to format constraints for display
-  formatConstraints(field: UserTemplateField): string {
-    if (!field.constraints) return '';
-    switch (field.type) {
-      case 'number':
-        const {min, max} = field.constraints;
-        if (min !== undefined && max !== undefined) return `${min}–${max}`;
-        if (min !== undefined) return `≥${min}`;
-        if (max !== undefined) return `≤${max}`;
-        return '';
-      case 'string':
-        return field.constraints.maxLength ? `max ${field.constraints.maxLength} chars` : '';
-      case 'enum':
-        return field.constraints.options?.join(', ') ?? '';
-      default:
-        return '';
-    }
+  openAddFieldOverlay(templateType: 'system' | 'user'): void {
+    const fields = templateType === 'system'
+      ? this.systemTemplateFields()
+      : this.userTemplateFields();
+
+    const existingKeys = fields
+      .map(f => f.key)
+      .filter((k): k is string => !!k);
+
+    this.overlayService.open<AddFieldOverlayData>({
+      component: AddFieldOverlayComponent,
+      data: {
+        templateType,
+        existingFieldKeys: existingKeys,
+        onSubmit: (field: TemplateField) => this.handleAddField(field, templateType)
+      },
+      maxWidth: '500px'
+    });
+  }
+
+  openEditFieldOverlay(field: TemplateField, templateType: 'system' | 'user'): void {
+    const fields = templateType === 'system'
+      ? this.systemTemplateFields()
+      : this.userTemplateFields();
+
+    // Exclude current field key from existing keys to allow keeping the same key
+    const existingKeys = fields
+      .map(f => f.key)
+      .filter((k): k is string => !!k && k !== field.key);
+
+    this.overlayService.open<EditFieldOverlayData>({
+      component: EditFieldOverlayComponent,
+      data: {
+        templateType,
+        field,
+        existingFieldKeys: existingKeys,
+        onSubmit: (updatedField: TemplateField) => this.handleEditField(field.key!, updatedField, templateType)
+      },
+      maxWidth: '500px'
+    });
   }
 
   // Helper to get override value for a key
@@ -1133,87 +1107,181 @@ export class ApplicationOverview implements OnInit {
     this.saveSystemFieldEdit();
   }
 
-  saveSystemFieldEdit(): void {
-    const editing = this.editingSystemField();
-    const envName = this.selectedEnvironment()?.name;
-    if (!editing || !envName) return;
+  openDeleteFieldOverlay(key: string, templateType: 'system' | 'user'): void {
+    const appName = this.applicationName();
 
-    const newValue = this.editValue().trim();
-    if (!newValue) {
-      this.cancelEdit();
-      return;
-    }
-
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
-
-      const updatedFields = envData.systemTemplate.fields.map(f => {
-        if (f.key === editing.key) {
-          return editing.field === 'key'
-            ? {...f, key: newValue}
-            : {...f, value: newValue};
-        }
-        return f;
-      });
-
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          systemTemplate: {fields: updatedFields}
-        }
-      };
+    this.overlayService.open<DeleteFieldOverlayData>({
+      component: DeleteFieldOverlayComponent,
+      data: {
+        applicationName: appName,
+        fieldKey: key,
+        templateType,
+        onConfirm: () => this.handleDeleteField(key, templateType)
+      },
+      maxWidth: '450px'
     });
+  }
 
+  // --- Add Field Overlay ---
+
+  async deleteSystemField(key: string): Promise<void> {
+    const app = this.application();
+    if (!app?.id) return;
+
+    const template = this.systemTemplate();
+    if (!template?.schema?.fields) return;
+
+    const updatedFields = template.schema.fields.filter(f => f.key !== key);
+
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(app.id, TemplateType.System, {
+        fields: updatedFields,
+        defaultValues: template.schema.defaultValues
+      });
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to delete system field:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
+    }
+  }
+
+  async saveUserFieldEdit(): Promise<void> {
+    // User field editing is handled via saveTemplateCellEdit now
+    // This method is kept for backward compatibility
     this.cancelEdit();
   }
 
-  addSystemField(): void {
-    const envName = this.selectedEnvironment()?.name;
-    const key = this.newSystemFieldKey().trim();
-    const value = this.newSystemFieldValue().trim();
+  // --- Edit Field Overlay ---
 
-    if (!envName || !key) return;
+  async deleteUserField(key: string): Promise<void> {
+    const app = this.application();
+    if (!app?.id) return;
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    const template = this.userTemplate();
+    if (!template?.schema?.fields) return;
 
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          systemTemplate: {
-            fields: [...envData.systemTemplate.fields, {key, value}]
-          }
-        }
-      };
-    });
+    const updatedFields = template.schema.fields.filter(f => f.key !== key);
 
-    this.newSystemFieldKey.set('');
-    this.newSystemFieldValue.set('');
-    this.showAddSystemField.set(false);
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(app.id, TemplateType.User, {
+        fields: updatedFields,
+        defaultValues: template.schema.defaultValues
+      });
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to delete user field:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
+    }
   }
 
-  deleteSystemField(key: string): void {
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
+  async addIdentifier(): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    const identifier = this.newIdentifierName().trim();
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    if (!app?.id || !env?.id || !identifier) return;
 
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          systemTemplate: {
-            fields: envData.systemTemplate.fields.filter(f => f.key !== key)
-          }
-        }
-      };
+    // Create an empty override for both system and user templates
+    try {
+      // Create override with empty values (just to establish the identifier)
+      await this.templateService.setOverride(app.id, TemplateType.System, env.id, identifier, {});
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to add identifier:', error);
+    }
+
+    this.newIdentifierName.set('');
+    this.showAddIdentifier.set(false);
+  }
+
+  // --- Delete Field Overlay ---
+
+  async deleteIdentifier(identifier: string): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
+
+    try {
+      // Delete overrides for both system and user templates
+      await Promise.all([
+        this.templateService.deleteOverride(app.id, TemplateType.System, env.id, identifier).catch(() => {
+        }),
+        this.templateService.deleteOverride(app.id, TemplateType.User, env.id, identifier).catch(() => {
+        })
+      ]);
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to delete identifier:', error);
+    }
+  }
+
+  // Copy overrides overlay methods
+  openCopyOverridesOverlay(): void {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+
+    if (!app?.id || !env?.id) return;
+
+    this.overlayService.open<CopyOverridesOverlayData>({
+      component: CopyOverridesOverlayComponent,
+      data: {
+        applicationId: app.id,
+        applicationName: app.name ?? 'Application',
+        environments: this.environments(),
+        currentEnvironmentId: env.id,
+        allIdentifiers: this.allIdentifiers(),
+        onSuccess: () => this.handleCopyOverridesSuccess()
+      },
+      maxWidth: '500px'
     });
+  }
+
+  async saveIdentifierOverrideEdit(): Promise<void> {
+    const editing = this.editingIdentifier();
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!editing || !app?.id || !env?.id) return;
+
+    const newValue = this.editValue().trim();
+    const overrides = editing.template === 'system' ? this.systemOverrides() : this.userOverrides();
+    const existingOverride = overrides.find(o => o.identifier === editing.identifier);
+    const currentValues = (existingOverride?.values as Record<string, unknown>) ?? {};
+
+    // Build updated values
+    const updatedValues: Record<string, unknown> = {...currentValues};
+    if (newValue) {
+      updatedValues[editing.field] = newValue;
+    } else {
+      delete updatedValues[editing.field];
+    }
+
+    try {
+      if (Object.keys(updatedValues).length === 0) {
+        await this.templateService.deleteOverride(
+          app.id,
+          editing.template === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          editing.identifier
+        );
+      } else {
+        await this.templateService.setOverride(
+          app.id,
+          editing.template === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          editing.identifier,
+          updatedValues
+        );
+      }
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to save identifier override:', error);
+    }
+
+    this.cancelEdit();
   }
 
   // --- User Template Field CRUD ---
@@ -1228,155 +1296,153 @@ export class ApplicationOverview implements OnInit {
     this.saveUserFieldEdit();
   }
 
-  saveUserFieldEdit(): void {
-    const editing = this.editingUserField();
-    const envName = this.selectedEnvironment()?.name;
-    if (!editing || !envName) return;
+  // Add an override value for an identifier
+  async addIdentifierOverride(identifier: string, template: 'system' | 'user', fieldKey: string): Promise<void> {
+    if (!fieldKey) return;
 
-    const newValue = this.editValue().trim();
-    if (!newValue && editing.field !== 'defaultValue') {
-      this.cancelEdit();
-      return;
-    }
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
 
-    if (editing.field === 'key') {
-      // Update schema (app-level) - update key in all environments
-      this.userTemplateSchema.update(schema =>
-        schema.map(f => f.key === editing.key ? {...f, key: newValue} : f)
+    // Get default value for the field
+    const fields = template === 'system' ? this.systemTemplateFields() : this.userTemplateFields();
+    const field = fields.find(f => f.key === fieldKey);
+    const defaultValue = field ? this.templateService.getDefaultValue(field) : '';
+
+    // Get existing override values
+    const overrides = template === 'system' ? this.systemOverrides() : this.userOverrides();
+    const existingOverride = overrides.find(o => o.identifier === identifier);
+    const currentValues = (existingOverride?.values as Record<string, unknown>) ?? {};
+
+    // Add the new override value
+    const updatedValues: Record<string, unknown> = {
+      ...currentValues,
+      [fieldKey]: defaultValue
+    };
+
+    try {
+      await this.templateService.setOverride(
+        app.id,
+        template === 'system' ? TemplateType.System : TemplateType.User,
+        env.id,
+        identifier,
+        updatedValues
       );
-      // Also update the key in all environment defaults
-      this.templateData.update(data => {
-        const updated = {...data};
-        for (const env of Object.keys(updated)) {
-          updated[env] = {
-            ...updated[env],
-            userTemplateDefaults: updated[env].userTemplateDefaults.map(d =>
-              d.key === editing.key ? {...d, key: newValue} : d
-            )
-          };
-        }
-        return updated;
-      });
-    } else if (editing.field === 'type') {
-      // Update schema type
-      this.userTemplateSchema.update(schema =>
-        schema.map(f => f.key === editing.key ? {...f, type: newValue as FieldType, constraints: undefined} : f)
-      );
-    } else if (editing.field === 'defaultValue') {
-      // Update environment-specific default
-      this.templateData.update(data => {
-        const envData = data[envName];
-        if (!envData) return data;
-
-        return {
-          ...data,
-          [envName]: {
-            ...envData,
-            userTemplateDefaults: envData.userTemplateDefaults.map(d =>
-              d.key === editing.key ? {...d, value: newValue} : d
-            )
-          }
-        };
-      });
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to add identifier override:', error);
     }
-
-    this.cancelEdit();
   }
 
-  addUserField(): void {
-    const envName = this.selectedEnvironment()?.name;
-    const key = this.newUserFieldKey().trim();
-    const type = this.newUserFieldType();
+  // Delete an override value for an identifier
+  async deleteIdentifierOverride(identifier: string, template: 'system' | 'user', fieldKey: string): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
 
-    if (!envName || !key) return;
+    // Get existing override values
+    const overrides = template === 'system' ? this.systemOverrides() : this.userOverrides();
+    const existingOverride = overrides.find(o => o.identifier === identifier);
+    const currentValues = (existingOverride?.values as Record<string, unknown>) ?? {};
 
-    // Add to schema (app-level)
-    this.userTemplateSchema.update(schema => [
-      ...schema,
-      {key, type}
-    ]);
+    // Remove the field from values
+    const updatedValues: Record<string, unknown> = {...currentValues};
+    delete updatedValues[fieldKey];
 
-    // Add default value to all environments
-    this.templateData.update(data => {
-      const updated = {...data};
-      for (const env of Object.keys(updated)) {
-        updated[env] = {
-          ...updated[env],
-          userTemplateDefaults: [
-            ...updated[env].userTemplateDefaults,
-            {key, value: ''}
-          ]
-        };
+    try {
+      if (Object.keys(updatedValues).length === 0) {
+        await this.templateService.deleteOverride(
+          app.id,
+          template === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          identifier
+        );
+      } else {
+        await this.templateService.setOverride(
+          app.id,
+          template === 'system' ? TemplateType.System : TemplateType.User,
+          env.id,
+          identifier,
+          updatedValues
+        );
       }
-      return updated;
-    });
-
-    this.newUserFieldKey.set('');
-    this.newUserFieldType.set('string');
-    this.showAddUserField.set(false);
-  }
-
-  deleteUserField(key: string): void {
-    // Remove from schema
-    this.userTemplateSchema.update(schema => schema.filter(f => f.key !== key));
-
-    // Remove from all environments
-    this.templateData.update(data => {
-      const updated = {...data};
-      for (const env of Object.keys(updated)) {
-        updated[env] = {
-          ...updated[env],
-          userTemplateDefaults: updated[env].userTemplateDefaults.filter(d => d.key !== key)
-        };
-      }
-      return updated;
-    });
+      await this.loadOverrides(app.id, env.id);
+    } catch (error) {
+      console.error('Failed to delete identifier override:', error);
+    }
   }
 
   // --- Identifier Override CRUD ---
 
-  addIdentifier(): void {
-    const envName = this.selectedEnvironment()?.name;
-    const identifier = this.newIdentifierName().trim();
+  // Helper to get override value for an identifier
+  getIdentifierOverrideValue(identifier: string, template: 'system' | 'user', fieldKey: string): string {
+    const overrides = template === 'system' ? this.systemOverrides() : this.userOverrides();
+    const override = overrides.find(o => o.identifier === identifier);
+    if (!override?.values) return '';
 
-    if (!envName || !identifier) return;
-
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
-
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          identifierOverrides: [
-            ...envData.identifierOverrides,
-            {identifier, systemOverrides: [], userOverrides: []}
-          ]
-        }
-      };
-    });
-
-    this.newIdentifierName.set('');
-    this.showAddIdentifier.set(false);
+    const values = override.values as Record<string, unknown>;
+    const value = values[fieldKey];
+    return value !== undefined ? String(value) : '';
   }
 
-  deleteIdentifier(identifier: string): void {
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
+  // Toggle editable property for a user field
+  async toggleUserFieldEditable(key: string): Promise<void> {
+    const app = this.application();
+    if (!app?.id) return;
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    const template = this.userTemplate();
+    if (!template?.schema?.fields) return;
 
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          identifierOverrides: envData.identifierOverrides.filter(o => o.identifier !== identifier)
-        }
-      };
+    const updatedFields = template.schema.fields.map(field => {
+      if (field.key !== key) return field;
+      return {...field, editable: !field.editable};
     });
+
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(app.id, TemplateType.User, {
+        fields: updatedFields,
+        defaultValues: template.schema.defaultValues
+      });
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to toggle field editable:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
+    }
+  }
+
+  // Load templates from API
+  private async loadTemplates(applicationId: string): Promise<void> {
+    this.isLoadingTemplates.set(true);
+    try {
+      const templates = await this.templateService.getTemplates(applicationId);
+      const systemTemplate = templates.find(t => t.type === TemplateType.System);
+      const userTemplate = templates.find(t => t.type === TemplateType.User);
+      this.systemTemplate.set(systemTemplate ?? null);
+      this.userTemplate.set(userTemplate ?? null);
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    } finally {
+      this.isLoadingTemplates.set(false);
+    }
+  }
+
+  // Load overrides from API
+  private async loadOverrides(applicationId: string, environmentId: string): Promise<void> {
+    this.isLoadingOverrides.set(true);
+    try {
+      const [systemOverrides, userOverrides] = await Promise.all([
+        this.templateService.getOverrides(applicationId, TemplateType.System, environmentId),
+        this.templateService.getOverrides(applicationId, TemplateType.User, environmentId)
+      ]);
+      this.systemOverrides.set(systemOverrides);
+      this.userOverrides.set(userOverrides);
+    } catch (error) {
+      console.error('Failed to load overrides:', error);
+    } finally {
+      this.isLoadingOverrides.set(false);
+    }
   }
 
   startEditIdentifierOverride(identifier: string, template: 'system' | 'user', fieldKey: string, currentValue: string): void {
@@ -1384,78 +1450,67 @@ export class ApplicationOverview implements OnInit {
     this.editValue.set(currentValue);
   }
 
-  saveIdentifierOverrideEdit(): void {
-    const editing = this.editingIdentifier();
-    const envName = this.selectedEnvironment()?.name;
-    if (!editing || !envName) return;
+  /**
+   * Validates a default value against the field's constraints.
+   * Returns an error message if invalid, or null if valid.
+   */
+  private validateDefaultValue(field: TemplateField, newValue: string): string | null {
+    if (this.templateService.isStringField(field)) {
+      const stringField = field as StringTemplateField;
+      // Empty string is allowed (means no default)
+      if (!newValue) return null;
 
-    const newValue = this.editValue().trim();
+      const minLength = stringField.minLength ?? 0;
+      const maxLength = stringField.maxLength ?? Infinity;
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+      if (newValue.length < minLength) {
+        return `Value must be at least ${minLength} characters`;
+      }
+      if (newValue.length > maxLength) {
+        return `Value must be at most ${maxLength} characters`;
+      }
+    } else if (this.templateService.isNumberField(field)) {
+      const numberField = field as NumberTemplateField;
 
-      const updatedOverrides = envData.identifierOverrides.map(override => {
-        if (override.identifier !== editing.identifier) return override;
+      // Empty string is allowed (means no default)
+      if (!newValue) return null;
 
-        if (editing.template === 'system') {
-          const existingOverride = override.systemOverrides.find(o => o.key === editing.field);
-          if (newValue) {
-            if (existingOverride) {
-              return {
-                ...override,
-                systemOverrides: override.systemOverrides.map(o =>
-                  o.key === editing.field ? {...o, value: newValue} : o
-                )
-              };
-            } else {
-              return {
-                ...override,
-                systemOverrides: [...override.systemOverrides, {key: editing.field, value: newValue}]
-              };
-            }
-          } else {
-            // Remove override if empty
-            return {
-              ...override,
-              systemOverrides: override.systemOverrides.filter(o => o.key !== editing.field)
-            };
-          }
-        } else {
-          const existingOverride = override.userOverrides.find(o => o.key === editing.field);
-          if (newValue) {
-            if (existingOverride) {
-              return {
-                ...override,
-                userOverrides: override.userOverrides.map(o =>
-                  o.key === editing.field ? {...o, value: newValue} : o
-                )
-              };
-            } else {
-              return {
-                ...override,
-                userOverrides: [...override.userOverrides, {key: editing.field, value: newValue}]
-              };
-            }
-          } else {
-            return {
-              ...override,
-              userOverrides: override.userOverrides.filter(o => o.key !== editing.field)
-            };
-          }
+      const numValue = parseFloat(newValue);
+      if (isNaN(numValue)) {
+        return 'Value must be a valid number';
+      }
+
+      const minValue = numberField.minValue ?? -Infinity;
+      const maxValue = numberField.maxValue ?? Infinity;
+      const incrementAmount = numberField.incrementAmount ?? 1;
+
+      if (numValue < minValue) {
+        return `Value must be at least ${minValue}`;
+      }
+      if (numValue > maxValue) {
+        return `Value must be at most ${maxValue}`;
+      }
+
+      // Check increment alignment
+      if (incrementAmount > 0 && numberField.minValue !== undefined) {
+        const diff = numValue - minValue;
+        const remainder = Math.abs(diff % incrementAmount);
+        const tolerance = incrementAmount * 1e-9;
+        if (remainder > tolerance && remainder < incrementAmount - tolerance) {
+          return `Value must align with increment of ${incrementAmount} (starting from ${minValue})`;
         }
-      });
+      }
+    } else if (this.templateService.isEnumField(field)) {
+      const enumField = field as EnumTemplateField;
+      // Empty string is allowed (means no default)
+      if (!newValue) return null;
 
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          identifierOverrides: updatedOverrides
-        }
-      };
-    });
+      if (enumField.options && !enumField.options.includes(newValue)) {
+        return `Value must be one of: ${enumField.options.join(', ')}`;
+      }
+    }
 
-    this.cancelEdit();
+    return null;
   }
 
   // Alias for template binding
@@ -1468,89 +1523,71 @@ export class ApplicationOverview implements OnInit {
     this.saveIdentifierOverrideEdit();
   }
 
-  // Add an override value for an identifier
-  addIdentifierOverride(identifier: string, template: 'system' | 'user', fieldKey: string): void {
-    if (!fieldKey) return;
-
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
-
-    // Get default value for the field
-    let defaultValue = '';
-    if (template === 'system') {
-      const field = this.currentTemplateData()?.systemTemplate.fields.find(f => f.key === fieldKey);
-      defaultValue = field?.value ?? '';
-    } else {
-      const field = this.currentUserTemplateFields().find(f => f.key === fieldKey);
-      defaultValue = field?.defaultValue ?? '';
+  private async handleAddField(field: TemplateField, templateType: 'system' | 'user'): Promise<void> {
+    const app = this.application();
+    if (!app?.id) {
+      return;
     }
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
 
-      const updatedOverrides = envData.identifierOverrides.map(override => {
-        if (override.identifier !== identifier) return override;
+    // Allow adding fields even if template has no schema yet - we'll create a new schema
+    const existingFields = template?.schema?.fields ?? [];
+    const updatedFields = [...existingFields, field];
 
-        if (template === 'system') {
-          // Check if override already exists
-          if (override.systemOverrides.some(o => o.key === fieldKey)) return override;
-          return {
-            ...override,
-            systemOverrides: [...override.systemOverrides, {key: fieldKey, value: defaultValue}]
-          };
-        } else {
-          if (override.userOverrides.some(o => o.key === fieldKey)) return override;
-          return {
-            ...override,
-            userOverrides: [...override.userOverrides, {key: fieldKey, value: defaultValue}]
-          };
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(
+        app.id,
+        templateType === 'system' ? TemplateType.System : TemplateType.User,
+        {
+          fields: updatedFields,
+          defaultValues: template?.schema?.defaultValues ?? {}
         }
-      });
-
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          identifierOverrides: updatedOverrides
-        }
-      };
-    });
+      );
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to add field:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
+    }
   }
 
-  // Delete an override value for an identifier
-  deleteIdentifierOverride(identifier: string, template: 'system' | 'user', fieldKey: string): void {
-    const envName = this.selectedEnvironment()?.name;
-    if (!envName) return;
+  private async handleEditField(originalKey: string, updatedField: TemplateField, templateType: 'system' | 'user'): Promise<void> {
+    const app = this.application();
+    if (!app?.id) {
+      return;
+    }
 
-    this.templateData.update(data => {
-      const envData = data[envName];
-      if (!envData) return data;
+    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
+    if (!template?.schema?.fields) {
+      return;
+    }
 
-      const updatedOverrides = envData.identifierOverrides.map(override => {
-        if (override.identifier !== identifier) return override;
-
-        if (template === 'system') {
-          return {
-            ...override,
-            systemOverrides: override.systemOverrides.filter(o => o.key !== fieldKey)
-          };
-        } else {
-          return {
-            ...override,
-            userOverrides: override.userOverrides.filter(o => o.key !== fieldKey)
-          };
-        }
-      });
-
-      return {
-        ...data,
-        [envName]: {
-          ...envData,
-          identifierOverrides: updatedOverrides
-        }
-      };
+    // Replace the field with the updated one
+    const updatedFields = template.schema.fields.map(f => {
+      if (f.key === originalKey) {
+        return updatedField;
+      }
+      return f;
     });
+
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(
+        app.id,
+        templateType === 'system' ? TemplateType.System : TemplateType.User,
+        {
+          fields: updatedFields,
+          defaultValues: template.schema.defaultValues ?? {}
+        }
+      );
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to edit field:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
+    }
   }
 
   // --- Common Edit Helpers ---
@@ -1577,25 +1614,38 @@ export class ApplicationOverview implements OnInit {
     }
   }
 
-  // Helper to get override value for an identifier
-  getIdentifierOverrideValue(identifier: string, template: 'system' | 'user', fieldKey: string): string {
-    const data = this.currentTemplateData();
-    if (!data) return '';
+  private async handleDeleteField(key: string, templateType: 'system' | 'user'): Promise<void> {
+    const app = this.application();
+    if (!app?.id) return;
 
-    const override = data.identifierOverrides.find(o => o.identifier === identifier);
-    if (!override) return '';
+    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
+    if (!template?.schema?.fields) return;
 
-    if (template === 'system') {
-      return override.systemOverrides.find(o => o.key === fieldKey)?.value ?? '';
-    } else {
-      return override.userOverrides.find(o => o.key === fieldKey)?.value ?? '';
+    const updatedFields = template.schema.fields.filter(f => f.key !== key);
+
+    this.isSavingTemplate.set(true);
+    try {
+      await this.templateService.updateTemplate(
+        app.id,
+        templateType === 'system' ? TemplateType.System : TemplateType.User,
+        {
+          fields: updatedFields,
+          defaultValues: template.schema.defaultValues
+        }
+      );
+      await this.loadTemplates(app.id);
+    } catch (error) {
+      console.error('Failed to delete field:', error);
+    } finally {
+      this.isSavingTemplate.set(false);
     }
   }
 
-  // Toggle editable property for a user field
-  toggleUserFieldEditable(key: string): void {
-    this.userTemplateSchema.update(schema =>
-      schema.map(f => f.key === key ? {...f, editable: !f.editable} : f)
-    );
+  private async handleCopyOverridesSuccess(): Promise<void> {
+    const app = this.application();
+    const env = this.selectedEnvironment();
+    if (!app?.id || !env?.id) return;
+
+    await this.loadOverrides(app.id, env.id);
   }
 }

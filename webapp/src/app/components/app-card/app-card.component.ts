@@ -1,5 +1,5 @@
 import {Component, input, output} from '@angular/core';
-import {ApplicationResponse} from '../../api/generated/models';
+import {ApplicationListResponse} from '../../api/generated/models';
 
 @Component({
   selector: 'app-card',
@@ -10,10 +10,10 @@ import {ApplicationResponse} from '../../api/generated/models';
 export class AppCardComponent {
   name = input<string>();
   isAddCard = input(false);
-  application = input<ApplicationResponse>();
+  application = input<ApplicationListResponse>();
 
   cardClick = output<void>();
-  applicationClick = output<ApplicationResponse>();
+  applicationClick = output<ApplicationListResponse>();
 
   onClick(): void {
     if (this.isAddCard()) {

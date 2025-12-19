@@ -3,7 +3,7 @@ import {FormsModule} from '@angular/forms';
 import {Api} from '../../api/generated/api';
 import {createInvite} from '../../api/generated/fn/invite/create-invite';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
-import {ApplicationResponse} from '../../api/generated/models/application-response';
+import {ApplicationListResponse} from '../../api/generated/models/application-list-response';
 import {InviteCreationResponse} from '../../api/generated/models/invite-creation-response';
 import {CustomerRole} from '../../api/generated/models/customer-role';
 
@@ -31,7 +31,7 @@ export class UserCreationFormComponent implements OnInit {
   email = signal('');
   selectedRole = signal<CustomerRole | null>(null);
   // Data
-  applications = signal<ApplicationResponse[]>([]);
+  applications = signal<ApplicationListResponse[]>([]);
   selectedApplicationIds = signal<Set<string>>(new Set());
   error = signal('');
   isLoading = signal(false);

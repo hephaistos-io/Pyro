@@ -1,0 +1,237 @@
+<div class="edit-field-overlay">
+  <h2 class="edit-field-overlay__title">Edit Field</h2>
+
+  <form (ngSubmit)="onSubmit()" class="edit-field-overlay__form">
+    <!-- Common Fields Section -->
+    <div class="form-section">
+      <div class="form-group">
+        <label class="form-label" for="fieldKey">Field Key</label>
+        <div class="form-input form-input--readonly">
+          <code>{{ fieldKey() }}</code>
+        </div>
+        <span class="form-hint">Field key cannot be changed after creation</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fieldType">Type</label>
+        <div class="form-input form-input--readonly">
+          {{ getTypeDisplayName() }}
+        </div>
+        <span class="form-hint">Field type cannot be changed after creation</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <input
+          (ngModelChange)="description.set($event)"
+          [ngModel]="description()"
+          autocomplete="off"
+          class="form-input"
+          id="description"
+          name="description"
+          placeholder="Brief description of this field"
+          type="text">
+      </div>
+
+      @if (data().templateType === 'user') {
+        <div class="form-group form-group--inline">
+          <label class="form-checkbox">
+            <input
+              (change)="editable.set($any($event.target).checked)"
+              [checked]="editable()"
+              type="checkbox">
+            <span class="form-checkbox__label">User Editable</span>
+          </label>
+        </div>
+      }
+    </div>
+
+    <!-- Type-Specific Constraints Section -->
+    <div class="form-section form-section--constraints">
+      <h3 class="form-section__title">
+        @switch (fieldType()) {
+          @case ('STRING') {
+            String Constraints
+          }
+          @case ('NUMBER') {
+            Number Constraints
+          }
+          @case ('BOOLEAN') {
+            Default Value
+          }
+          @case ('ENUM') {
+            Enum Options
+          }
+        }
+      </h3>
+
+      @switch (fieldType()) {
+        @case ('STRING') {
+          <div class="form-group">
+            <label class="form-label" for="stringDefault">Default Value</label>
+            <input
+              (ngModelChange)="stringDefaultValue.set($event)"
+              [ngModel]="stringDefaultValue()"
+              autocomplete="off"
+              class="form-input"
+              id="stringDefault"
+              name="stringDefault"
+              placeholder="Optional default value"
+              type="text">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="minLength">Min Length</label>
+              <input
+                (ngModelChange)="minLength.set(+$event || defaults.string.minLength)"
+                [ngModel]="minLength()"
+                class="form-input"
+                id="minLength"
+                min="0"
+                name="minLength"
+                type="number">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maxLength">Max Length</label>
+              <input
+                (ngModelChange)="maxLength.set(+$event || defaults.string.maxLength)"
+                [ngModel]="maxLength()"
+                class="form-input"
+                id="maxLength"
+                min="1"
+                name="maxLength"
+                type="number">
+            </div>
+          </div>
+        }
+        @case ('NUMBER') {
+          <div class="form-group">
+            <label class="form-label" for="numberDefault">Default Value</label>
+            <input
+              (ngModelChange)="numberDefaultValue.set(+$event || defaults.number.defaultValue)"
+              [ngModel]="numberDefaultValue()"
+              class="form-input"
+              id="numberDefault"
+              name="numberDefault"
+              type="number">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="minValue">Min Value</label>
+              <input
+                (ngModelChange)="minValue.set(+$event || defaults.number.minValue)"
+                [ngModel]="minValue()"
+                class="form-input"
+                id="minValue"
+                name="minValue"
+                type="number">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="maxValue">Max Value</label>
+              <input
+                (ngModelChange)="maxValue.set(+$event || defaults.number.maxValue)"
+                [ngModel]="maxValue()"
+                class="form-input"
+                id="maxValue"
+                name="maxValue"
+                type="number">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="increment">Increment Amount</label>
+            <input
+              (ngModelChange)="incrementAmount.set(+$event || defaults.number.increment)"
+              [ngModel]="incrementAmount()"
+              class="form-input"
+              id="increment"
+              min="0.001"
+              name="increment"
+              step="any"
+              type="number">
+          </div>
+        }
+        @case ('BOOLEAN') {
+          <div class="form-group form-group--inline">
+            <label class="form-toggle">
+              <input
+                (change)="booleanDefaultValue.set($any($event.target).checked)"
+                [checked]="booleanDefaultValue()"
+                type="checkbox">
+              <span class="form-toggle__track"></span>
+              <span class="form-toggle__label">
+                Default: {{ booleanDefaultValue() ? 'True' : 'False' }}
+              </span>
+            </label>
+          </div>
+        }
+        @case ('ENUM') {
+          <div class="form-group">
+            <label class="form-label">Options *</label>
+            <div class="enum-options">
+              @for (option of enumOptions(); track $index) {
+                <div class="enum-option">
+                  <span class="enum-option__text">{{ option }}</span>
+                  <button
+                    (click)="removeEnumOption($index)"
+                    [disabled]="enumOptions().length <= 1"
+                    class="enum-option__remove"
+                    title="Remove option"
+                    type="button">
+                    <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
+                      <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+            <div class="enum-add">
+              <input
+                (keydown.enter)="$event.preventDefault(); addEnumOption()"
+                (ngModelChange)="newEnumOption.set($event)"
+                [ngModel]="newEnumOption()"
+                class="form-input"
+                name="newEnumOption"
+                placeholder="Add option..."
+                type="text">
+              <button
+                (click)="addEnumOption()"
+                [disabled]="!newEnumOption().trim()"
+                class="btn btn--secondary btn--sm"
+                type="button">
+                Add
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="enumDefault">Default Value</label>
+            <select
+              (ngModelChange)="enumDefaultValue.set($event)"
+              [ngModel]="enumDefaultValue()"
+              class="form-select"
+              id="enumDefault"
+              name="enumDefault">
+              <option value="">Select default...</option>
+              @for (option of enumOptions(); track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </div>
+        }
+      }
+
+      @if (constraintError()) {
+        <div class="form-error form-error--section">{{ constraintError() }}</div>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="edit-field-overlay__actions">
+      <button (click)="onCancel()" class="btn btn--secondary" type="button">
+        Cancel
+      </button>
+      <button [disabled]="!isValid()" class="btn btn--primary" type="submit">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</div>
