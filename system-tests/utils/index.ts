@@ -10,3 +10,4 @@ export * from './invite.util';
 export * from './navigation.util';
 export * from './users-table.util';
 export * from './setup.util';
+export * from './template.util';

@@ -1,0 +1,127 @@
+<div class="copy-overrides-overlay">
+  <h2 class="copy-overrides-overlay__title">Copy Identifier Overrides</h2>
+
+  <form (ngSubmit)="onSubmit()" class="copy-overrides-overlay__form">
+    <!-- Source Environment (read-only, pre-selected) -->
+    <div class="form-section">
+      <div class="form-group">
+        <label class="form-label" for="sourceEnvironment">Source Environment</label>
+        <select
+          (ngModelChange)="sourceEnvironmentId.set($event)"
+          [ngModel]="sourceEnvironmentId()"
+          class="form-select"
+          disabled
+          id="sourceEnvironment"
+          name="sourceEnvironment">
+          @for (env of data().environments; track env.id) {
+            <option [value]="env.id">{{ env.name }}</option>
+          }
+        </select>
+        <span class="form-hint">Overrides will be copied from this environment</span>
+      </div>
+
+      <!-- Identifier Selection -->
+      <div class="form-group">
+        <label class="form-label" for="identifier">Identifier *</label>
+        @if (availableIdentifiers().length > 0) {
+          <select
+            (ngModelChange)="selectedIdentifier.set($event); onIdentifierChange()"
+            [class.form-select--error]="!selectedIdentifier() && targetEnvironmentId()"
+            [ngModel]="selectedIdentifier()"
+            class="form-select"
+            id="identifier"
+            name="identifier"
+            required>
+            <option value="">Select an identifier...</option>
+            @for (identifier of availableIdentifiers(); track identifier) {
+              <option [value]="identifier">{{ identifier }}</option>
+            }
+          </select>
+        } @else {
+          <div class="form-empty">
+            No identifiers available in the current environment.
+          </div>
+        }
+      </div>
+
+      <!-- Target Environment -->
+      <div class="form-group">
+        <label class="form-label" for="targetEnvironment">Target Environment *</label>
+        @if (targetEnvironmentOptions().length > 0) {
+          <select
+            (ngModelChange)="targetEnvironmentId.set($event)"
+            [disabled]="!selectedIdentifier()"
+            [ngModel]="targetEnvironmentId()"
+            class="form-select"
+            id="targetEnvironment"
+            name="targetEnvironment"
+            required>
+            <option value="">Select target environment...</option>
+            @for (env of targetEnvironmentOptions(); track env.id) {
+              <option [value]="env.id">{{ env.name }}</option>
+            }
+          </select>
+          <span class="form-hint">Overrides will be copied to this environment</span>
+        } @else {
+          <div class="form-empty">
+            No other environments available. Please create another environment first.
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Summary Section -->
+    @if (summaryMessage()) {
+      <div class="form-section form-section--summary">
+        <div class="summary">
+          <svg class="summary__icon" fill="none" height="20" viewBox="0 0 20 20" width="20">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 6v4m0 4h.01" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+          </svg>
+          <p class="summary__text">{{ summaryMessage() }}</p>
+        </div>
+      </div>
+    }
+
+    <!-- Success Message -->
+    @if (successMessage()) {
+      <div class="message message--success">
+        <svg class="message__icon" fill="none" height="20" viewBox="0 0 20 20" width="20">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="1.5"/>
+        </svg>
+        <span class="message__text">{{ successMessage() }}</span>
+      </div>
+    }
+
+    <!-- Error Message -->
+    @if (errorMessage()) {
+      <div class="message message--error">
+        <svg class="message__icon" fill="none" height="20" viewBox="0 0 20 20" width="20">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 6v4m0 4h.01" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+        <span class="message__text">{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Actions -->
+    <div class="copy-overrides-overlay__actions">
+      <button (click)="onCancel()" [disabled]="isCopying()" class="btn btn--secondary" type="button">
+        Cancel
+      </button>
+      <button
+        [disabled]="!isValid() || isCopying()"
+        class="btn btn--primary"
+        type="submit">
+        @if (isCopying()) {
+          <span class="spinner"></span>
+          Copying...
+        } @else {
+          Copy Overrides
+        }
+      </button>
+    </div>
+  </form>
+</div>

@@ -592,13 +592,13 @@
                         (click)="templateTemplateType.set('system')">
                   System
                   <span
-                    class="template-toggle__count">{{ currentTemplateData()?.systemTemplate?.fields?.length ?? 0 }}</span>
+                          class="template-toggle__count">{{ systemTemplateFields().length }}</span>
                 </button>
                 <button class="template-toggle__btn"
                         [class.template-toggle__btn--active]="templateTemplateType() === 'user'"
                         (click)="templateTemplateType.set('user')">
                   User
-                  <span class="template-toggle__count">{{ currentUserTemplateFields().length }}</span>
+                    <span class="template-toggle__count">{{ userTemplateFields().length }}</span>
                 </button>
               </div>
 
@@ -627,7 +627,7 @@
 
               <!-- Add Field Button -->
               <button class="btn btn-primary btn-sm btn-icon"
-                      (click)="templateTemplateType() === 'system' ? showAddSystemField.set(true) : showAddUserField.set(true)">
+                      (click)="openAddFieldOverlay(templateTemplateType())">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -644,8 +644,10 @@
                   <thead>
                   <tr>
                     <th class="template-matrix-table__header template-matrix-table__header--sticky">Field</th>
-                    <th class="template-matrix-table__header">Value</th>
+                      <th class="template-matrix-table__header">Type</th>
+                      <th class="template-matrix-table__header">Default</th>
                     <th class="template-matrix-table__header">Description</th>
+                      <th class="template-matrix-table__header">Constraints</th>
                     <th class="template-matrix-table__header template-matrix-table__header--actions"></th>
                   </tr>
                   </thead>
@@ -654,61 +656,45 @@
                       <tr class="template-matrix-table__row">
                         <!-- Field Key (sticky) -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--sticky">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'key') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <code class="template-matrix-table__field-name"
-                                  (click)="startEditTemplateCell(field.key, 'key', field.key)">
-                              {{ field.key }}
+                            <code class="template-matrix-table__field-name">
+                                {{ field.key }}
                             </code>
-                          }
                         </td>
-                        <!-- Value -->
-                        <td class="template-matrix-table__cell"
-                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'value'">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'value') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <span class="template-matrix-table__value"
-                                  (click)="startEditTemplateCell(field.key, 'value', field.value)">
-                                                        {{ field.value || '—' }}
-                                                    </span>
-                          }
+                          <!-- Type -->
+                          <td class="template-matrix-table__cell">
+                          <span class="template-matrix-table__type template-matrix-table__type--{{ field.type }}">
+                            {{ field.type }}
+                          </span>
+                          </td>
+                          <!-- Default Value -->
+                          <td class="template-matrix-table__cell">
+                          <span class="template-matrix-table__value">
+                            {{ getFieldDefaultValue(field) || '—' }}
+                          </span>
                         </td>
                         <!-- Description -->
-                        <td class="template-matrix-table__cell template-matrix-table__cell--description"
-                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description'">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <span class="template-matrix-table__description"
-                                  (click)="startEditTemplateCell(field.key, 'description', field.description ?? '')">
-                                                        {{ field.description || '—' }}
-                                                    </span>
-                          }
+                          <td class="template-matrix-table__cell template-matrix-table__cell--description">
+                          <span class="template-matrix-table__description">
+                            {{ field.description || '—' }}
+                          </span>
+                          </td>
+                          <!-- Constraints (read-only) -->
+                          <td class="template-matrix-table__cell template-matrix-table__cell--constraints">
+                              {{ formatConstraints(field) || '—' }}
                         </td>
                         <!-- Actions -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--actions">
+                            <button (click)="openEditFieldOverlay(field, 'system')"
+                                    class="template-matrix-table__action-btn"
+                                    title="Edit field">
+                                <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                                    <path d="M11.333 2.00004C11.5081 1.82494 11.716 1.68605 11.9447 1.59129C12.1735 1.49653 12.4187 1.44775 12.6663 1.44775C12.914 1.44775 13.1592 1.49653 13.3879 1.59129C13.6167 1.68605 13.8246 1.82494 13.9997 2.00004C14.1748 2.17513 14.3137 2.383 14.4084 2.61178C14.5032 2.84055 14.552 3.08575 14.552 3.33337C14.552 3.58099 14.5032 3.82619 14.4084 4.05497C14.3137 4.28374 14.1748 4.49161 13.9997 4.66671L5.00001 13.6667L1.33334 14.6667L2.33334 11L11.333 2.00004Z"
+                                          stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                          stroke-width="1.5"/>
+                                </svg>
+                            </button>
                           <button class="template-matrix-table__delete-btn"
-                                  (click)="deleteSystemField(field.key)"
+                                  (click)="openDeleteFieldOverlay(field.key!, 'system')"
                                   title="Delete field">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2"
@@ -722,27 +708,6 @@
                 </table>
               </div>
 
-              <!-- Add System Field Form (inline) -->
-              @if (showAddSystemField()) {
-                <div class="template-add-form-inline">
-                  <input type="text"
-                         class="template-add-form-inline__input"
-                         placeholder="Key"
-                         [ngModel]="newSystemFieldKey()"
-                         (ngModelChange)="newSystemFieldKey.set($event)">
-                  <input type="text"
-                         class="template-add-form-inline__input"
-                         placeholder="Value"
-                         [ngModel]="newSystemFieldValue()"
-                         (ngModelChange)="newSystemFieldValue.set($event)"
-                         (keydown.enter)="addSystemField()">
-                  <button class="template-add-form-inline__save" (click)="addSystemField()">Add</button>
-                  <button class="template-add-form-inline__cancel"
-                          (click)="showAddSystemField.set(false); newSystemFieldKey.set(''); newSystemFieldValue.set('')">
-                    Cancel
-                  </button>
-                </div>
-              }
             } @else {
               <div class="template-empty">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -758,27 +723,6 @@
                   <p class="template-empty__hint">Add fields to define system-level configuration.</p>
                 }
 
-                <!-- Add System Field Form (for empty state) -->
-                @if (showAddSystemField()) {
-                  <div class="template-add-form-inline">
-                    <input type="text"
-                           class="template-add-form-inline__input"
-                           placeholder="Key"
-                           [ngModel]="newSystemFieldKey()"
-                           (ngModelChange)="newSystemFieldKey.set($event)">
-                    <input type="text"
-                           class="template-add-form-inline__input"
-                           placeholder="Value"
-                           [ngModel]="newSystemFieldValue()"
-                           (ngModelChange)="newSystemFieldValue.set($event)"
-                           (keydown.enter)="addSystemField()">
-                    <button class="template-add-form-inline__save" (click)="addSystemField()">Add</button>
-                    <button class="template-add-form-inline__cancel"
-                            (click)="showAddSystemField.set(false); newSystemFieldKey.set(''); newSystemFieldValue.set('')">
-                      Cancel
-                    </button>
-                  </div>
-                }
               </div>
             }
 
@@ -819,47 +763,20 @@
                       <tr class="template-matrix-table__row">
                         <!-- Field Key (sticky) -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--sticky">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'key') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <code class="template-matrix-table__field-name"
-                                  (click)="startEditTemplateCell(field.key, 'key', field.key)">
-                              {{ field.key }}
+                            <code class="template-matrix-table__field-name">
+                                {{ field.key }}
                             </code>
-                          }
                         </td>
                         <!-- Type -->
-                        <td class="template-matrix-table__cell"
-                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'type'">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'type') {
-                            <select class="template-matrix-table__select"
-                                    [value]="editValue()"
-                                    (change)="editValue.set($any($event.target).value); saveTemplateCellEdit()">
-                              <option value="string">string</option>
-                              <option value="number">number</option>
-                              <option value="boolean">boolean</option>
-                              <option value="enum">enum</option>
-                            </select>
-                          } @else {
-                            <span class="template-matrix-table__type template-matrix-table__type--{{ field.type }}"
-                                  (click)="startEditTemplateCell(field.key, 'type', field.type)">
-                                                        {{ field.type }}
-                                                    </span>
-                          }
+                          <td class="template-matrix-table__cell">
+                          <span class="template-matrix-table__type template-matrix-table__type--{{ field.type }}">
+                            {{ field.type }}
+                          </span>
                         </td>
                         <!-- Editable -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--editable">
-                          <button class="template-matrix-table__toggle"
-                                  [class.template-matrix-table__toggle--active]="field.editable"
-                                  (click)="toggleUserFieldEditable(field.key)"
-                                  [attr.aria-pressed]="field.editable"
-                                  title="Toggle editable">
+                          <span [class.template-matrix-table__toggle--active]="field.editable"
+                                class="template-matrix-table__toggle">
                             @if (field.editable) {
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2"
@@ -871,43 +788,19 @@
                                       stroke-linecap="round"/>
                               </svg>
                             }
-                          </button>
+                          </span>
                         </td>
                         <!-- Default Value -->
-                        <td class="template-matrix-table__cell"
-                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'defaultValue'">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'defaultValue') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <span class="template-matrix-table__value"
-                                  (click)="startEditTemplateCell(field.key, 'defaultValue', field.defaultValue)">
-                                                        {{ field.defaultValue || '—' }}
-                                                    </span>
-                          }
+                          <td class="template-matrix-table__cell">
+                          <span class="template-matrix-table__value">
+                            {{ getFieldDefaultValue(field) || '—' }}
+                          </span>
                         </td>
                         <!-- Description -->
-                        <td class="template-matrix-table__cell template-matrix-table__cell--description"
-                            [class.template-matrix-table__cell--editing]="editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description'">
-                          @if (editingTemplateCell()?.fieldKey === field.key && editingTemplateCell()?.property === 'description') {
-                            <input type="text"
-                                   class="template-matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveTemplateCellEdit()"
-                                   (keydown.escape)="cancelTemplateCellEdit()"
-                                   (blur)="saveTemplateCellEdit()">
-                          } @else {
-                            <span class="template-matrix-table__description"
-                                  (click)="startEditTemplateCell(field.key, 'description', field.description ?? '')">
-                                                        {{ field.description || '—' }}
-                                                    </span>
-                          }
+                          <td class="template-matrix-table__cell template-matrix-table__cell--description">
+                          <span class="template-matrix-table__description">
+                            {{ field.description || '—' }}
+                          </span>
                         </td>
                         <!-- Constraints (read-only) -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--constraints">
@@ -915,8 +808,17 @@
                         </td>
                         <!-- Actions -->
                         <td class="template-matrix-table__cell template-matrix-table__cell--actions">
+                            <button (click)="openEditFieldOverlay(field, 'user')"
+                                    class="template-matrix-table__action-btn"
+                                    title="Edit field">
+                                <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                                    <path d="M11.333 2.00004C11.5081 1.82494 11.716 1.68605 11.9447 1.59129C12.1735 1.49653 12.4187 1.44775 12.6663 1.44775C12.914 1.44775 13.1592 1.49653 13.3879 1.59129C13.6167 1.68605 13.8246 1.82494 13.9997 2.00004C14.1748 2.17513 14.3137 2.383 14.4084 2.61178C14.5032 2.84055 14.552 3.08575 14.552 3.33337C14.552 3.58099 14.5032 3.82619 14.4084 4.05497C14.3137 4.28374 14.1748 4.49161 13.9997 4.66671L5.00001 13.6667L1.33334 14.6667L2.33334 11L11.333 2.00004Z"
+                                          stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                          stroke-width="1.5"/>
+                                </svg>
+                            </button>
                           <button class="template-matrix-table__delete-btn"
-                                  (click)="deleteUserField(field.key)"
+                                  (click)="openDeleteFieldOverlay(field.key!, 'user')"
                                   title="Delete field">
                             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                               <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" stroke-width="2"
@@ -929,29 +831,6 @@
                   </tbody>
                 </table>
               </div>
-
-              <!-- Add User Field Form (inline) -->
-              @if (showAddUserField()) {
-                <div class="template-add-form-inline template-add-form-inline--user">
-                  <input type="text"
-                         class="template-add-form-inline__input"
-                         placeholder="Field name"
-                         [ngModel]="newUserFieldKey()"
-                         (ngModelChange)="newUserFieldKey.set($event)">
-                  <select class="template-add-form-inline__select"
-                          [ngModel]="newUserFieldType()"
-                          (ngModelChange)="newUserFieldType.set($event)">
-                    <option value="string">string</option>
-                    <option value="number">number</option>
-                    <option value="boolean">boolean</option>
-                    <option value="enum">enum</option>
-                  </select>
-                  <button class="template-add-form-inline__save" (click)="addUserField()">Add</button>
-                  <button class="template-add-form-inline__cancel"
-                          (click)="showAddUserField.set(false); newUserFieldKey.set('')">Cancel
-                  </button>
-                </div>
-              }
             } @else {
               <div class="template-empty">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
@@ -965,29 +844,6 @@
                 } @else {
                   <p>No user template fields configured.</p>
                   <p class="template-empty__hint">Add fields to define user-level configuration.</p>
-                }
-
-                <!-- Add User Field Form (for empty state) -->
-                @if (showAddUserField()) {
-                  <div class="template-add-form-inline template-add-form-inline--user">
-                    <input type="text"
-                           class="template-add-form-inline__input"
-                           placeholder="Field name"
-                           [ngModel]="newUserFieldKey()"
-                           (ngModelChange)="newUserFieldKey.set($event)">
-                    <select class="template-add-form-inline__select"
-                            [ngModel]="newUserFieldType()"
-                            (ngModelChange)="newUserFieldType.set($event)">
-                      <option value="string">string</option>
-                      <option value="number">number</option>
-                      <option value="boolean">boolean</option>
-                      <option value="enum">enum</option>
-                    </select>
-                    <button class="template-add-form-inline__save" (click)="addUserField()">Add</button>
-                    <button class="template-add-form-inline__cancel"
-                            (click)="showAddUserField.set(false); newUserFieldKey.set('')">Cancel
-                    </button>
-                  </div>
                 }
               </div>
             }
@@ -1053,7 +909,24 @@
                 <span class="overrides-checkbox__label">Show only overrides</span>
               </label>
 
-              <!-- Add Identifier Button -->
+                <!-- Copy Overrides Button -->
+                @if (hasIdentifierOverrides()) {
+                    <button
+                            (click)="openCopyOverridesOverlay()"
+                            class="btn btn-secondary btn-sm btn-icon"
+                            title="Copy identifier overrides to another environment">
+                        <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                            <path d="M5.333 5.333V3.2A1.067 1.067 0 0 1 6.4 2.133h7.467a1.067 1.067 0 0 1 1.066 1.067v7.467a1.067 1.067 0 0 1-1.066 1.066h-2.134"
+                                  stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                  stroke-width="1.5"/>
+                            <rect height="8.533" rx="1.067" stroke="currentColor" stroke-width="1.5" width="8.533" x="2.133"
+                                  y="5.333"/>
+                        </svg>
+                        Copy Overrides
+                    </button>
+                }
+
+                <!-- Add Identifier Button -->
               <button class="btn btn-primary btn-sm btn-icon" (click)="showAddIdentifier.set(true)">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -1107,13 +980,70 @@
                             [class.matrix-table__cell--override]="getMatrixCellValue(identifier, attr) !== null"
                             [class.matrix-table__cell--editing]="editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr">
                           @if (editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr) {
-                            <input type="text"
-                                   class="matrix-table__input"
-                                   [value]="editValue()"
-                                   (input)="editValue.set($any($event.target).value)"
-                                   (keydown.enter)="saveMatrixCellEdit()"
-                                   (keydown.escape)="cancelMatrixCellEdit()"
-                                   (blur)="saveMatrixCellEdit()">
+                              <div class="matrix-table__edit-wrapper">
+                                  @if (getMatrixField(attr); as field) {
+                                      @if (templateService.isEnumField(field)) {
+                                          <!-- Enum field: Dropdown -->
+                                          <select
+                                                  (blur)="tryToSaveMatrixCellEdit()"
+                                                  (change)="onMatrixInputChange($any($event.target).value)"
+                                                  (keydown.enter)="saveMatrixCellEdit()"
+                                                  (keydown.escape)="cancelMatrixCellEdit()"
+                                                  [class.matrix-table__input--error]="editError()"
+                                                  [value]="editValue()"
+                                                  class="matrix-table__input matrix-table__input--select">
+                                              <option [value]="getDefaultValue(attr)">—
+                                                  (default: {{ getDefaultValue(attr) }})
+                                              </option>
+                                              @for (option of field.options; track option) {
+                                                  <option [value]="option">{{ option }}</option>
+                                              }
+                                          </select>
+                                      } @else if (templateService.isBooleanField(field)) {
+                                          <!-- Boolean field: Dropdown -->
+                                          <select
+                                                  (blur)="tryToSaveMatrixCellEdit()"
+                                                  (change)="onMatrixInputChange($any($event.target).value)"
+                                                  (keydown.enter)="saveMatrixCellEdit()"
+                                                  (keydown.escape)="cancelMatrixCellEdit()"
+                                                  [class.matrix-table__input--error]="editError()"
+                                                  [value]="editValue()"
+                                                  class="matrix-table__input matrix-table__input--select">
+                                              <option [value]="getDefaultValue(attr)">—
+                                                  (default: {{ getDefaultValue(attr) }})
+                                              </option>
+                                              <option value="true">true</option>
+                                              <option value="false">false</option>
+                                          </select>
+                                      } @else if (templateService.isNumberField(field)) {
+                                          <!-- Number field: Number input -->
+                                          <input (blur)="tryToSaveMatrixCellEdit()"
+                                                 (input)="onMatrixInputChange($any($event.target).value)"
+                                                 (keydown.enter)="saveMatrixCellEdit()"
+                                                 (keydown.escape)="cancelMatrixCellEdit()"
+                                                 [class.matrix-table__input--error]="editError()"
+                                                 [max]="field.maxValue"
+                                                 [min]="field.minValue"
+                                                 [step]="field.incrementAmount ?? 1"
+                                                 [value]="editValue()"
+                                                 class="matrix-table__input"
+                                                 type="number">
+                                      } @else {
+                                          <!-- String field: Text input -->
+                                          <input (blur)="tryToSaveMatrixCellEdit()"
+                                                 (input)="onMatrixInputChange($any($event.target).value)"
+                                                 (keydown.enter)="saveMatrixCellEdit()"
+                                                 (keydown.escape)="cancelMatrixCellEdit()"
+                                                 [class.matrix-table__input--error]="editError()"
+                                                 [value]="editValue()"
+                                                 class="matrix-table__input"
+                                                 type="text">
+                                      }
+                                  }
+                                  @if (editError()) {
+                                      <span class="matrix-table__error">{{ editError() }}</span>
+                                  }
+                              </div>
                           } @else {
                             <span class="matrix-table__value"
                                   [class.matrix-table__value--default]="getMatrixCellValue(identifier, attr) === null"

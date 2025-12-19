@@ -13,7 +13,7 @@ import {UsersTableComponent} from '../../components/users-table/users-table.comp
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
-import {ApplicationResponse, CompanyResponse, CustomerRole} from '../../api/generated/models';
+import {ApplicationListResponse, ApplicationResponse, CompanyResponse, CustomerRole} from '../../api/generated/models';
 import {User, UsersService} from '../../services/users.service';
 import {CommonModule} from '@angular/common';
 import {HasRoleDirective} from '../../directives/has-role.directive';
@@ -39,7 +39,7 @@ export class DashboardComponent implements OnInit {
   private usersService = inject(UsersService);
 
   showSuccessMessage = signal(false);
-  applications = signal<ApplicationResponse[]>([]);
+  applications = signal<ApplicationListResponse[]>([]);
   private api = inject(Api);
   activeTab = signal<'applications' | 'users'>('applications');
 
@@ -119,7 +119,7 @@ export class DashboardComponent implements OnInit {
     await this.fetchApplications();
   }
 
-  onApplicationClick(application: ApplicationResponse): void {
+  onApplicationClick(application: ApplicationListResponse): void {
     this.router.navigate(['/dashboard/application', application.id], {
       state: {application}
     });

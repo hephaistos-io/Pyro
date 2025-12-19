@@ -917,8 +917,18 @@
     opacity: 0.4;
   }
 
+  &__edit-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 150px;
+    max-width: 200px;
+  }
+
   &__input {
     width: 100%;
+    min-width: 150px;
+    max-width: 200px;
     padding: 0.375rem 0.5rem;
     font-family: inherit;
     font-size: 0.85rem;
@@ -932,10 +942,35 @@
       box-shadow: 0 0 0 3px rgba($pyro-red, 0.15);
     }
 
+    &--error {
+      border-color: $pyro-red-deep;
+      background: rgba($pyro-red, 0.05);
+    }
+
+    &--select {
+      cursor: pointer;
+    }
+
     @include dark-mode {
       background: $dark-card;
       color: $dark-text;
       border-color: $pyro-red-light;
+
+      &--error {
+        border-color: $pyro-red;
+        background: rgba($pyro-red, 0.08);
+      }
+    }
+  }
+
+  &__error {
+    font-size: 0.7rem;
+    color: $pyro-red-deep;
+    padding: 0.125rem 0.5rem;
+    font-weight: 500;
+
+    @include dark-mode {
+      color: $pyro-red-light;
     }
   }
 }
@@ -2756,24 +2791,6 @@
     }
   }
 
-  // Editable cell styles
-  &__editable {
-    cursor: pointer;
-    padding: 0.125rem 0.25rem;
-    border-radius: 4px;
-    transition: background 0.15s ease;
-
-    &:hover {
-      background: rgba($pyro-red, 0.08);
-    }
-
-    @include dark-mode {
-      &:hover {
-        background: rgba($pyro-red, 0.15);
-      }
-    }
-  }
-
   // Inline input field
   &__input {
     width: 100%;
@@ -3821,8 +3838,8 @@
     }
 
     &--actions {
-      width: 50px;
-      min-width: 50px;
+      width: 80px;
+      min-width: 80px;
     }
   }
 
@@ -3893,6 +3910,14 @@
     &--editing {
       padding: 0.375rem 0.5rem;
     }
+
+    &--error {
+      background: rgba(#dc2626, 0.05);
+
+      @include dark-mode {
+        background: rgba(#ef4444, 0.1);
+      }
+    }
   }
 
   &__field-name {
@@ -3904,20 +3929,60 @@
     background: rgba($pyro-red, 0.08);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.15s ease;
     word-break: break-word;
-
-    &:hover {
-      background: rgba($pyro-red, 0.15);
-    }
 
     @include dark-mode {
       color: $pyro-red-light;
       background: rgba($pyro-red, 0.15);
+    }
+  }
 
-      &:hover {
-        background: rgba($pyro-red, 0.25);
+  &__type {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    &--STRING {
+      background: #fef3c7;
+      color: #92400e;
+
+      @include dark-mode {
+        background: rgba(#fbbf24, 0.2);
+        color: #fbbf24;
+      }
+    }
+
+    &--NUMBER {
+      background: #d1fae5;
+      color: #065f46;
+
+      @include dark-mode {
+        background: rgba(#10b981, 0.2);
+        color: #34d399;
+      }
+    }
+
+    &--BOOLEAN {
+      background: #dbeafe;
+      color: #1e40af;
+
+      @include dark-mode {
+        background: rgba(#3b82f6, 0.2);
+        color: #60a5fa;
+      }
+    }
+
+    &--ENUM {
+      background: #ede9fe;
+      color: #6d28d9;
+
+      @include dark-mode {
+        background: rgba(#8b5cf6, 0.2);
+        color: #a78bfa;
       }
     }
   }
@@ -3926,15 +3991,9 @@
     display: block;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.15s ease;
     font-family: 'SF Mono', 'Monaco', monospace;
     font-size: 0.8rem;
     word-break: break-word;
-
-    &:hover {
-      background: rgba($pyro-red, 0.08);
-    }
   }
 
   &__type {
@@ -3944,12 +4003,6 @@
     padding: 0.2rem 0.5rem;
     border-radius: 4px;
     text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.15s ease;
-
-    &:hover {
-      opacity: 0.8;
-    }
 
     &--string {
       color: #059669;
@@ -4009,10 +4062,39 @@
       box-shadow: 0 0 0 3px rgba($pyro-red, 0.15);
     }
 
+    &--error {
+      border-color: #dc2626;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(#dc2626, 0.15);
+      }
+    }
+
     @include dark-mode {
       background: $dark-card;
       color: $dark-text;
       border-color: $pyro-red-light;
+
+      &--error {
+        border-color: #ef4444;
+      }
+    }
+  }
+
+  &__edit-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 150px;
+  }
+
+  &__error {
+    font-size: 0.7rem;
+    color: #dc2626;
+    white-space: nowrap;
+
+    @include dark-mode {
+      color: #ef4444;
     }
   }
 
@@ -4037,6 +4119,37 @@
       background: $dark-card;
       color: $dark-text;
       border-color: $pyro-red-light;
+    }
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $charcoal-light;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      background: rgba($pyro-red, 0.1);
+      color: $pyro-red;
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        background: rgba($pyro-red, 0.2);
+        color: $pyro-red-light;
+      }
     }
   }
 
@@ -4075,22 +4188,12 @@
     display: block;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.15s ease;
     font-size: 0.8rem;
     color: $charcoal-light;
     word-break: break-word;
 
-    &:hover {
-      background: rgba($charcoal, 0.06);
-    }
-
     @include dark-mode {
       color: $dark-text-muted;
-
-      &:hover {
-        background: rgba($white, 0.06);
-      }
     }
   }
 
@@ -4105,37 +4208,19 @@
     border: none;
     border-radius: 6px;
     color: $charcoal-light;
-    cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover {
-      background: rgba($charcoal, 0.12);
-    }
 
     &--active {
       background: rgba(#059669, 0.15);
       color: #059669;
-
-      &:hover {
-        background: rgba(#059669, 0.25);
-      }
     }
 
     @include dark-mode {
       background: rgba($white, 0.08);
       color: $dark-text-muted;
 
-      &:hover {
-        background: rgba($white, 0.12);
-      }
-
       &--active {
         background: rgba(#34d399, 0.2);
         color: #34d399;
-
-        &:hover {
-          background: rgba(#34d399, 0.3);
-        }
       }
     }
   }
