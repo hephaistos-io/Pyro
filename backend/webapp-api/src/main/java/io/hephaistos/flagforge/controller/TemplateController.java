@@ -1,6 +1,8 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.MergedTemplateValuesResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
@@ -16,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -110,5 +113,13 @@ public class TemplateController {
     public void deleteOverride(@PathVariable UUID applicationId, @PathVariable TemplateType type,
             @PathVariable UUID environmentId, @PathVariable String identifier) {
         templateService.deleteOverride(applicationId, environmentId, type, identifier);
+    }
+
+    @Operation(summary = "Copy overrides from one environment to another")
+    @PostMapping(value = "/copy-overrides", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public CopyOverridesResponse copyOverrides(@PathVariable UUID applicationId,
+            @Valid @RequestBody CopyOverridesRequest request) {
+        return templateService.copyOverrides(applicationId, request);
     }
 }

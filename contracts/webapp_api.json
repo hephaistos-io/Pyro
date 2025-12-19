@@ -397,6 +397,48 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/templates/copy-overrides": {
+      "post": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Copy overrides from one environment to another",
+        "operationId": "copyOverrides",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyOverridesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopyOverridesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/environments": {
       "get": {
         "tags": [
@@ -1451,6 +1493,59 @@
               "FREE",
               "PAID"
             ]
+          }
+        }
+      },
+      "CopyOverridesRequest": {
+        "required": [
+          "sourceEnvironmentId",
+          "targetEnvironmentId"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceEnvironmentId": {
+            "type": "string",
+            "description": "Source environment ID to copy from",
+            "format": "uuid"
+          },
+          "targetEnvironmentId": {
+            "type": "string",
+            "description": "Target environment ID to copy to",
+            "format": "uuid"
+          },
+          "types": {
+            "type": "array",
+            "description": "Template types to copy (USER, SYSTEM, or both). If not provided, copies all types.",
+            "items": {
+              "$ref": "#/components/schemas/TemplateType"
+            }
+          },
+          "overwrite": {
+            "type": "boolean",
+            "description": "Whether to overwrite existing overrides in the target environment. Default: false"
+          },
+          "identifiers": {
+            "type": "array",
+            "description": "Optional list of specific identifiers to copy. If not provided, copies all identifiers.",
+            "items": {
+              "type": "string",
+              "description": "Optional list of specific identifiers to copy. If not provided, copies all identifiers."
+            }
+          }
+        }
+      },
+      "CopyOverridesResponse": {
+        "type": "object",
+        "properties": {
+          "copiedCount": {
+            "type": "integer",
+            "description": "Number of overrides successfully copied",
+            "format": "int32"
+          },
+          "skippedCount": {
+            "type": "integer",
+            "description": "Number of overrides skipped (already existed and overwrite\u003dfalse)",
+            "format": "int32"
           }
         }
       },

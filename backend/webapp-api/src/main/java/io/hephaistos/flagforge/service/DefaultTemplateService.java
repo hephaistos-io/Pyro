@@ -1,13 +1,20 @@
 package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
+import io.hephaistos.flagforge.controller.dto.CopyOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.MergedTemplateValuesResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
 import io.hephaistos.flagforge.data.ApplicationEntity;
+import io.hephaistos.flagforge.data.BooleanTemplateField;
+import io.hephaistos.flagforge.data.EnumTemplateField;
+import io.hephaistos.flagforge.data.NumberTemplateField;
+import io.hephaistos.flagforge.data.StringTemplateField;
 import io.hephaistos.flagforge.data.TemplateEntity;
+import io.hephaistos.flagforge.data.TemplateField;
 import io.hephaistos.flagforge.data.TemplateSchema;
 import io.hephaistos.flagforge.data.TemplateType;
 import io.hephaistos.flagforge.data.TemplateValuesEntity;
@@ -201,11 +208,13 @@ public class DefaultTemplateService implements TemplateService {
         }
         validateEnvironment(environmentId);
 
-        // Check if template exists
-        if (!templateRepository.existsByApplicationIdAndType(applicationId, type)) {
-            throw new NotFoundException(
-                    "Template of type %s not found for application".formatted(type));
-        }
+        // Fetch template to validate against schema
+        var template = templateRepository.findByApplicationIdAndType(applicationId, type)
+                .orElseThrow(() -> new NotFoundException(
+                        "Template of type %s not found for application".formatted(type)));
+
+        // Validate override values against template schema
+        validateOverrideValues(request.values(), template.getSchema());
 
         // Find existing or create new
         var existingOverride =
@@ -246,6 +255,200 @@ public class DefaultTemplateService implements TemplateService {
                                 "Override not found for identifier: " + identifier));
 
         templateValuesRepository.delete(override);
+    }
+
+    @Override
+    @RequireDev
+    public CopyOverridesResponse copyOverrides(UUID applicationId, CopyOverridesRequest request) {
+        if (!applicationRepository.existsByIdFiltered(applicationId)) {
+            throw new NotFoundException("Application not found: " + applicationId);
+        }
+        validateEnvironment(request.sourceEnvironmentId());
+        validateEnvironment(request.targetEnvironmentId());
+
+        if (request.sourceEnvironmentId().equals(request.targetEnvironmentId())) {
+            throw new IllegalArgumentException("Source and target environments must be different");
+        }
+
+        // Determine which types to copy
+        List<TemplateType> typesToCopy = request.types() != null && !request.types().isEmpty() ?
+                request.types() :
+                List.of(TemplateType.values());
+
+        boolean overwrite = request.overwrite() != null && request.overwrite();
+
+        // Determine identifier filtering
+        List<String> identifiersFilter = request.identifiers();
+        boolean filterByIdentifiers = identifiersFilter != null && !identifiersFilter.isEmpty();
+
+        int copiedCount = 0;
+        int skippedCount = 0;
+
+        for (TemplateType type : typesToCopy) {
+            // Get all overrides from source environment for this type
+            var sourceOverrides =
+                    templateValuesRepository.findByApplicationIdAndEnvironmentIdAndType(
+                            applicationId, request.sourceEnvironmentId(), type);
+
+            for (var sourceOverride : sourceOverrides) {
+                String identifier = sourceOverride.getIdentifier();
+
+                // Skip if not in filter list
+                if (filterByIdentifiers && !identifiersFilter.contains(identifier)) {
+                    continue;
+                }
+
+                // Check if override already exists in target
+                var existingTarget =
+                        templateValuesRepository.findByApplicationIdAndEnvironmentIdAndTypeAndIdentifier(
+                                applicationId, request.targetEnvironmentId(), type, identifier);
+
+                if (existingTarget.isPresent() && !overwrite) {
+                    skippedCount++;
+                    continue;
+                }
+
+                // Copy the override
+                TemplateValuesEntity targetOverride;
+                if (existingTarget.isPresent()) {
+                    targetOverride = existingTarget.get();
+                    targetOverride.setValues(new HashMap<>(sourceOverride.getValues()));
+                }
+                else {
+                    targetOverride = new TemplateValuesEntity();
+                    targetOverride.setApplicationId(applicationId);
+                    targetOverride.setEnvironmentId(request.targetEnvironmentId());
+                    targetOverride.setType(type);
+                    targetOverride.setIdentifier(identifier);
+                    targetOverride.setValues(new HashMap<>(sourceOverride.getValues()));
+                }
+
+                templateValuesRepository.save(targetOverride);
+                copiedCount++;
+            }
+        }
+
+        return new CopyOverridesResponse(copiedCount, skippedCount);
+    }
+
+    /**
+     * Validates override values against the template schema constraints. Each value must match the
+     * type and constraints of its corresponding field. Unknown fields (not in schema) are allowed
+     * for flexibility.
+     *
+     * @param values Override values to validate
+     * @param schema Template schema containing field definitions
+     * @throws IllegalArgumentException if any value violates its field constraints
+     */
+    private void validateOverrideValues(Map<String, Object> values, TemplateSchema schema) {
+        // Create a map of field key -> field for quick lookup
+        Map<String, TemplateField> fieldMap = new HashMap<>();
+        for (var field : schema.fields()) {
+            fieldMap.put(field.key(), field);
+        }
+
+        // Validate each value against its field definition
+        for (var entry : values.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            // Find the field definition
+            TemplateField field = fieldMap.get(key);
+            if (field == null) {
+                // Allow fields not in schema for flexibility (forward compatibility)
+                continue;
+            }
+
+            // Validate based on field type using pattern matching
+            switch (field) {
+                case StringTemplateField stringField ->
+                        validateStringValue(key, value, stringField);
+                case NumberTemplateField numberField ->
+                        validateNumberValue(key, value, numberField);
+                case BooleanTemplateField booleanField ->
+                        validateBooleanValue(key, value, booleanField);
+                case EnumTemplateField enumField -> validateEnumValue(key, value, enumField);
+            }
+        }
+    }
+
+    private void validateStringValue(String key, Object value, StringTemplateField field) {
+        if (!(value instanceof String strValue)) {
+            throw new IllegalArgumentException(
+                    "Field '%s' expects a String value, but got %s".formatted(key,
+                            value.getClass().getSimpleName()));
+        }
+
+        int length = strValue.length();
+
+        if (field.minLength() != null && length < field.minLength()) {
+            throw new IllegalArgumentException(
+                    "Field '%s' value length (%d) is below minLength (%d)".formatted(key, length,
+                            field.minLength()));
+        }
+
+        if (field.maxLength() != null && length > field.maxLength()) {
+            throw new IllegalArgumentException(
+                    "Field '%s' value length (%d) exceeds maxLength (%d)".formatted(key, length,
+                            field.maxLength()));
+        }
+    }
+
+    private void validateNumberValue(String key, Object value, NumberTemplateField field) {
+        if (!(value instanceof Number)) {
+            throw new IllegalArgumentException(
+                    "Field '%s' expects a Number value, but got %s".formatted(key,
+                            value.getClass().getSimpleName()));
+        }
+
+        double numValue = ((Number) value).doubleValue();
+
+        if (field.minValue() != null && numValue < field.minValue()) {
+            throw new IllegalArgumentException(
+                    "Field '%s' value (%.2f) is below minValue (%.2f)".formatted(key, numValue,
+                            field.minValue()));
+        }
+
+        if (field.maxValue() != null && numValue > field.maxValue()) {
+            throw new IllegalArgumentException(
+                    "Field '%s' value (%.2f) exceeds maxValue (%.2f)".formatted(key, numValue,
+                            field.maxValue()));
+        }
+
+        // Validate increment alignment
+        if (field.incrementAmount() != null && field.minValue() != null) {
+            double diff = numValue - field.minValue();
+            double remainder = Math.abs(diff % field.incrementAmount());
+            double tolerance = field.incrementAmount() * 1e-9;
+
+            if (remainder > tolerance && remainder < field.incrementAmount() - tolerance) {
+                throw new IllegalArgumentException(
+                        "Field '%s' value (%.2f) must align with incrementAmount (%.2f) starting from minValue (%.2f)".formatted(
+                                key, numValue, field.incrementAmount(), field.minValue()));
+            }
+        }
+    }
+
+    private void validateBooleanValue(String key, Object value, BooleanTemplateField field) {
+        if (!(value instanceof Boolean)) {
+            throw new IllegalArgumentException(
+                    "Field '%s' expects a boolean value, but got %s".formatted(key,
+                            value.getClass().getSimpleName()));
+        }
+    }
+
+    private void validateEnumValue(String key, Object value, EnumTemplateField field) {
+        if (!(value instanceof String strValue)) {
+            throw new IllegalArgumentException(
+                    "Field '%s' expects a String value (from enum options), but got %s".formatted(
+                            key, value.getClass().getSimpleName()));
+        }
+
+        if (!field.options().contains(strValue)) {
+            throw new IllegalArgumentException(
+                    "Field '%s' value '%s' is not in the allowed options: %s".formatted(key,
+                            strValue, field.options()));
+        }
     }
 
     private void validateEnvironment(UUID environmentId) {
