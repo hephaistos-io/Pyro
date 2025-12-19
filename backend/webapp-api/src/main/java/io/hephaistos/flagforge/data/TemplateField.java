@@ -1,41 +1,58 @@
 package io.hephaistos.flagforge.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.hephaistos.flagforge.validation.ValidTemplateField;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Represents a single field definition in a template schema.
+ * Sealed interface for template field definitions.
  * <p>
- * Constraints are required based on field type:
+ * Template fields define the structure of a template schema. Each field has a type
+ * that determines its constraints and allowed values:
  * <ul>
- *   <li>STRING: minLength (int >= 0), maxLength (int > 0)</li>
- *   <li>NUMBER: minValue (number), maxValue (number), incrementAmount (number > 0)</li>
- *   <li>ENUM: options (non-empty list of strings)</li>
- *   <li>BOOLEAN: no constraints required</li>
+ *   <li>STRING: Text values with minLength/maxLength constraints</li>
+ *   <li>NUMBER: Numeric values with minValue/maxValue/incrementAmount constraints</li>
+ *   <li>BOOLEAN: True/false values with no additional constraints</li>
+ *   <li>ENUM: Selection from a predefined list of options</li>
  * </ul>
- *
- * @param key          Unique field identifier (e.g., "night_mode", "tier")
- * @param type         Field data type
- * @param description  Human-readable description of the field
- * @param editable     Whether users can modify this field (USER templates only)
- * @param defaultValue Default value for this field
- * @param constraints  Type-specific constraints (required for STRING, NUMBER, ENUM)
+ * <p>
+ * Polymorphic serialization uses the {@code type} field as discriminator.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@ValidTemplateField
-public record TemplateField(@NotBlank(message = "Field key is required") String key,
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY,
+        property = "type", visible = true)
+@JsonSubTypes({@JsonSubTypes.Type(value = StringTemplateField.class, name = "STRING"),
+        @JsonSubTypes.Type(value = NumberTemplateField.class, name = "NUMBER"),
+        @JsonSubTypes.Type(value = BooleanTemplateField.class, name = "BOOLEAN"),
+        @JsonSubTypes.Type(value = EnumTemplateField.class, name = "ENUM")})
+@Schema(oneOf = {StringTemplateField.class, NumberTemplateField.class, BooleanTemplateField.class,
+        EnumTemplateField.class}, discriminatorProperty = "type", discriminatorMapping = {
+        @DiscriminatorMapping(value = "STRING", schema = StringTemplateField.class),
+        @DiscriminatorMapping(value = "NUMBER", schema = NumberTemplateField.class),
+        @DiscriminatorMapping(value = "BOOLEAN", schema = BooleanTemplateField.class),
+        @DiscriminatorMapping(value = "ENUM", schema = EnumTemplateField.class)})
+public sealed interface TemplateField
+        permits StringTemplateField, NumberTemplateField, BooleanTemplateField, EnumTemplateField {
 
-                            @NotNull(message = "Field type is required") FieldType type,
+    /**
+     * @return Unique field identifier within the template
+     */
+    String key();
 
-                            String description,
+    /**
+     * @return Field data type (discriminator for polymorphic serialization)
+     */
+    FieldType type();
 
-                            boolean editable,
+    /**
+     * @return Human-readable description of the field
+     */
+    String description();
 
-                            Object defaultValue,
-
-                            Map<String, Object> constraints) {
+    /**
+     * @return Whether users can modify this field (relevant for USER templates)
+     */
+    boolean editable();
 }

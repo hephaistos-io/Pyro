@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8080/api",
+      "url": "http://localhost/api",
       "description": "Generated server url"
     }
   ],
@@ -16,7 +16,7 @@
         "tags": [
           "templates"
         ],
-        "summary": "Update a template\u0027s schema",
+        "summary": "Update a template's schema",
         "operationId": "updateTemplate",
         "parameters": [
           {
@@ -349,7 +349,7 @@
         "tags": [
           "application"
         ],
-        "summary": "Get all applications for current customers\u0027s company",
+        "summary": "Get all applications for current customers's company",
         "operationId": "getApplications",
         "responses": {
           "200": {
@@ -371,7 +371,7 @@
         "tags": [
           "application"
         ],
-        "summary": "Create application for current customers\u0027s company",
+        "summary": "Create application for current customers's company",
         "operationId": "createApplication",
         "requestBody": {
           "content": {
@@ -950,8 +950,84 @@
           "SYSTEM"
         ]
       },
+      "BooleanTemplateField": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "description": "A boolean field with no additional constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "EnumTemplateField": {
+        "required": [
+          "key",
+          "options"
+        ],
+        "type": "object",
+        "description": "An enum field with a list of allowed options",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "string"
+              },
+              "options": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
       "FieldType": {
         "type": "string",
+        "description": "Field type, always ENUM for this schema",
         "enum": [
           "STRING",
           "NUMBER",
@@ -959,36 +1035,131 @@
           "ENUM"
         ]
       },
-      "TemplateField": {
+      "NumberTemplateField": {
+        "required": [
+          "incrementAmount",
+          "key",
+          "maxValue",
+          "minValue"
+        ],
+        "type": "object",
+        "description": "A numeric field with range and increment constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "number"
+              },
+              "minValue": {
+                "type": "number",
+                "format": "double"
+              },
+              "maxValue": {
+                "type": "number",
+                "format": "double"
+              },
+              "incrementAmount": {
+                "type": "number",
+                "format": "double"
+              }
+            }
+          }
+        ]
+      },
+      "StringTemplateField": {
         "required": [
           "key",
+          "maxLength",
+          "minLength"
+        ],
+        "type": "object",
+        "description": "A string field with length constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "string"
+              },
+              "minLength": {
+                "minimum": 0,
+                "type": "integer",
+                "format": "int32"
+              },
+              "maxLength": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      },
+      "TemplateField": {
+        "required": [
           "type"
         ],
         "type": "object",
         "properties": {
-          "key": {
-            "minLength": 1,
-            "type": "string"
-          },
           "type": {
-            "$ref": "#/components/schemas/FieldType"
-          },
-          "description": {
             "type": "string"
-          },
-          "editable": {
-            "type": "boolean"
-          },
-          "defaultValue": {
-            "type": "object"
-          },
-          "constraints": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object"
-            }
           }
-        }
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "STRING": "#/components/schemas/StringTemplateField",
+            "NUMBER": "#/components/schemas/NumberTemplateField",
+            "BOOLEAN": "#/components/schemas/BooleanTemplateField",
+            "ENUM": "#/components/schemas/EnumTemplateField"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StringTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/BooleanTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/EnumTemplateField"
+          }
+        ]
       },
       "TemplateSchema": {
         "type": "object",

@@ -1,0 +1,64 @@
+package io.hephaistos.flagforge.data;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
+/**
+ * A template field definition for NUMBER type values.
+ * <p>
+ * Requires minValue, maxValue, and incrementAmount constraints.
+ *
+ * @param key             Unique field identifier
+ * @param type            Always NUMBER for this record type
+ * @param description     Human-readable description of the field
+ * @param editable        Whether users can modify this field
+ * @param defaultValue    Default numeric value for this field
+ * @param minValue        Minimum allowed value
+ * @param maxValue        Maximum allowed value
+ * @param incrementAmount Step size for value changes (> 0)
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "A numeric field with range and increment constraints")
+public record NumberTemplateField(@NotBlank(message = "Field key is required") String key,
+
+                                  @Schema(description = "Field type, always NUMBER for this schema") FieldType type,
+
+                                  String description,
+
+                                  boolean editable,
+
+                                  Number defaultValue,
+
+                                  @NotNull(
+                                          message = "minValue is required for NUMBER fields") Double minValue,
+
+                                  @NotNull(
+                                          message = "maxValue is required for NUMBER fields") Double maxValue,
+
+                                  @NotNull(
+                                          message = "incrementAmount is required for NUMBER fields") @Positive(
+                                          message = "incrementAmount must be positive") Double incrementAmount)
+        implements TemplateField {
+
+    /**
+     * Compact constructor that enforces type and validates constraints.
+     */
+    public NumberTemplateField {
+        type = FieldType.NUMBER;
+        if (minValue != null && maxValue != null && minValue > maxValue) {
+            throw new IllegalArgumentException("minValue must be less than or equal to maxValue");
+        }
+    }
+
+    /**
+     * Convenience constructor without explicit type parameter.
+     */
+    public NumberTemplateField(String key, String description, boolean editable,
+            Number defaultValue, Double minValue, Double maxValue, Double incrementAmount) {
+        this(key, FieldType.NUMBER, description, editable, defaultValue, minValue, maxValue,
+                incrementAmount);
+    }
+}

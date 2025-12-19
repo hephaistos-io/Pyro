@@ -20,7 +20,22 @@ public record TemplateSchema(@Valid List<TemplateField> fields) {
      */
     public Map<String, Object> getDefaultValues() {
         return fields.stream()
-                .filter(f -> f.defaultValue() != null)
-                .collect(Collectors.toMap(TemplateField::key, TemplateField::defaultValue));
+                .filter(f -> getDefaultValue(f) != null)
+                .collect(Collectors.toMap(TemplateField::key, this::getDefaultValue));
+    }
+
+    /**
+     * Extracts the default value from a polymorphic TemplateField using pattern matching.
+     *
+     * @param field The template field
+     * @return The default value, or null if not set
+     */
+    private Object getDefaultValue(TemplateField field) {
+        return switch (field) {
+            case StringTemplateField s -> s.defaultValue();
+            case NumberTemplateField n -> n.defaultValue();
+            case BooleanTemplateField b -> b.defaultValue();
+            case EnumTemplateField e -> e.defaultValue();
+        };
     }
 }
