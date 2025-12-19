@@ -22,8 +22,12 @@ import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;
 import io.hephaistos.flagforge.data.repository.TemplateValuesRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -85,19 +89,6 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
                 .containsExactlyInAnyOrder(TemplateType.USER, TemplateType.SYSTEM);
     }
 
-    @Test
-    void autoCreatedTemplatesHaveEmptySchema() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-
-        var response = get("/v1/applications/" + applicationId + "/templates?type=USER", token,
-                TemplateResponse[].class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
-        assertThat(response.getBody()[0].schema().fields()).isEmpty();
-    }
-
     // ========== Template CRUD Tests ==========
 
     @Test
@@ -110,178 +101,6 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).hasSize(2);
-    }
-
-    @Test
-    void getTemplateByTypeReturnsSuccessfully() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-
-        var response = get("/v1/applications/" + applicationId + "/templates?type=USER", token,
-                TemplateResponse[].class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(1);
-        assertThat(response.getBody()[0].type()).isEqualTo(TemplateType.USER);
-    }
-
-    @Test
-    void updateTemplateSuccessfully() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-
-        var newSchema = createTestSchema();
-
-        var response = put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(newSchema), token, TemplateResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().schema().fields()).hasSize(1);
-        assertThat(response.getBody().schema().fields().getFirst().key()).isEqualTo("night_mode");
-    }
-
-    // ========== Template Values Tests ==========
-
-    @Test
-    void getMergedValuesReturnsDefaultsFromSchema() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field with default value
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        var response =
-                get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/values",
-                        token, MergedTemplateValuesResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().values()).containsEntry("night_mode", false);
-        assertThat(response.getBody().appliedIdentifiers()).isEmpty();
-    }
-
-    @Test
-    void setOverrideReturns200() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        var response =
-                put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-123",
-                        new TemplateValuesRequest(Map.of("night_mode", true)), token,
-                        TemplateValuesResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().identifier()).isEqualTo("user-123");
-        assertThat(response.getBody().values()).containsEntry("night_mode", true);
-    }
-
-    @Test
-    void getMergedValuesAppliesOverrides() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-123",
-                new TemplateValuesRequest(Map.of("night_mode", true)), token,
-                TemplateValuesResponse.class);
-
-        var response =
-                get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/values?identifiers=user-123",
-                        token, MergedTemplateValuesResponse.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().values()).containsEntry("night_mode", true);
-        assertThat(response.getBody().appliedIdentifiers()).containsExactly("user-123");
-    }
-
-    @Test
-    void getMergedValuesAppliesMultipleOverridesInOrder() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        // Create two overrides
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/region-eu",
-                new TemplateValuesRequest(Map.of("night_mode", true)), token,
-                TemplateValuesResponse.class);
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-123",
-                new TemplateValuesRequest(Map.of("night_mode", false)), token,
-                TemplateValuesResponse.class);
-
-        // Request with user-123 last (should win)
-        var response =
-                get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/values?identifiers=region-eu,user-123",
-                        token, MergedTemplateValuesResponse.class);
-
-        assertThat(response.getBody().values()).containsEntry("night_mode", false);
-        assertThat(response.getBody().appliedIdentifiers()).containsExactly("region-eu",
-                "user-123");
-    }
-
-    @Test
-    void listOverridesReturnsAllOverrides() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-1",
-                new TemplateValuesRequest(Map.of("night_mode", true)), token,
-                TemplateValuesResponse.class);
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-2",
-                new TemplateValuesRequest(Map.of("night_mode", false)), token,
-                TemplateValuesResponse.class);
-
-        var response =
-                get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides",
-                        token, TemplateValuesResponse[].class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2);
-    }
-
-    @Test
-    void deleteOverrideReturns204() {
-        String token = registerAndAuthenticateWithCompany();
-        UUID applicationId = createApplication(token, "Test App");
-        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
-
-        // Update template to have a field
-        put("/v1/applications/" + applicationId + "/templates/USER",
-                new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
-
-        put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-123",
-                new TemplateValuesRequest(Map.of("night_mode", true)), token,
-                TemplateValuesResponse.class);
-
-        var response =
-                delete("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/user-123",
-                        token, Void.class);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-
-        // Verify deletion
-        var listResponse =
-                get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides",
-                        token, TemplateValuesResponse[].class);
-        assertThat(listResponse.getBody()).isEmpty();
     }
 
     @Test
@@ -358,6 +177,204 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
         var response = get("/v1/applications/" + appIdA + "/templates", token2, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // ========== Per-Type Parameterized Tests ==========
+
+
+    @Nested
+    @ParameterizedClass
+    @EnumSource(TemplateType.class)
+    class PerTypeTests {
+
+        @Parameter
+        TemplateType type;
+
+        @Test
+        void autoCreatedTemplateHasEmptySchema() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates?type=" + type, token,
+                            TemplateResponse[].class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).hasSize(1);
+            assertThat(response.getBody()[0].schema().fields()).isEmpty();
+        }
+
+        @Test
+        void getTemplateByTypeReturnsSuccessfully() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates?type=" + type, token,
+                            TemplateResponse[].class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).hasSize(1);
+            assertThat(response.getBody()[0].type()).isEqualTo(type);
+        }
+
+        @Test
+        void updateTemplateSuccessfully() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+
+            var newSchema = createTestSchema();
+
+            var response = put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(newSchema), token, TemplateResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().schema().fields()).hasSize(1);
+            assertThat(response.getBody().schema().fields().getFirst().key()).isEqualTo(
+                    "night_mode");
+        }
+
+        @Test
+        void getMergedValuesReturnsDefaultsFromSchema() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field with default value
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/values",
+                            token, MergedTemplateValuesResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().values()).containsEntry("night_mode", false);
+            assertThat(response.getBody().appliedIdentifiers()).isEmpty();
+        }
+
+        @Test
+        void setOverrideReturns200() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            var response =
+                    put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-123",
+                            new TemplateValuesRequest(Map.of("night_mode", true)), token,
+                            TemplateValuesResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().identifier()).isEqualTo("id-123");
+            assertThat(response.getBody().values()).containsEntry("night_mode", true);
+        }
+
+        @Test
+        void getMergedValuesAppliesOverrides() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-123",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), token,
+                    TemplateValuesResponse.class);
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/values?identifiers=id-123",
+                            token, MergedTemplateValuesResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().values()).containsEntry("night_mode", true);
+            assertThat(response.getBody().appliedIdentifiers()).containsExactly("id-123");
+        }
+
+        @Test
+        void getMergedValuesAppliesMultipleOverridesInOrder() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            // Create two overrides
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/region-eu",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), token,
+                    TemplateValuesResponse.class);
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-123",
+                    new TemplateValuesRequest(Map.of("night_mode", false)), token,
+                    TemplateValuesResponse.class);
+
+            // Request with id-123 last (should win)
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/values?identifiers=region-eu,id-123",
+                            token, MergedTemplateValuesResponse.class);
+
+            assertThat(response.getBody().values()).containsEntry("night_mode", false);
+            assertThat(response.getBody().appliedIdentifiers()).containsExactly("region-eu",
+                    "id-123");
+        }
+
+        @Test
+        void listOverridesReturnsAllOverrides() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-1",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), token,
+                    TemplateValuesResponse.class);
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-2",
+                    new TemplateValuesRequest(Map.of("night_mode", false)), token,
+                    TemplateValuesResponse.class);
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides",
+                            token, TemplateValuesResponse[].class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).hasSize(2);
+        }
+
+        @Test
+        void deleteOverrideReturns204() {
+            String token = registerAndAuthenticateWithCompany();
+            UUID applicationId = createApplication(token, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+            // Update template to have a field
+            put("/v1/applications/" + applicationId + "/templates/" + type,
+                    new TemplateUpdateRequest(createTestSchema()), token, TemplateResponse.class);
+
+            put("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-123",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), token,
+                    TemplateValuesResponse.class);
+
+            var response =
+                    delete("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides/id-123",
+                            token, Void.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+            // Verify deletion
+            var listResponse =
+                    get("/v1/applications/" + applicationId + "/templates/" + type + "/environments/" + environmentId + "/overrides",
+                            token, TemplateValuesResponse[].class);
+            assertThat(listResponse.getBody()).isEmpty();
+        }
     }
 
     // ========== Helper Methods ==========
