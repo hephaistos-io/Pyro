@@ -1591,6 +1591,10 @@
           },
           "secretKey": {
             "type": "string"
+          },
+          "expirationDate": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

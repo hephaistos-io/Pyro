@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.UUID;
 
@@ -23,6 +25,8 @@ public class DefaultApiKeyService implements ApiKeyService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultApiKeyService.class);
     private static final int API_KEY_RANDOM_LENGTH = 64;
     private static final int DEFAULT_RATE_LIMIT = 1000;
+    private static final OffsetDateTime DEFAULT_EXPIRATION_DATE =
+            OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     private final ApiKeyRepository apiKeyRepository;
     private final ApplicationRepository applicationRepository;
@@ -42,6 +46,7 @@ public class DefaultApiKeyService implements ApiKeyService {
         apiKey.setKey(generateSecretKey());
         apiKey.setRateLimitRequestsPerMinute(DEFAULT_RATE_LIMIT);
         apiKey.setKeyType(keyType);
+        apiKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
         apiKeyRepository.save(apiKey);
         LOGGER.info("Created API key (type: {}) for application {} and environment {}", keyType,
@@ -56,8 +61,8 @@ public class DefaultApiKeyService implements ApiKeyService {
             throw new NotFoundException("Application not found");
         }
 
-        return apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                        environmentId, keyType)
+        return apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                        environmentId, keyType, OffsetDateTime.now(ZoneOffset.UTC))
                 .map(ApiKeyResponse::fromEntity)
                 .orElseThrow(() -> new NotFoundException("API key not found for type " + keyType));
     }
@@ -69,20 +74,32 @@ public class DefaultApiKeyService implements ApiKeyService {
             throw new NotFoundException("Application not found");
         }
 
-        ApiKeyEntity apiKey =
-                apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                                environmentId, keyType)
+        ApiKeyEntity oldKey =
+                apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
+                                environmentId, keyType, OffsetDateTime.now(ZoneOffset.UTC))
                         .orElseThrow(() -> new NotFoundException(
                                 "API key not found for type " + keyType));
 
-        String newKey = generateSecretKey();
-        apiKey.setKey(newKey);
+        OffsetDateTime newExpirationDateForOldKey = OffsetDateTime.now(ZoneOffset.UTC).plusWeeks(1);
+        oldKey.setExpirationDate(newExpirationDateForOldKey);
+        apiKeyRepository.save(oldKey);
 
-        apiKeyRepository.save(apiKey);
+        var newKey = new ApiKeyEntity();
+        newKey.setApplicationId(applicationId);
+        newKey.setEnvironmentId(environmentId);
+        newKey.setKey(generateSecretKey());
+        newKey.setRateLimitRequestsPerMinute(oldKey.getRateLimitRequestsPerMinute());
+        newKey.setKeyType(keyType);
+        newKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
+
+        apiKeyRepository.save(newKey);
         LOGGER.info("Regenerated API key (type: {}) for application {} and environment {}", keyType,
                 applicationId, environmentId);
 
-        return ApiKeyResponse.fromEntity(apiKey);
+        var response = ApiKeyResponse.fromEntity(newKey);
+        return new ApiKeyResponse(response.id(), response.environmentId(),
+                response.rateLimitRequestsPerMinute(), response.keyType(), response.secretKey(),
+                newExpirationDateForOldKey);
     }
 
     private String generateSecretKey() {

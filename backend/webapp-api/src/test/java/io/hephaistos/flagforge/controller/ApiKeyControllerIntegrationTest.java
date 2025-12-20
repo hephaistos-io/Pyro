@@ -197,14 +197,18 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(regenerateResponse.getBody()).isNotNull();
-        assertThat(regenerateResponse.getBody().id()).isEqualTo(originalKey.id());
+        assertThat(regenerateResponse.getBody().id()).isNotEqualTo(originalKey.id());
         assertThat(regenerateResponse.getBody().secretKey()).isNotNull();
         assertThat(regenerateResponse.getBody().secretKey()).hasSize(64);
         assertThat(regenerateResponse.getBody().secretKey()).isNotEqualTo(originalKey.secretKey());
+        assertThat(regenerateResponse.getBody().expirationDate()).isAfter(
+                java.time.OffsetDateTime.now());
+        assertThat(regenerateResponse.getBody().expirationDate()).isBefore(
+                java.time.OffsetDateTime.now().plusWeeks(1).plusMinutes(1));
     }
 
     @Test
-    void regenerateApiKeyPreservesKeyId() {
+    void regenerateApiKeyCreatesNewKeyEntity() {
         String token = registerAndAuthenticateWithCompany();
         UUID applicationId = createApplication(token, "Test App");
         UUID environmentId = getDefaultEnvironmentId(token, applicationId);
@@ -215,11 +219,33 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         post(apiKeyPath(applicationId, environmentId, KeyType.WRITE) + "/regenerate", null, token,
                 ApiKeyResponse.class);
 
-        // Verify the key ID is unchanged
+        // Verify a new key was created with a different ID
         var newKey = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
                 ApiKeyResponse.class).getBody();
 
-        assertThat(newKey.id()).isEqualTo(originalKey.id());
+        assertThat(newKey.id()).isNotEqualTo(originalKey.id());
+        assertThat(newKey.secretKey()).isNotEqualTo(originalKey.secretKey());
+    }
+
+    @Test
+    void regenerateApiKeyExpiresOldKeyAfterOneWeek() {
+        String token = registerAndAuthenticateWithCompany();
+        UUID applicationId = createApplication(token, "Test App");
+        UUID environmentId = getDefaultEnvironmentId(token, applicationId);
+
+        var originalKey = get(apiKeyPath(applicationId, environmentId, KeyType.READ), token,
+                ApiKeyResponse.class).getBody();
+        UUID originalKeyId = originalKey.id();
+
+        post(apiKeyPath(applicationId, environmentId, KeyType.READ) + "/regenerate", null, token,
+                ApiKeyResponse.class);
+
+        // Verify the old key still exists in DB but will expire in one week
+        var oldKeyEntity = apiKeyRepository.findById(originalKeyId);
+        assertThat(oldKeyEntity).isPresent();
+        assertThat(oldKeyEntity.get().getExpirationDate()).isAfter(java.time.OffsetDateTime.now());
+        assertThat(oldKeyEntity.get().getExpirationDate()).isBefore(
+                java.time.OffsetDateTime.now().plusWeeks(1).plusMinutes(1));
     }
 
     @Test

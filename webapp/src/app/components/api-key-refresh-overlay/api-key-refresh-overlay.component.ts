@@ -1,14 +1,15 @@
 import {Component, input, signal} from '@angular/core';
+import {DatePipe} from '@angular/common';
 
 export interface ApiKeyRefreshOverlayData {
   keyType: 'read' | 'write';
-  onConfirm: () => Promise<void>;
+  onConfirm: () => Promise<string | undefined>;
 }
 
 @Component({
   selector: 'app-api-key-refresh-overlay',
   standalone: true,
-  imports: [],
+  imports: [DatePipe],
   templateUrl: './api-key-refresh-overlay.component.html',
   styleUrl: './api-key-refresh-overlay.component.scss'
 })
@@ -17,12 +18,16 @@ export class ApiKeyRefreshOverlayComponent {
   close = input.required<() => void>();
 
   isRefreshing = signal(false);
+  isSuccess = signal(false);
+  expirationDate = signal<string | undefined>(undefined);
 
   async onConfirm(): Promise<void> {
     this.isRefreshing.set(true);
     try {
-      await this.data().onConfirm();
-      this.close()();
+      const expiration = await this.data().onConfirm();
+      this.expirationDate.set(expiration);
+      this.isSuccess.set(true);
+      this.isRefreshing.set(false);
     } catch (error) {
       console.error('Error refreshing key:', error);
       this.isRefreshing.set(false);
@@ -30,6 +35,10 @@ export class ApiKeyRefreshOverlayComponent {
   }
 
   onCancel(): void {
+    this.close()();
+  }
+
+  onClose(): void {
     this.close()();
   }
 }

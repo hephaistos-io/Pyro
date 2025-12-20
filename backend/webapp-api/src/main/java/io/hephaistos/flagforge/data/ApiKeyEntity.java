@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -34,6 +35,9 @@ public class ApiKeyEntity extends ApplicationOwnedEntity {
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "key_type", nullable = false)
     private KeyType keyType;
+
+    @Column(name = "expiration_date", nullable = false)
+    private OffsetDateTime expirationDate;
 
     public UUID getId() {
         return id;
@@ -73,5 +77,13 @@ public class ApiKeyEntity extends ApplicationOwnedEntity {
 
     public void setEnvironmentId(UUID environmentId) {
         this.environmentId = environmentId;
+    }
+
+    public OffsetDateTime getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(OffsetDateTime expirationDate) {
+        this.expirationDate = expirationDate;
     }
 }

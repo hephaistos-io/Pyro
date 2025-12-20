@@ -13,6 +13,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -153,6 +155,25 @@ class DefaultApiKeyServiceTest {
         assertThat(savedEntities.get(0).getKey()).isNotEqualTo(savedEntities.get(1).getKey());
     }
 
+    @Test
+    void createApiKeySetsExpirationDateTo2100() {
+        UUID applicationId = UUID.randomUUID();
+        UUID environmentId = UUID.randomUUID();
+
+        when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(invocation -> {
+            ApiKeyEntity entity = invocation.getArgument(0);
+            entity.setId(UUID.randomUUID());
+            return entity;
+        });
+
+        apiKeyService.createApiKey(applicationId, environmentId, KeyType.READ);
+
+        ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
+        verify(apiKeyRepository).save(captor.capture());
+        assertThat(captor.getValue().getExpirationDate()).isNotNull();
+        assertThat(captor.getValue().getExpirationDate().getYear()).isEqualTo(2100);
+    }
+
     // ========== Get API Key by Type Tests ==========
 
     @Test
@@ -163,8 +184,9 @@ class DefaultApiKeyServiceTest {
 
         var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.READ);
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.READ)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.of(apiKeyEntity));
 
         var result = apiKeyService.getApiKeyByType(applicationId, environmentId, KeyType.READ);
 
@@ -185,8 +207,8 @@ class DefaultApiKeyServiceTest {
                 KeyType.READ)).isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Application not found");
 
-        verify(apiKeyRepository, never()).findByApplicationIdAndEnvironmentIdAndKeyType(any(),
-                any(), any());
+        verify(apiKeyRepository, never()).findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(),
+                any(), any(), any());
     }
 
     @Test
@@ -195,8 +217,9 @@ class DefaultApiKeyServiceTest {
         UUID environmentId = UUID.randomUUID();
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.WRITE)).thenReturn(Optional.empty());
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.empty());
 
         assertThatThrownBy(() -> apiKeyService.getApiKeyByType(applicationId, environmentId,
                 KeyType.WRITE)).isInstanceOf(NotFoundException.class)
@@ -206,50 +229,63 @@ class DefaultApiKeyServiceTest {
     // ========== Regenerate API Key Tests ==========
 
     @Test
-    void regenerateKeyReturnsNewKeyValue() {
+    void regenerateKeyCreatesNewKeyAndReturnsNewExpirationDateOfOldKey() {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
+        UUID oldKeyId = UUID.randomUUID();
         String originalKey = "originalkey123";
 
-        var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.READ);
-        apiKeyEntity.setKey(originalKey);
+        var oldApiKeyEntity =
+                createApiKeyEntity(oldKeyId, applicationId, environmentId, KeyType.READ);
+        oldApiKeyEntity.setKey(originalKey);
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.READ)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.of(oldApiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
         var result = apiKeyService.regenerateKey(applicationId, environmentId, KeyType.READ);
 
-        assertThat(result.id()).isEqualTo(keyId);
+        assertThat(result.id()).isNotEqualTo(oldKeyId);
         assertThat(result.secretKey()).isNotNull();
         assertThat(result.secretKey()).isNotEqualTo(originalKey);
         assertThat(result.secretKey()).hasSize(64);
+        assertThat(result.expirationDate()).isAfter(OffsetDateTime.now());
+        assertThat(result.expirationDate()).isBefore(
+                OffsetDateTime.now().plusWeeks(1).plusMinutes(1));
     }
 
     @Test
-    void regenerateKeyUpdatesEntityWithNewKey() {
+    void regenerateKeySavesBothOldAndNewKeys() {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
-        String originalKey = "originalkey123";
+        UUID oldKeyId = UUID.randomUUID();
 
-        var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.WRITE);
-        apiKeyEntity.setKey(originalKey);
+        var oldApiKeyEntity =
+                createApiKeyEntity(oldKeyId, applicationId, environmentId, KeyType.WRITE);
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.WRITE)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.of(oldApiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
         apiKeyService.regenerateKey(applicationId, environmentId, KeyType.WRITE);
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
-        verify(apiKeyRepository).save(captor.capture());
-        assertThat(captor.getValue().getKey()).isNotEqualTo(originalKey);
+        verify(apiKeyRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        var savedEntities = captor.getAllValues();
+
+        assertThat(savedEntities.getFirst().getId()).isEqualTo(oldKeyId);
+        assertThat(savedEntities.getFirst().getExpirationDate()).isAfter(OffsetDateTime.now());
+        assertThat(savedEntities.getFirst().getExpirationDate()).isBefore(
+                OffsetDateTime.now().plusWeeks(1).plusMinutes(1));
+
+        assertThat(savedEntities.get(1).getId()).isNotEqualTo(oldKeyId);
+        assertThat(savedEntities.get(1).getExpirationDate().getYear()).isEqualTo(2100);
     }
 
     @Test
@@ -263,8 +299,8 @@ class DefaultApiKeyServiceTest {
                 KeyType.READ)).isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Application not found");
 
-        verify(apiKeyRepository, never()).findByApplicationIdAndEnvironmentIdAndKeyType(any(),
-                any(), any());
+        verify(apiKeyRepository, never()).findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(),
+                any(), any(), any());
     }
 
     @Test
@@ -273,8 +309,9 @@ class DefaultApiKeyServiceTest {
         UUID environmentId = UUID.randomUUID();
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.READ)).thenReturn(Optional.empty());
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.empty());
 
         assertThatThrownBy(() -> apiKeyService.regenerateKey(applicationId, environmentId,
                 KeyType.READ)).isInstanceOf(NotFoundException.class)
@@ -282,45 +319,29 @@ class DefaultApiKeyServiceTest {
     }
 
     @Test
-    void regenerateKeyPreservesKeyType() {
+    void regenerateKeyPreservesRateLimit() {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
+        UUID oldKeyId = UUID.randomUUID();
+        int customRateLimit = 5000;
 
-        var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.WRITE);
+        var oldApiKeyEntity =
+                createApiKeyEntity(oldKeyId, applicationId, environmentId, KeyType.WRITE);
+        oldApiKeyEntity.setRateLimitRequestsPerMinute(customRateLimit);
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.WRITE)).thenReturn(Optional.of(apiKeyEntity));
+        when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
+                any(UUID.class), any(KeyType.class), any(OffsetDateTime.class))).thenReturn(
+                Optional.of(oldApiKeyEntity));
         when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
                 invocation -> invocation.getArgument(0));
 
         apiKeyService.regenerateKey(applicationId, environmentId, KeyType.WRITE);
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
-        verify(apiKeyRepository).save(captor.capture());
-        assertThat(captor.getValue().getKeyType()).isEqualTo(KeyType.WRITE);
-    }
-
-    @Test
-    void regenerateKeyPreservesEnvironmentId() {
-        UUID applicationId = UUID.randomUUID();
-        UUID environmentId = UUID.randomUUID();
-        UUID keyId = UUID.randomUUID();
-
-        var apiKeyEntity = createApiKeyEntity(keyId, applicationId, environmentId, KeyType.READ);
-
-        when(applicationRepository.existsById(applicationId)).thenReturn(true);
-        when(apiKeyRepository.findByApplicationIdAndEnvironmentIdAndKeyType(applicationId,
-                environmentId, KeyType.READ)).thenReturn(Optional.of(apiKeyEntity));
-        when(apiKeyRepository.save(any(ApiKeyEntity.class))).thenAnswer(
-                invocation -> invocation.getArgument(0));
-
-        apiKeyService.regenerateKey(applicationId, environmentId, KeyType.READ);
-
-        ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
-        verify(apiKeyRepository).save(captor.capture());
-        assertThat(captor.getValue().getEnvironmentId()).isEqualTo(environmentId);
+        verify(apiKeyRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+        var newKey = captor.getAllValues().get(1);
+        assertThat(newKey.getRateLimitRequestsPerMinute()).isEqualTo(customRateLimit);
     }
 
     // ========== Helper Methods ==========
@@ -334,6 +355,7 @@ class DefaultApiKeyServiceTest {
         entity.setKeyType(keyType);
         entity.setKey("testkey123456789012345678901234567890123456789012345678901234");
         entity.setRateLimitRequestsPerMinute(1000);
+        entity.setExpirationDate(OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
         return entity;
     }
 }

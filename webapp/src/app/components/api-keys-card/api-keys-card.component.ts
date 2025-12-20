@@ -86,7 +86,7 @@ export class ApiKeysCardComponent {
           const appId = this.applicationId();
           const envId = this.environmentId();
 
-          if (!appId || !envId) return;
+          if (!appId || !envId) return undefined;
 
           const response = await this.api.invoke(regenerateApiKey, {
             applicationId: appId,
@@ -104,6 +104,9 @@ export class ApiKeysCardComponent {
             this.writeKeyData.set(response);
             this.showWriteKey.set(true);
           }
+
+          // Return the expiration date of the old key
+          return response.expirationDate;
         }
       },
       maxWidth: '450px'

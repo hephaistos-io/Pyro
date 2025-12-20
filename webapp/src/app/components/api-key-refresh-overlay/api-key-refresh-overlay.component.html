@@ -1,30 +1,54 @@
 <div class="api-key-refresh-overlay">
-  <h3 class="api-key-refresh-overlay__title">Refresh {{ data().keyType === 'read' ? 'Read' : 'Write' }}</h3>
+    @if (!isSuccess()) {
+        <h3 class="api-key-refresh-overlay__title">Refresh {{ data().keyType === 'read' ? 'Read' : 'Write' }} Key</h3>
 
-  <p class="api-key-refresh-overlay__message">
-    This action will immediately invalidate the current {{ data().keyType === 'read' ? 'Read-Key' : 'Write-Key' }}.
-    Any applications using the old key will stop working.
-  </p>
+        <p class="api-key-refresh-overlay__message">
+            A new {{ data().keyType === 'read' ? 'Read-Key' : 'Write-Key' }} will be generated.
+            <strong>The existing key will expire in 1 week from now</strong>, giving you time to update your
+            applications.
+        </p>
 
-  <div class="api-key-refresh-overlay__actions">
-    <button
-      (click)="onCancel()"
-      [disabled]="isRefreshing()"
-      class="btn btn--secondary"
-      type="button">
-      Cancel
-    </button>
-    <button
-      (click)="onConfirm()"
-      [disabled]="isRefreshing()"
-      class="btn btn--danger"
-      type="button">
-      @if (isRefreshing()) {
-        <span class="btn__spinner"></span>
-        Regenerating...
-      } @else {
-        Regenerate Key
-      }
-    </button>
-  </div>
+        <div class="api-key-refresh-overlay__actions">
+            <button
+                    (click)="onCancel()"
+                    [disabled]="isRefreshing()"
+                    class="btn btn--secondary"
+                    type="button">
+                Cancel
+            </button>
+            <button
+                    (click)="onConfirm()"
+                    [disabled]="isRefreshing()"
+                    class="btn btn--primary"
+                    type="button">
+                @if (isRefreshing()) {
+                    <span class="btn__spinner"></span>
+                    Generating...
+                } @else {
+                    Generate New Key
+                }
+            </button>
+        </div>
+    } @else {
+        <h3 class="api-key-refresh-overlay__title">Key Generated Successfully</h3>
+
+        <p class="api-key-refresh-overlay__message">
+            Your new {{ data().keyType === 'read' ? 'Read-Key' : 'Write-Key' }} has been generated.
+        </p>
+
+        <p class="api-key-refresh-overlay__message api-key-refresh-overlay__message--highlight">
+            <strong>Important:</strong> The old key will expire on
+            <strong>{{ expirationDate() | date:'medium' }}</strong>.
+            Make sure to update your applications before this date.
+        </p>
+
+        <div class="api-key-refresh-overlay__actions">
+            <button
+                    (click)="onClose()"
+                    class="btn btn--primary"
+                    type="button">
+                Close
+            </button>
+        </div>
+    }
 </div>
