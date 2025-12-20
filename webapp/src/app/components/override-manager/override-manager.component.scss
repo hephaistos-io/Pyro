@@ -1,0 +1,583 @@
+@use '../../../styles/index' as *;
+@use 'sass:color';
+
+.overrides-tab {
+  animation: fadeUp 0.3s ease-out both;
+}
+
+.overrides-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.overrides-toggle {
+  display: flex;
+  background: rgba($charcoal, 0.06);
+  border-radius: 8px;
+  padding: 0.25rem;
+
+  @include dark-mode {
+    background: rgba($white, 0.08);
+  }
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: $charcoal;
+    }
+
+    &--active {
+      background: $white;
+      color: $pyro-red;
+      box-shadow: 0 1px 3px rgba($black, 0.1);
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        color: $dark-text;
+      }
+
+      &--active {
+        background: $dark-card;
+        color: $pyro-red-light;
+        box-shadow: 0 1px 3px rgba($black, 0.3);
+      }
+    }
+  }
+}
+
+.overrides-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 0.75rem;
+    color: $charcoal-light;
+    pointer-events: none;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__input {
+    width: 220px;
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    color: $charcoal;
+    background: $white;
+    border: 1px solid rgba($charcoal, 0.15);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder {
+      color: $charcoal-light;
+    }
+
+    &:focus {
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.1);
+    }
+
+    @include dark-mode {
+      background: $dark-card;
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+
+      &:focus {
+        border-color: $pyro-red-light;
+        box-shadow: 0 0 0 3px rgba($pyro-red, 0.2);
+      }
+    }
+  }
+}
+
+.overrides-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: $pyro-red;
+    cursor: pointer;
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    color: $charcoal;
+    user-select: none;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.overrides-add-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba($charcoal, 0.03);
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+
+  @include dark-mode {
+    background: rgba($white, 0.03);
+    border-color: $dark-border;
+  }
+
+  &__input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.85rem;
+    color: $charcoal;
+    background: $white;
+    border: 1px solid rgba($charcoal, 0.15);
+    border-radius: 6px;
+    outline: none;
+
+    &:focus {
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.1);
+    }
+
+    @include dark-mode {
+      background: $dark-card;
+      color: $dark-text;
+      border-color: $dark-border;
+
+      &:focus {
+        border-color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &--save {
+      color: $white;
+      background: $pyro-red;
+
+      &:hover {
+        background: $pyro-red-deep;
+      }
+    }
+
+    &--cancel {
+      color: $charcoal;
+      background: rgba($charcoal, 0.08);
+
+      &:hover {
+        background: rgba($charcoal, 0.15);
+      }
+
+      @include dark-mode {
+        color: $dark-text;
+        background: rgba($white, 0.1);
+
+        &:hover {
+          background: rgba($white, 0.15);
+        }
+      }
+    }
+  }
+}
+
+// ===== MATRIX TABLE =====
+
+.matrix-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  background: $white;
+
+  @include dark-mode {
+    border-color: $dark-border;
+    background: $dark-card;
+  }
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: $font-sans;
+  font-size: 0.85rem;
+
+  &__header {
+    position: relative;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: $charcoal;
+    background: rgba($charcoal, 0.03);
+    border-bottom: 1px solid rgba($charcoal, 0.1);
+    white-space: nowrap;
+
+    @include dark-mode {
+      color: $dark-text;
+      background: rgba($white, 0.03);
+      border-bottom-color: $dark-border;
+    }
+
+    &--sticky {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f5f5f5;
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+      box-shadow: 2px 0 4px rgba($black, 0.05);
+
+      @include dark-mode {
+        background: color.adjust($dark-card, $lightness: 3%);
+        box-shadow: 2px 0 4px rgba($black, 0.2);
+      }
+    }
+  }
+
+  &__identifier-header {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $charcoal;
+    margin-right: 0.5rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__identifier-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    margin-left: 0.25rem;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      color: $charcoal;
+
+      @include dark-mode {
+        color: $dark-text;
+      }
+    }
+
+    &:hover {
+      opacity: 1;
+      background: rgba($pyro-red, 0.1);
+
+      svg {
+        color: $pyro-red;
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &__default {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: $charcoal-light;
+    margin-top: 0.25rem;
+    opacity: 0.8;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__row {
+    &:hover {
+      background: rgba($charcoal, 0.02);
+
+      @include dark-mode {
+        background: rgba($white, 0.02);
+      }
+    }
+  }
+
+  &__cell {
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid rgba($charcoal, 0.06);
+    min-width: 100px;
+
+    @include dark-mode {
+      border-bottom-color: rgba($white, 0.06);
+    }
+
+    &--sticky {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: $white;
+      border-right: 1px solid rgba($charcoal, 0.1);
+      box-shadow: 2px 0 4px rgba($black, 0.03);
+      width: 140px;
+      min-width: 140px;
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      @include dark-mode {
+        background: $dark-card;
+        border-right-color: $dark-border;
+        box-shadow: 2px 0 4px rgba($black, 0.15);
+      }
+
+      .matrix-table__row:hover & {
+        background: color.adjust($white, $lightness: -2%);
+
+        @include dark-mode {
+          background: color.adjust($dark-card, $lightness: 2%);
+        }
+      }
+    }
+
+    &--override {
+      background: rgba($pyro-red, 0.04);
+
+      @include dark-mode {
+        background: rgba($pyro-red, 0.08);
+      }
+    }
+
+    &--editing {
+      padding: 0.375rem 0.5rem;
+    }
+  }
+
+  &__identifier {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $pyro-red;
+    background: rgba($pyro-red, 0.08);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+      background: rgba($pyro-red, 0.15);
+    }
+  }
+
+  &__identifier-header {
+    display: inline-block;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $pyro-red;
+    background: rgba($pyro-red, 0.08);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-transform: none;
+    letter-spacing: 0;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+      background: rgba($pyro-red, 0.15);
+    }
+  }
+
+  &__field-name {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__value {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgba($pyro-red, 0.08);
+    }
+
+    &--default {
+      color: $charcoal-light;
+
+      @include dark-mode {
+        color: $dark-text-muted;
+      }
+    }
+  }
+
+  &__dash {
+    opacity: 0.4;
+  }
+
+  &__edit-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 150px;
+    max-width: 200px;
+  }
+
+  &__input {
+    width: 100%;
+    min-width: 150px;
+    max-width: 200px;
+    padding: 0.375rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: $charcoal;
+    background: $white;
+    border: 2px solid $pyro-red;
+    border-radius: 4px;
+    outline: none;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.15);
+    }
+
+    &--error {
+      border-color: $pyro-red-deep;
+      background: rgba($pyro-red, 0.05);
+    }
+
+    &--select {
+      cursor: pointer;
+    }
+
+    @include dark-mode {
+      background: $dark-card;
+      color: $dark-text;
+      border-color: $pyro-red-light;
+
+      &--error {
+        border-color: $pyro-red;
+        background: rgba($pyro-red, 0.08);
+      }
+    }
+  }
+
+  &__error {
+    font-size: 0.7rem;
+    color: $pyro-red-deep;
+    padding: 0.125rem 0.5rem;
+    font-weight: 500;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+    }
+  }
+}
+
+.overrides-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: $charcoal-light;
+  background: rgba($charcoal, 0.02);
+  border: 1px dashed rgba($charcoal, 0.15);
+  border-radius: 12px;
+
+  svg {
+    color: $charcoal-light;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-family: $font-sans;
+    font-size: 0.95rem;
+  }
+
+  &__hint {
+    font-size: 0.85rem !important;
+    margin-top: 0.5rem !important;
+    opacity: 0.7;
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+    background: rgba($white, 0.02);
+    border-color: rgba($white, 0.1);
+
+    svg {
+      color: $dark-text-muted;
+    }
+  }
+}

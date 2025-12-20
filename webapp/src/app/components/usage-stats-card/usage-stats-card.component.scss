@@ -1,0 +1,424 @@
+@use '../../../styles/index' as *;
+
+.usage-stats-card {
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba($charcoal, 0.08);
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba($black, 0.3);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba($charcoal, 0.1);
+    text-align: left;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: rgba($charcoal, 0.02);
+    }
+
+    @include dark-mode {
+      border-bottom-color: $dark-border;
+
+      &:hover {
+        background: rgba($white, 0.02);
+      }
+    }
+  }
+
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__period {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__content {
+    padding: 1.5rem;
+  }
+}
+
+.template-card {
+  &--collapsed {
+    .usage-stats-card__content {
+      display: none;
+    }
+  }
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__chevron {
+    color: $charcoal-light;
+    transition: transform 0.2s ease;
+
+    &--open {
+      transform: rotate(90deg);
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Usage Chart Styles
+.usage-chart {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-bottom-color: rgba($white, 0.08);
+  }
+
+  &__bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex: 1;
+    height: 120px;
+    position: relative;
+  }
+
+  &__limit-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba($charcoal, 0.2);
+    border-top: 1px dashed rgba($charcoal, 0.3);
+
+    @include dark-mode {
+      background: rgba($white, 0.15);
+      border-top-color: rgba($white, 0.25);
+    }
+  }
+
+  &__limit-label {
+    position: absolute;
+    right: 0;
+    top: -18px;
+    font-family: $font-sans;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+  }
+
+  &__bar {
+    width: 100%;
+    max-width: 40px;
+    background: linear-gradient(180deg, $pyro-red 0%, rgba($pyro-red, 0.6) 100%);
+    border-radius: 4px 4px 0 0;
+    margin-top: auto;
+    transition: height 0.3s ease;
+    min-height: 4px;
+
+    &--high {
+      background: linear-gradient(180deg, $pyro-red-deep 0%, $pyro-red 100%);
+    }
+
+    @include dark-mode {
+      background: linear-gradient(180deg, $pyro-red-light 0%, rgba($pyro-red, 0.6) 100%);
+
+      &--high {
+        background: linear-gradient(180deg, $pyro-red 0%, $pyro-red-light 100%);
+      }
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+    margin-top: 0.5rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-family: $font-sans;
+    font-size: 0.7rem;
+    color: $charcoal-light;
+    padding-bottom: 1.5rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// Usage Stats Grid
+.usage-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.usage-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__value {
+    font-family: $font-sans;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__unit {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    margin-left: 0.125rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__sublabel {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__progress {
+    height: 6px;
+    background: rgba($charcoal, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.375rem;
+
+    @include dark-mode {
+      background: rgba($white, 0.1);
+    }
+  }
+
+  &__progress-bar {
+    height: 100%;
+    background: $pyro-red;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+
+    &--warning {
+      background: linear-gradient(90deg, $pyro-red 0%, $pyro-red-deep 100%);
+    }
+
+    @include dark-mode {
+      background: $pyro-red-light;
+
+      &--warning {
+        background: linear-gradient(90deg, $pyro-red-light 0%, $pyro-red 100%);
+      }
+    }
+  }
+}
+
+// Usage Recommendation
+.usage-recommendation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba($charcoal, 0.04);
+  border: 1px solid rgba($charcoal, 0.08);
+  border-radius: 10px;
+  border-left: 3px solid $charcoal-light;
+
+  @include dark-mode {
+    background: rgba($white, 0.04);
+    border-color: rgba($white, 0.08);
+    border-left-color: $dark-text-muted;
+  }
+
+  &--info {
+    $info-blue: #3b82f6;
+    $info-blue-deep: #1d4ed8;
+    $info-blue-light: #60a5fa;
+
+    background: rgba($info-blue, 0.06);
+    border-color: rgba($info-blue, 0.15);
+    border-left-color: $info-blue;
+
+    @include dark-mode {
+      background: rgba($info-blue, 0.1);
+      border-color: rgba($info-blue, 0.2);
+      border-left-color: $info-blue-light;
+    }
+
+    .usage-recommendation__icon {
+      color: $info-blue;
+
+      @include dark-mode {
+        color: $info-blue-light;
+      }
+    }
+
+    .usage-recommendation__label {
+      color: $info-blue-deep;
+
+      @include dark-mode {
+        color: $info-blue-light;
+      }
+    }
+  }
+
+  &--danger {
+    background: rgba($pyro-red, 0.06);
+    border-color: rgba($pyro-red, 0.15);
+    border-left-color: $pyro-red;
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.1);
+      border-color: rgba($pyro-red, 0.2);
+      border-left-color: $pyro-red-light;
+    }
+
+    .usage-recommendation__icon {
+      color: $pyro-red;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+
+    .usage-recommendation__label {
+      color: $pyro-red-deep;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__icon {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__message {
+    font-family: $font-sans;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}

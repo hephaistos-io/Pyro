@@ -1,0 +1,108 @@
+<div [class.template-card--collapsed]="!expanded()" class="usage-stats-card template-card">
+  <button (click)="toggleCard()" class="usage-stats-card__header template-card__header">
+    <div class="template-card__header-left">
+      <svg [class.template-card__chevron--open]="expanded()" class="template-card__chevron"
+           fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="2"/>
+      </svg>
+      <h3 class="usage-stats-card__title">Usage Overview</h3>
+    </div>
+    <span class="usage-stats-card__period">Last 7 days</span>
+  </button>
+  @if (expanded()) {
+    <div class="usage-stats-card__content">
+      <!-- Usage Chart -->
+      <div class="usage-chart">
+        <div class="usage-chart__bars">
+          <div class="usage-chart__limit-line">
+            <span class="usage-chart__limit-label">Limit</span>
+          </div>
+          @for (day of weeklyFetches(); track day.day) {
+            <div class="usage-chart__bar-container">
+              <div
+                [class.usage-chart__bar--high]="day.fetches / day.limit > 0.8"
+                [style.height.%]="(day.fetches / day.limit) * 100"
+                class="usage-chart__bar">
+              </div>
+              <span class="usage-chart__label">{{ day.day }}</span>
+            </div>
+          }
+        </div>
+        <div class="usage-chart__axis">
+          <span>50k</span>
+          <span>25k</span>
+          <span>0</span>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="usage-stats">
+        <div class="usage-stat">
+          <span class="usage-stat__value">{{ formatNumber(usageStats().fetchesToday) }}</span>
+          <span class="usage-stat__label">Fetches today</span>
+          <div class="usage-stat__progress">
+            <div
+              [class.usage-stat__progress-bar--warning]="usagePercentage() > 80"
+              [style.width.%]="usagePercentage()"
+              class="usage-stat__progress-bar">
+            </div>
+          </div>
+          <span class="usage-stat__sublabel">{{ usagePercentage() }}
+            % of {{ formatNumber(usageStats().dailyLimit) }} limit</span>
+        </div>
+
+        <div class="usage-stat">
+          <span class="usage-stat__value">{{ formatNumber(usageStats().users) }}</span>
+          <span class="usage-stat__label">Users</span>
+        </div>
+
+        <div class="usage-stat">
+          <span class="usage-stat__value">{{ formatNumber(usageStats().totalThisMonth) }}</span>
+          <span class="usage-stat__label">Total this month</span>
+        </div>
+
+        <div class="usage-stat">
+          <span class="usage-stat__value">{{ usageStats().avgResponseTime }}<span
+            class="usage-stat__unit">ms</span></span>
+          <span class="usage-stat__label">Avg. response time</span>
+        </div>
+      </div>
+
+      <!-- Recommendation -->
+      @if (usageRecommendation()) {
+        <div class="usage-recommendation usage-recommendation--info">
+          <svg class="usage-recommendation__icon" fill="none" height="18" viewBox="0 0 24 24"
+               width="18" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round" stroke-width="2"/>
+            <path d="M12 16v-4M12 8h.01" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" stroke-width="2"/>
+          </svg>
+          <div class="usage-recommendation__content">
+            <span class="usage-recommendation__label">Recommendation</span>
+            <span class="usage-recommendation__message">{{ usageRecommendation()!.message }}</span>
+          </div>
+        </div>
+      }
+
+      <!-- High Risk Alert -->
+      @if (highRiskAlert()) {
+        <div class="usage-recommendation usage-recommendation--danger">
+          <svg class="usage-recommendation__icon" fill="none" height="18" viewBox="0 0 24 24"
+               width="18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 9v4M12 17h.01" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" stroke-width="2"/>
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                  stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="2"/>
+          </svg>
+          <div class="usage-recommendation__content">
+            <span class="usage-recommendation__label">High Risk</span>
+            <span class="usage-recommendation__message">{{ highRiskAlert()!.message }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,648 @@
+@use '../../../styles/index' as *;
+@use 'sass:color';
+
+.template-tab {
+  animation: fadeUp 0.3s ease-out both;
+}
+
+.template-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+.template-toggle {
+  display: flex;
+  background: rgba($charcoal, 0.06);
+  border-radius: 8px;
+  padding: 0.25rem;
+
+  @include dark-mode {
+    background: rgba($white, 0.08);
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $charcoal-light;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: $charcoal;
+    }
+
+    &--active {
+      background: $white;
+      color: $pyro-red;
+      box-shadow: 0 1px 3px rgba($black, 0.1);
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        color: $dark-text;
+      }
+
+      &--active {
+        background: $dark-card;
+        color: $pyro-red-light;
+        box-shadow: 0 1px 3px rgba($black, 0.3);
+      }
+    }
+  }
+
+  &__count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba($charcoal, 0.1);
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      background: rgba($white, 0.15);
+      color: $dark-text-muted;
+    }
+
+    .template-toggle__btn--active & {
+      background: rgba($pyro-red, 0.15);
+      color: $pyro-red;
+
+      @include dark-mode {
+        background: rgba($pyro-red, 0.2);
+        color: $pyro-red-light;
+      }
+    }
+  }
+}
+
+.template-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    left: 0.75rem;
+    color: $charcoal-light;
+    pointer-events: none;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__input {
+    width: 220px;
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    color: $charcoal;
+    background: $white;
+    border: 1px solid rgba($charcoal, 0.15);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &::placeholder {
+      color: $charcoal-light;
+    }
+
+    &:focus {
+      border-color: $pyro-red;
+      box-shadow: 0 0 0 3px rgba($pyro-red, 0.1);
+    }
+
+    @include dark-mode {
+      background: $dark-card;
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+
+      &:focus {
+        border-color: $pyro-red-light;
+        box-shadow: 0 0 0 3px rgba($pyro-red, 0.2);
+      }
+    }
+  }
+}
+
+.template-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: $pyro-red;
+    cursor: pointer;
+  }
+
+  &__label {
+    font-family: $font-sans;
+    font-size: 0.85rem;
+    color: $charcoal;
+    user-select: none;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+// ===== TEMPLATE MATRIX TABLE =====
+
+.template-matrix-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  background: $white;
+
+  @include dark-mode {
+    border-color: $dark-border;
+    background: $dark-card;
+  }
+}
+
+.template-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: $font-sans;
+  font-size: 0.85rem;
+
+  &__header {
+    position: relative;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: $charcoal;
+    background: rgba($charcoal, 0.03);
+    border-bottom: 1px solid rgba($charcoal, 0.1);
+    white-space: nowrap;
+
+    @include dark-mode {
+      color: $dark-text;
+      background: rgba($white, 0.03);
+      border-bottom-color: $dark-border;
+    }
+
+    &--sticky {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #f5f5f5;
+      width: 1%; // Shrink to content
+      min-width: 120px;
+      box-shadow: 2px 0 4px rgba($black, 0.05);
+      white-space: nowrap; // Keep header on one line
+
+      @include dark-mode {
+        background: color.adjust($dark-card, $lightness: 3%);
+        box-shadow: 2px 0 4px rgba($black, 0.2);
+      }
+    }
+
+    &--actions {
+      width: 80px;
+      min-width: 80px;
+    }
+  }
+
+  &__row {
+    &:hover {
+      background: rgba($charcoal, 0.02);
+
+      @include dark-mode {
+        background: rgba($white, 0.02);
+      }
+    }
+  }
+
+  &__cell {
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid rgba($charcoal, 0.06);
+    white-space: normal;
+    word-wrap: break-word;
+
+    @include dark-mode {
+      border-bottom-color: rgba($white, 0.06);
+    }
+
+    &--sticky {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: $white;
+      border-right: 1px solid rgba($charcoal, 0.1);
+      box-shadow: 2px 0 4px rgba($black, 0.03);
+      width: 1%; // Shrink to content
+      min-width: 120px;
+      white-space: nowrap; // Field names don't wrap
+
+      @include dark-mode {
+        background: $dark-card;
+        border-right-color: $dark-border;
+        box-shadow: 2px 0 4px rgba($black, 0.15);
+      }
+
+      .template-matrix-table__row:hover & {
+        background: color.adjust($white, $lightness: -2%);
+
+        @include dark-mode {
+          background: color.adjust($dark-card, $lightness: 2%);
+        }
+      }
+    }
+
+    &--actions {
+      width: 50px;
+      text-align: center;
+    }
+
+    &--constraints {
+      font-size: 0.8rem;
+      color: $charcoal-light;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      @include dark-mode {
+        color: $dark-text-muted;
+      }
+    }
+
+    &--editing {
+      padding: 0.375rem 0.5rem;
+    }
+
+    &--error {
+      background: rgba(#dc2626, 0.05);
+
+      @include dark-mode {
+        background: rgba(#ef4444, 0.1);
+      }
+    }
+  }
+
+  &__field-name {
+    display: inline-block;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $pyro-red;
+    background: rgba($pyro-red, 0.08);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    word-break: break-word;
+
+    @include dark-mode {
+      color: $pyro-red-light;
+      background: rgba($pyro-red, 0.15);
+    }
+  }
+
+  &__type {
+    display: inline-block;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    &--STRING {
+      background: #fef3c7;
+      color: #92400e;
+
+      @include dark-mode {
+        background: rgba(#fbbf24, 0.2);
+        color: #fbbf24;
+      }
+    }
+
+    &--NUMBER {
+      background: #d1fae5;
+      color: #065f46;
+
+      @include dark-mode {
+        background: rgba(#10b981, 0.2);
+        color: #34d399;
+      }
+    }
+
+    &--BOOLEAN {
+      background: #dbeafe;
+      color: #1e40af;
+
+      @include dark-mode {
+        background: rgba(#3b82f6, 0.2);
+        color: #60a5fa;
+      }
+    }
+
+    &--ENUM {
+      background: #ede9fe;
+      color: #6d28d9;
+
+      @include dark-mode {
+        background: rgba(#8b5cf6, 0.2);
+        color: #a78bfa;
+      }
+    }
+  }
+
+  &__value {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 0.8rem;
+    word-break: break-word;
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $charcoal-light;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      background: rgba($pyro-red, 0.1);
+      color: $pyro-red;
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        background: rgba($pyro-red, 0.2);
+        color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: $charcoal-light;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(#ef4444, 0.1);
+      color: #ef4444;
+    }
+
+    @include dark-mode {
+      color: $dark-text-muted;
+
+      &:hover {
+        background: rgba(#ef4444, 0.2);
+        color: #f87171;
+      }
+    }
+  }
+
+  &__description {
+    display: block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: $charcoal-light;
+    word-break: break-word;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba($charcoal, 0.08);
+    border: none;
+    border-radius: 6px;
+    color: $charcoal-light;
+
+    &--active {
+      background: rgba(#059669, 0.15);
+      color: #059669;
+    }
+
+    @include dark-mode {
+      background: rgba($white, 0.08);
+      color: $dark-text-muted;
+
+      &--active {
+        background: rgba(#34d399, 0.2);
+        color: #34d399;
+      }
+    }
+  }
+}
+
+// ===== TEMPLATE EMPTY STATE =====
+
+.template-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: $charcoal-light;
+  background: rgba($charcoal, 0.02);
+  border: 1px dashed rgba($charcoal, 0.15);
+  border-radius: 12px;
+
+  svg {
+    color: $charcoal-light;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-family: $font-sans;
+    font-size: 0.95rem;
+  }
+
+  &__hint {
+    font-size: 0.85rem !important;
+    margin-top: 0.5rem !important;
+    opacity: 0.7;
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+    background: rgba($white, 0.02);
+    border-color: rgba($white, 0.1);
+
+    svg {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+// ===== TEMPLATE OVERRIDES LINK =====
+
+.template-overrides-link {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($charcoal, 0.08);
+
+  @include dark-mode {
+    border-top-color: rgba($white, 0.08);
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba($charcoal, 0.03);
+    border: 1px solid rgba($charcoal, 0.08);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: $font-sans;
+
+    &:hover {
+      background: rgba($pyro-red, 0.05);
+      border-color: rgba($pyro-red, 0.2);
+    }
+
+    svg {
+      color: $charcoal-light;
+      transition: transform 0.2s ease;
+    }
+
+    &:hover svg {
+      color: $pyro-red;
+      transform: translateX(2px);
+    }
+
+    @include dark-mode {
+      background: rgba($white, 0.03);
+      border-color: rgba($white, 0.08);
+
+      &:hover {
+        background: rgba($pyro-red, 0.1);
+        border-color: rgba($pyro-red, 0.3);
+      }
+
+      svg {
+        color: $dark-text-muted;
+      }
+
+      &:hover svg {
+        color: $pyro-red-light;
+      }
+    }
+  }
+
+  &__text {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+// ===== RESPONSIVE =====
+
+@media (max-width: 768px) {
+  .template-controls {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__left,
+    &__right {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  .template-search__input {
+    width: 100%;
+  }
+
+  .template-matrix-table--user {
+    // Hide Description and Constraints columns on mobile
+    th:nth-child(5),
+    td:nth-child(5),
+    th:nth-child(6),
+    td:nth-child(6) {
+      display: none;
+    }
+  }
+
+  // Hide Description column on mobile for system template too
+  .template-matrix-table:not(.template-matrix-table--user) {
+    th:nth-child(4),
+    td:nth-child(4) {
+      display: none;
+    }
+  }
+}

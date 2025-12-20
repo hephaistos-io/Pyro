@@ -1,23 +1,41 @@
-<div class="edit-field-overlay">
-  <h2 class="edit-field-overlay__title">Edit Field</h2>
+<div class="field-overlay">
+  <h2 class="field-overlay__title">{{ title() }}</h2>
 
-  <form (ngSubmit)="onSubmit()" class="edit-field-overlay__form">
+  <form (ngSubmit)="onSubmit()" class="field-overlay__form">
     <!-- Common Fields Section -->
     <div class="form-section">
       <div class="form-group">
-        <label class="form-label" for="fieldKey">Field Key</label>
-        <div class="form-input form-input--readonly">
-          <code>{{ fieldKey() }}</code>
-        </div>
-        <span class="form-hint">Field key cannot be changed after creation</span>
+        <label class="form-label" for="fieldKey">Field Key *</label>
+        <input
+          (ngModelChange)="fieldKey.set($event)"
+          [class.form-input--error]="fieldKey() && keyError()"
+          [class.form-input--readonly]="isEditMode()"
+          [ngModel]="fieldKey()"
+          [readonly]="isEditMode()"
+          autocomplete="off"
+          class="form-input"
+          id="fieldKey"
+          name="fieldKey"
+          placeholder="e.g., apiVersion, maxRetries"
+          type="text">
+        @if (fieldKey() && keyError()) {
+          <span class="form-error">{{ keyError() }}</span>
+        }
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="fieldType">Type</label>
-        <div class="form-input form-input--readonly">
-          {{ getTypeDisplayName() }}
-        </div>
-        <span class="form-hint">Field type cannot be changed after creation</span>
+        <label class="form-label" for="fieldType">Type *</label>
+        <select
+          (ngModelChange)="fieldType.set($event)"
+          [ngModel]="fieldType()"
+          class="form-select"
+          id="fieldType"
+          name="fieldType">
+          <option value="STRING">String</option>
+          <option value="NUMBER">Number</option>
+          <option value="BOOLEAN">Boolean</option>
+          <option value="ENUM">Enum</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -225,12 +243,12 @@
     </div>
 
     <!-- Actions -->
-    <div class="edit-field-overlay__actions">
+    <div class="field-overlay__actions">
       <button (click)="onCancel()" class="btn btn--secondary" type="button">
         Cancel
       </button>
-      <button [disabled]="!isValid()" class="btn btn--primary" type="submit">
-        Save Changes
+      <button [disabled]="!isValid()" class="btn btn--primary field-overlay__submit-btn" type="submit">
+        {{ isEditMode() ? 'Save Changes' : 'Add Field' }}
       </button>
     </div>
   </form>

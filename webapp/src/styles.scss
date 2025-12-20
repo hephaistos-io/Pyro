@@ -30,6 +30,70 @@ body {
   transition: background 0.4s ease, color 0.4s ease;
 }
 
+// Global button styles
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  font-family: $font-sans;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &--primary {
+    background: $pyro-red;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: $pyro-red-deep;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba($pyro-red, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    color: $charcoal;
+    border: 1.5px solid rgba($charcoal, 0.2);
+
+    &:hover:not(:disabled) {
+      background: rgba($charcoal, 0.05);
+      border-color: $charcoal;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &--danger {
+    background: $pyro-red;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: $pyro-red-deep;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba($pyro-red, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
 // Dark mode styles - supports class on html (early load) or body (Angular)
 html.dark-mode body,
 body.dark-mode {
@@ -42,4 +106,15 @@ body.dark-mode {
   --charcoal: #{$dark-text};
   --charcoal-light: #{$dark-text-muted};
   --pyro-red-pale: #{rgba($pyro-red, 0.15)};
+
+  // Button dark mode
+  .btn--secondary {
+    color: $dark-text;
+    border-color: $dark-border;
+
+    &:hover:not(:disabled) {
+      background: rgba($white, 0.05);
+      border-color: rgba($white, 0.3);
+    }
+  }
 }

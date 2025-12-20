@@ -1,0 +1,59 @@
+@use '../../../styles/index' as *;
+
+.environment-creation-overlay {
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.75rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0 0 2rem 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($charcoal, 0.1);
+    margin-top: 0.5rem;
+
+    @include dark-mode {
+      border-top-color: $dark-border;
+    }
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: $charcoal;
+
+  @include dark-mode {
+    color: $dark-text;
+  }
+}
+
+.form-input {
+  @include form-input-base;
+}
+
+.btn__spinner {
+  @include spinner(14px, 2px, $white);
+  margin-right: 0.5rem;
+}
