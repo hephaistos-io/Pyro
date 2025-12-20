@@ -3,6 +3,7 @@
 
 export interface ApiKeyResponse {
   environmentId?: string;
+  expirationDate?: string;
   id?: string;
   keyType?: 'READ' | 'WRITE';
   rateLimitRequestsPerMinute?: number;
