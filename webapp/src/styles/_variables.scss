@@ -21,3 +21,26 @@ $dark-bg-deeper: #111111; // For footer and deeper backgrounds
 // Shadow and overlay colors
 $black: #000000;
 $white: #ffffff;
+
+// Success colors
+$success: #22c55e;
+$success-light: #4ade80;
+$success-pale: rgba(#22c55e, 0.1);
+
+// Info colors
+$info: #3b82f6;
+$info-light: #93c5fd;
+$info-pale: rgba(#3b82f6, 0.1);
+
+// Warning colors
+$warning: #f59e0b;
+$warning-light: #fbbf24;
+
+// Purple accent
+$purple: #7c3aed;
+$purple-light: #a78bfa;
+
+// Border colors (semantic)
+$border-light: rgba($charcoal, 0.1);
+$border-medium: rgba($charcoal, 0.2);
+$border-strong: rgba($charcoal, 0.3);

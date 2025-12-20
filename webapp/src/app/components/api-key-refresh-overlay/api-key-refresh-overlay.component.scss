@@ -1,0 +1,42 @@
+@use '../../../styles/index' as *;
+
+.api-key-refresh-overlay {
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0 0 1rem 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__message {
+    color: $charcoal;
+    line-height: 1.6;
+    margin: 0 0 1.5rem 0;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($charcoal, 0.1);
+
+    @include dark-mode {
+      border-top-color: $dark-border;
+    }
+  }
+}
+
+.btn__spinner {
+  @include spinner(14px, 2px, $white);
+  margin-right: 0.5rem;
+}

@@ -1,0 +1,51 @@
+<div class="environment-creation-overlay">
+  <h3 class="environment-creation-overlay__title">Add New Environment</h3>
+
+  <form (submit)="$event.preventDefault(); envNameInput.value && onConfirm(envNameInput.value, envDescInput.value)"
+        class="environment-creation-overlay__form">
+    <div class="form-group">
+      <label class="form-label" for="envName">Environment Name</label>
+      <input
+        #envNameInput
+        [disabled]="isCreating()"
+        autocomplete="off"
+        class="form-input"
+        id="envName"
+        placeholder="e.g., Production, Staging, or Germany"
+        required
+        type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="envDesc">Description</label>
+      <input
+        #envDescInput
+        [disabled]="isCreating()"
+        autocomplete="off"
+        class="form-input"
+        id="envDesc"
+        placeholder="e.g., Live production environment"
+        type="text">
+    </div>
+
+    <div class="environment-creation-overlay__actions">
+      <button
+        (click)="onCancel()"
+        [disabled]="isCreating()"
+        class="btn btn--secondary"
+        type="button">
+        Cancel
+      </button>
+      <button
+        [disabled]="isCreating()"
+        class="btn btn--primary"
+        type="submit">
+        @if (isCreating()) {
+          <span class="btn__spinner"></span>
+          Creating...
+        } @else {
+          Create Environment
+        }
+      </button>
+    </div>
+  </form>
+</div>

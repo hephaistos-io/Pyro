@@ -7,12 +7,18 @@
     </svg>
   </div>
 
-  <h2 class="delete-field-overlay__title">Delete Field "{{ data().fieldKey }}"?</h2>
+  <h2 class="delete-field-overlay__title">Delete {{ deleteType() === 'field' ? 'Field' : 'Identifier' }}
+    "{{ data().fieldKey }}"?</h2>
 
   <p class="delete-field-overlay__warning">
-    This action will permanently delete the <strong>{{ data().fieldKey }}</strong> field from the
-    <strong>{{ data().templateType }}</strong> template. This cannot be undone and may affect
-    existing configurations using this field.
+    @if (deleteType() === 'field') {
+      This action will permanently delete the <strong>{{ data().fieldKey }}</strong> field from the
+      <strong>{{ data().templateType }}</strong> template. This cannot be undone and may affect
+        existing configurations using this field.
+    } @else {
+      This action will permanently delete the <strong>{{ data().fieldKey }}</strong> identifier and all its
+        overrides from the <strong>{{ data().templateType }}</strong> template. This cannot be undone.
+    }
   </p>
 
   <div class="delete-field-overlay__confirm">
@@ -46,7 +52,7 @@
     </div>
 
     <div class="confirm-group">
-      <label class="confirm-label">Field Name</label>
+      <label class="confirm-label">{{ deleteType() === 'field' ? 'Field' : 'Identifier' }} Name</label>
       <div class="confirm-hint">
         Type: <code>{{ data().fieldKey }}</code>
       </div>
@@ -58,7 +64,7 @@
           [ngModel]="fieldKeyInput()"
           autocomplete="off"
           class="confirm-input"
-          placeholder="Enter field name"
+          placeholder="Enter {{ deleteType() === 'field' ? 'field' : 'identifier' }} name"
           type="text">
         @if (fieldKeyMatch()) {
           <span class="confirm-check">
@@ -80,7 +86,7 @@
       [disabled]="!canConfirm()"
       class="btn btn--danger"
       type="button">
-      Delete Field
+      Delete {{ deleteType() === 'field' ? 'Field' : 'Identifier' }}
     </button>
   </div>
 </div>

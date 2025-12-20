@@ -1,0 +1,30 @@
+<div class="api-key-refresh-overlay">
+  <h3 class="api-key-refresh-overlay__title">Refresh {{ data().keyType === 'read' ? 'Read' : 'Write' }}</h3>
+
+  <p class="api-key-refresh-overlay__message">
+    This action will immediately invalidate the current {{ data().keyType === 'read' ? 'Read-Key' : 'Write-Key' }}.
+    Any applications using the old key will stop working.
+  </p>
+
+  <div class="api-key-refresh-overlay__actions">
+    <button
+      (click)="onCancel()"
+      [disabled]="isRefreshing()"
+      class="btn btn--secondary"
+      type="button">
+      Cancel
+    </button>
+    <button
+      (click)="onConfirm()"
+      [disabled]="isRefreshing()"
+      class="btn btn--danger"
+      type="button">
+      @if (isRefreshing()) {
+        <span class="btn__spinner"></span>
+        Regenerating...
+      } @else {
+        Regenerate Key
+      }
+    </button>
+  </div>
+</div>

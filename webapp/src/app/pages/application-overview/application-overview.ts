@@ -1,7 +1,6 @@
 import {Component, computed, effect, inject, OnInit, signal} from '@angular/core';
 import {Router} from '@angular/router';
 import {
-  ApiKeyResponse,
   ApplicationResponse,
   BooleanTemplateField,
   EnumTemplateField,
@@ -13,30 +12,13 @@ import {
   TemplateType,
   TemplateValuesResponse
 } from '../../api/generated/models';
-import {Api} from '../../api/generated/api';
-import {createEnvironment} from '../../api/generated/fn/environments/create-environment';
-import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
-import {getApiKeyByType} from '../../api/generated/fn/api-keys/get-api-key-by-type';
-import {regenerateApiKey} from '../../api/generated/fn/api-keys/regenerate-api-key';
 import {FormsModule} from '@angular/forms';
 import {TemplateService} from '../../services/template.service';
-import {OverlayService} from '../../services/overlay.service';
-import {
-  AddFieldOverlayComponent,
-  AddFieldOverlayData
-} from '../../components/add-field-overlay/add-field-overlay.component';
-import {
-  DeleteFieldOverlayComponent,
-  DeleteFieldOverlayData
-} from '../../components/delete-field-overlay/delete-field-overlay.component';
-import {
-  EditFieldOverlayComponent,
-  EditFieldOverlayData
-} from '../../components/edit-field-overlay/edit-field-overlay.component';
-import {
-  CopyOverridesOverlayComponent,
-  CopyOverridesOverlayData
-} from '../../components/copy-overrides-overlay/copy-overrides-overlay.component';
+import {ApiKeysCardComponent} from '../../components/api-keys-card/api-keys-card.component';
+import {EnvironmentManagerComponent} from '../../components/environment-manager/environment-manager.component';
+import {UsageStatsCardComponent} from '../../components/usage-stats-card/usage-stats-card.component';
+import {TemplateConfigComponent} from '../../components/template-config/template-config.component';
+import {OverrideManagerComponent} from '../../components/override-manager/override-manager.component';
 
 interface RequestTier {
     id: string;
@@ -52,20 +34,9 @@ interface UserTier {
     monthlyPrice: number;
 }
 
-// ============================================================================
-// TEMPLATE TYPES
-// ============================================================================
-
-// Helper type for displaying field values with their defaults
-interface FieldDisplayValue {
-  key: string;
-  value: unknown;
-  hasOverride: boolean;
-}
-
 @Component({
     selector: 'app-application-overview',
-  imports: [FormsModule],
+  imports: [FormsModule, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent],
     templateUrl: './application-overview.html',
     styleUrl: './application-overview.scss',
 })
@@ -83,34 +54,6 @@ export class ApplicationOverview implements OnInit {
 
     // Pricing constants (will come from backend pricing service)
     readonly environmentFee = 10; // Additional environments cost $10/mo (first one is free)
-    isCreatingEnvironment = signal(false);
-    isDeletingEnvironment = signal(false);
-    // Check if selected environment can be deleted (only PAID tier can be deleted)
-    canDeleteEnvironment = computed(() => {
-        const env = this.selectedEnvironment();
-        return env?.tier === 'PAID';
-    });
-    showEnvironmentCreation = signal(false);
-    showEnvironmentDropdown = signal(false);
-    environmentSearchQuery = signal('');
-
-  // API key visibility and state
-    showReadKey = signal(false);
-    showWriteKey = signal(false);
-  readKey = signal<string | null>(null);
-  writeKey = signal<string | null>(null);
-  readKeyData = signal<ApiKeyResponse | null>(null);
-  writeKeyData = signal<ApiKeyResponse | null>(null);
-  isLoadingReadKey = signal(false);
-  isLoadingWriteKey = signal(false);
-
-    // Key refresh confirmation
-    showKeyRefreshConfirmation = signal(false);
-    keyToRefresh = signal<'read' | 'write' | null>(null);
-  isRefreshingKey = signal(false);
-
-    // Environment deletion confirmation
-    showEnvironmentDeletion = signal(false);
     // Mock total users - Replace with actual stats from backend
     totalUsers = signal(0);
     // Mock total hits this month - Replace with actual stats from backend
@@ -161,20 +104,6 @@ export class ApplicationOverview implements OnInit {
 
     // Environment count
     environmentCount = computed(() => this.environments().length);
-    // Computed filtered environments
-    filteredEnvironments = computed(() => {
-        const query = this.environmentSearchQuery().toLowerCase();
-        const envs = this.environments();
-
-        if (!query) {
-            return envs;
-        }
-
-        return envs.filter(env =>
-          env.name?.toLowerCase().includes(query) ||
-            env.description?.toLowerCase().includes(query)
-        );
-    });
 
     // Additional environment fees (first one is free)
     additionalEnvironmentFees = computed(() => {
@@ -195,61 +124,24 @@ export class ApplicationOverview implements OnInit {
     });
     private router = inject(Router);
 
-    // Mock usage statistics - Replace with: this.api.invoke(getUsageStats, {envId})
-    usageStats = signal({
-        fetchesToday: 12847,
-        dailyLimit: 50000,
-        users: 7954,
-        totalThisMonth: 287432,
-        avgResponseTime: 42, // ms
-    });
-
-    // Mock leniency tracking - Replace with: this.api.invoke(getLeniencyStats, {envId})
-    leniencyStats = signal({
-        used: 2,
-        allowed: 2,
-    });
-
-    // Mock weekly fetch data - Replace with: this.api.invoke(getWeeklyFetches, {envId})
-    weeklyFetches = signal([
-        {day: 'Mon', fetches: 38420, limit: 50000},
-        {day: 'Tue', fetches: 50000, limit: 50000},  // Hit limit
-        {day: 'Wed', fetches: 35890, limit: 50000},
-        {day: 'Thu', fetches: 51200, limit: 50000},  // Exceeded limit
-        {day: 'Fri', fetches: 31560, limit: 50000},
-        {day: 'Sat', fetches: 18940, limit: 50000},
-        {day: 'Sun', fetches: 12847, limit: 50000},
-    ]);
-
   // ============================================================================
   // TEMPLATE STATE - API-backed
   // ============================================================================
 
   templateService = inject(TemplateService); // Public so template can access type checking methods
-  // Copy overrides state
-  showCopyOverridesDialog = signal(false);
 
   // Card collapse state (expanded by default)
   apiAttributesExpanded = signal(true);
-  usageOverviewExpanded = signal(true);
 
   // Tab navigation
   activeTab = signal<'overview' | 'configuration' | 'overrides'>('overview');
 
   // Overrides tab state
   overridesTemplateType = signal<'system' | 'user'>('system');
-  overridesSearchQuery = signal('');
-  showOnlyOverrides = signal(false);
-  editingMatrixCell = signal<{ identifier: string; attribute: string } | null>(null);
-  copySourceEnvironmentId = signal<string | null>(null);
-  copyOverwriteExisting = signal(false);
-  isCopyingOverrides = signal(false);
   editError = signal<string | null>(null);
 
-  // Template (Configuration) tab state
-  templateTemplateType = signal<'system' | 'user'>('system');
-  templateSearchQuery = signal('');
-  showFieldsWithDefaults = signal(false);
+  // Template (Configuration) tab state - now managed by template-config component
+  templateTemplateType = signal<'system' | 'user'>('system'); // Still needed for overrides tab
   editingTemplateCell = signal<{ fieldKey: string; property: string } | null>(null);
 
   // Override sections expand state (legacy, kept for template cards)
@@ -261,11 +153,8 @@ export class ApplicationOverview implements OnInit {
   editingUserField = signal<{ key: string; field: 'key' | 'type' | 'defaultValue' } | null>(null);
   editingIdentifier = signal<{ identifier: string; template: 'system' | 'user'; field: string } | null>(null);
   editValue = signal('');
-  // New identifier form
-  showAddIdentifier = signal(false);
   // Loading states
   isLoadingTemplates = signal(false);
-  newIdentifierName = signal('');
   isLoadingOverrides = signal(false);
   isSavingTemplate = signal(false);
   // API-loaded templates (SYSTEM and USER)
@@ -292,120 +181,14 @@ export class ApplicationOverview implements OnInit {
   systemOverrideCount = computed(() => this.systemOverrides().length);
   // Count of identifiers with user overrides
   userOverrideCount = computed(() => this.userOverrides().length);
-  // Get all unique identifiers from overrides
-  allIdentifiers = computed<string[]>(() => {
+  // All unique identifiers (for tab badge)
+  matrixIdentifiers = computed<string[]>(() => {
     const systemIds = this.systemOverrides().map(o => o.identifier).filter((id): id is string => !!id);
     const userIds = this.userOverrides().map(o => o.identifier).filter((id): id is string => !!id);
     return [...new Set([...systemIds, ...userIds])];
   });
-  // Filtered system template fields (for Template tab)
-  filteredSystemTemplateFields = computed<TemplateField[]>(() => {
-    const fields = this.systemTemplateFields();
-    const query = this.templateSearchQuery().toLowerCase();
-
-    let filtered = fields;
-
-    if (query) {
-      filtered = filtered.filter(f => f.key?.toLowerCase().includes(query));
-    }
-
-    if (this.showFieldsWithDefaults()) {
-      filtered = filtered.filter(f => {
-        const defaultValue = this.templateService.getDefaultValue(f);
-        return defaultValue !== undefined && defaultValue !== null && defaultValue !== '';
-      });
-    }
-
-    return filtered;
-  });
-
-  // ============================================================================
-  // TEMPLATE TAB FILTERED COMPUTED PROPERTIES
-  // ============================================================================
-  // Filtered user template fields (for Template tab)
-  filteredUserTemplateFields = computed<TemplateField[]>(() => {
-    const fields = this.userTemplateFields();
-    const query = this.templateSearchQuery().toLowerCase();
-
-    let filtered = fields;
-
-    if (query) {
-      filtered = filtered.filter(f => f.key?.toLowerCase().includes(query));
-    }
-
-    if (this.showFieldsWithDefaults()) {
-      filtered = filtered.filter(f => {
-        const defaultValue = this.templateService.getDefaultValue(f);
-        return defaultValue !== undefined && defaultValue !== null && defaultValue !== '';
-      });
-    }
-
-    return filtered;
-  });
-  // Get all attribute keys for current template type
-  matrixAttributeKeys = computed<string[]>(() => {
-    const query = this.overridesSearchQuery().toLowerCase();
-    const showOnlyOverrides = this.showOnlyOverrides();
-    const templateType = this.overridesTemplateType();
-
-    let keys: string[];
-    if (templateType === 'system') {
-      keys = this.systemTemplateFields().map(f => f.key).filter((k): k is string => !!k);
-    } else {
-      keys = this.userTemplateFields().map(f => f.key).filter((k): k is string => !!k);
-    }
-
-    // Filter by search query
-    if (query) {
-      keys = keys.filter(k => k.toLowerCase().includes(query));
-    }
-
-    // Filter to show only attributes that have at least one override
-    if (showOnlyOverrides) {
-      const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
-      keys = keys.filter(key => {
-        return overrides.some(o => {
-          const values = o.values as Record<string, unknown> | undefined;
-          return values && key in values;
-        });
-      });
-    }
-
-    return keys;
-  });
-
-  // ============================================================================
-  // MATRIX VIEW COMPUTED PROPERTIES
-  // ============================================================================
-  // Get all identifiers for matrix rows
-  matrixIdentifiers = computed<string[]>(() => {
-    return this.allIdentifiers();
-  });
-  private overlayService = inject(OverlayService);
 
     constructor() {
-        // Auto-select first environment when environments change
-        effect(() => {
-            const envs = this.environments();
-            const selected = this.selectedEnvironment();
-            if (envs.length > 0 && !selected) {
-                this.selectedEnvironment.set(envs[0]);
-            }
-        });
-
-      // Clear API key state when environment changes
-      effect(() => {
-        // Just reading selectedEnvironment triggers the effect when it changes
-        this.selectedEnvironment();
-        // Clear all key state
-        this.showReadKey.set(false);
-        this.showWriteKey.set(false);
-        this.readKey.set(null);
-        this.writeKey.set(null);
-        this.readKeyData.set(null);
-        this.writeKeyData.set(null);
-      }, {allowSignalWrites: true});
-
       // Reset template override visibility when environment changes
       effect(() => {
         this.selectedEnvironment();
@@ -430,87 +213,6 @@ export class ApplicationOverview implements OnInit {
         }
       }, {allowSignalWrites: true});
     }
-
-  // Get matrix cell value (override value or null if using default)
-  getMatrixCellValue(identifier: string, attribute: string): string | null {
-    const templateType = this.overridesTemplateType();
-    const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
-
-    const override = overrides.find(o => o.identifier === identifier);
-    if (!override?.values) return null;
-
-    const values = override.values as Record<string, unknown>;
-    const value = values[attribute];
-    return value !== undefined ? String(value) : null;
-  }
-
-  // Get default value for an attribute (for overrides matrix view)
-  getDefaultValue(attribute: string): string {
-    const templateType = this.overridesTemplateType();
-    const fields = templateType === 'system' ? this.systemTemplateFields() : this.userTemplateFields();
-
-    const field = fields.find(f => f.key === attribute);
-    if (!field) return '';
-
-    const defaultValue = this.templateService.getDefaultValue(field);
-    return defaultValue !== undefined && defaultValue !== null ? String(defaultValue) : '';
-  }
-
-  // Matrix cell editing
-  startEditMatrixCell(identifier: string, attribute: string, currentValue: string | null): void {
-    this.editingMatrixCell.set({identifier, attribute});
-    this.editValue.set(currentValue ?? this.getDefaultValue(attribute));
-    this.editError.set(null); // Clear any previous errors
-  }
-
-    // Computed high risk alert based on leniency usage
-    highRiskAlert = computed(() => {
-        const leniency = this.leniencyStats();
-        if (leniency.used >= leniency.allowed) {
-            return {
-                message: `We offer leniency for exceeded limits ${leniency.allowed} times per month to prevent application downtime. This allowance has been fully used. Your application is at high risk of service interruption.`
-            };
-        }
-        return null;
-    });
-
-    // Computed usage percentage
-    usagePercentage = computed(() => {
-        const stats = this.usageStats();
-        return Math.round((stats.fetchesToday / stats.dailyLimit) * 100);
-    });
-
-    // Computed recommendation based on usage patterns
-    usageRecommendation = computed(() => {
-        const fetches = this.weeklyFetches();
-        const daysAtLimit = fetches.filter(day => day.fetches >= day.limit).length;
-
-        if (daysAtLimit >= 2) {
-            return {
-                type: 'warning' as const,
-                message: `You've hit the limit ${daysAtLimit} times this week. Consider upgrading to a higher tier.`
-            };
-        } else if (daysAtLimit === 1) {
-            return {
-                type: 'info' as const,
-                message: 'You hit your daily limit once this week. Monitor your usage to avoid interruptions.'
-            };
-        } else if (this.usagePercentage() > 80) {
-            return {
-                type: 'info' as const,
-                message: 'You\'re approaching your daily limit. Consider your usage patterns.'
-            };
-        }
-        return null;
-    });
-    private api = inject(Api);
-
-  // Get the field definition for a matrix attribute
-  getMatrixField(attribute: string): TemplateField | undefined {
-    const templateType = this.overridesTemplateType();
-    const fields = templateType === 'system' ? this.systemTemplateFields() : this.userTemplateFields();
-    return fields.find(f => f.key === attribute);
-  }
 
     // Format number with commas
     formatNumber(num: number): string {
@@ -538,246 +240,27 @@ export class ApplicationOverview implements OnInit {
         this.router.navigate(['/dashboard']);
     }
 
-    toggleEnvironmentDropdown(): void {
-        this.showEnvironmentDropdown.update(show => !show);
-        if (this.showEnvironmentDropdown()) {
-            this.environmentSearchQuery.set('');
-        }
+  // Environment Manager event handlers
+  onEnvironmentCreated(newEnvironment: EnvironmentResponse): void {
+    // Update application with new environment
+    this.application.update(current => {
+      if (!current) return current;
+      return {
+        ...current,
+        environments: [...(current.environments ?? []), newEnvironment]
+      };
+    });
     }
 
-    closeEnvironmentDropdown(): void {
-        this.showEnvironmentDropdown.set(false);
-        this.environmentSearchQuery.set('');
-    }
-
-    selectEnvironment(environment: EnvironmentResponse): void {
-        this.selectedEnvironment.set(environment);
-        this.closeEnvironmentDropdown();
-    }
-
-    onSearchQueryChange(query: string): void {
-        this.environmentSearchQuery.set(query);
-    }
-
-    onAddEnvironmentClick(): void {
-        this.closeEnvironmentDropdown();
-        this.showEnvironmentCreation.set(true);
-    }
-
-    onCloseEnvironmentCreation(): void {
-        this.showEnvironmentCreation.set(false);
-    }
-
-    async onEnvironmentCreated(name: string, description?: string): Promise<void> {
-        const app = this.application();
-        if (!app?.id) {
-            return;
-        }
-
-        this.isCreatingEnvironment.set(true);
-        try {
-            const newEnv = await this.api.invoke(createEnvironment, {
-                applicationId: app.id,
-                body: {
-                    name: name,
-                    description: description ?? ''
-                }
-            });
-
-            // Update the application with the new environment
-            this.application.update(current => {
-                if (!current) return current;
-                return {
-                    ...current,
-                    environments: [...(current.environments ?? []), newEnv]
-                };
-            });
-
-            this.selectedEnvironment.set(newEnv);
-            this.showEnvironmentCreation.set(false);
-        } catch (error) {
-            console.error('Failed to create environment:', error);
-        } finally {
-            this.isCreatingEnvironment.set(false);
-        }
-    }
-
-    // API Key methods
-  async toggleReadKeyVisibility(): Promise<void> {
-    if (this.showReadKey()) {
-      // Hide the key - clear the state
-      this.showReadKey.set(false);
-      this.readKey.set(null);
-    } else {
-      // Show the key - set flag before fetch to avoid race condition
-      this.showReadKey.set(true);
-      await this.fetchReadKey();
-    }
-  }
-
-  async toggleWriteKeyVisibility(): Promise<void> {
-    if (this.showWriteKey()) {
-      // Hide the key - clear the state
-      this.showWriteKey.set(false);
-      this.writeKey.set(null);
-    } else {
-      // Show the key - set flag before fetch to avoid race condition
-      this.showWriteKey.set(true);
-      await this.fetchWriteKey();
-    }
-  }
-
-  async confirmKeyRefresh(): Promise<void> {
-    const keyType = this.keyToRefresh();
-    const app = this.application();
-    const env = this.selectedEnvironment();
-
-    if (!keyType || !app?.id || !env?.id) {
-      this.showKeyRefreshConfirmation.set(false);
-      this.keyToRefresh.set(null);
-      return;
-    }
-
-    this.isRefreshingKey.set(true);
-    try {
-      const response = await this.api.invoke(regenerateApiKey, {
-        applicationId: app.id,
-        environmentId: env.id,
-        keyType: keyType === 'read' ? 'READ' : 'WRITE'
-      });
-
-      // Update the key and key data with the new secret
-      if (keyType === 'read') {
-        this.readKey.set(response.secretKey ?? null);
-        this.readKeyData.set(response);
-      } else {
-        this.writeKey.set(response.secretKey ?? null);
-        this.writeKeyData.set(response);
-      }
-    } catch (error) {
-      console.error('Failed to regenerate key:', error);
-    } finally {
-      this.isRefreshingKey.set(false);
-      this.showKeyRefreshConfirmation.set(false);
-      this.keyToRefresh.set(null);
-    }
-  }
-
-  getKeyPlaceholder(): string {
-    return '••••••••••••••••••••••••';
-    }
-
-    requestKeyRefresh(keyType: 'read' | 'write'): void {
-        this.keyToRefresh.set(keyType);
-        this.showKeyRefreshConfirmation.set(true);
-    }
-
-    cancelKeyRefresh(): void {
-        this.showKeyRefreshConfirmation.set(false);
-        this.keyToRefresh.set(null);
-    }
-
-  private async fetchReadKey(): Promise<void> {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-    if (!app?.id || !env?.id) return;
-
-    this.isLoadingReadKey.set(true);
-    try {
-      const response = await this.api.invoke(getApiKeyByType, {
-        applicationId: app.id,
-        environmentId: env.id,
-        keyType: 'READ'
-      });
-      this.readKeyData.set(response);
-      this.readKey.set(response.secretKey ?? null);
-    } catch (error) {
-      console.error('Failed to fetch read key:', error);
-      this.readKey.set(null);
-    } finally {
-      this.isLoadingReadKey.set(false);
-    }
-    }
-
-  private async fetchWriteKey(): Promise<void> {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-    if (!app?.id || !env?.id) return;
-
-    this.isLoadingWriteKey.set(true);
-    try {
-      const response = await this.api.invoke(getApiKeyByType, {
-        applicationId: app.id,
-        environmentId: env.id,
-        keyType: 'WRITE'
-      });
-      this.writeKeyData.set(response);
-      this.writeKey.set(response.secretKey ?? null);
-    } catch (error) {
-      console.error('Failed to fetch write key:', error);
-      this.writeKey.set(null);
-    } finally {
-      this.isLoadingWriteKey.set(false);
-    }
-    }
-
-    // Environment deletion methods
-    requestEnvironmentDeletion(): void {
-        // Only allow deletion for PAID tier environments
-        if (this.canDeleteEnvironment()) {
-            this.showEnvironmentDeletion.set(true);
-        }
-    }
-
-    cancelEnvironmentDeletion(): void {
-        this.showEnvironmentDeletion.set(false);
-    }
-
-    async confirmEnvironmentDeletion(): Promise<void> {
-        const app = this.application();
-        const currentEnv = this.selectedEnvironment();
-
-        if (!app?.id || !currentEnv?.id) {
-            return;
-        }
-
-        // Double-check tier before deletion
-        if (currentEnv.tier === 'FREE') {
-            console.error('Cannot delete FREE tier environment');
-            this.showEnvironmentDeletion.set(false);
-            return;
-        }
-
-        this.isDeletingEnvironment.set(true);
-        try {
-            await this.api.invoke(deleteEnvironment, {
-                applicationId: app.id,
-                environmentId: currentEnv.id
-            });
-
-            // Update application to remove the environment
-            this.application.update(current => {
-                if (!current) return current;
-                return {
-                    ...current,
-                    environments: (current.environments ?? []).filter(env => env.id !== currentEnv.id)
-                };
-            });
-
-            // Select another environment if available
-            const remaining: EnvironmentResponse[] = this.environments();
-            if (remaining.length > 0) {
-                this.selectedEnvironment.set(remaining[0] as EnvironmentResponse);
-            } else {
-                this.selectedEnvironment.set(null);
-            }
-
-            this.showEnvironmentDeletion.set(false);
-        } catch (error) {
-            console.error('Failed to delete environment:', error);
-        } finally {
-            this.isDeletingEnvironment.set(false);
-        }
+  onEnvironmentDeleted(environmentId: string): void {
+    // Remove environment from application
+    this.application.update(current => {
+      if (!current) return current;
+      return {
+        ...current,
+        environments: (current.environments ?? []).filter(env => env.id !== environmentId)
+      };
+    });
     }
 
     // Request Tier methods
@@ -810,121 +293,33 @@ export class ApplicationOverview implements OnInit {
     this.apiAttributesExpanded.update(v => !v);
   }
 
-  toggleUsageOverviewCard(): void {
-    this.usageOverviewExpanded.update(v => !v);
-  }
-
   // Tab navigation
   setActiveTab(tab: 'overview' | 'configuration' | 'overrides'): void {
     this.activeTab.set(tab);
   }
 
-  // Validate matrix cell value on input change
-  onMatrixInputChange(newValue: string): void {
-    this.editValue.set(newValue);
-
-    const editing = this.editingMatrixCell();
-    if (!editing) return;
-
-    const field = this.getMatrixField(editing.attribute);
-    if (!field) return;
-
-    // Validate the new value
-    const validationError = this.validateDefaultValue(field, newValue.trim());
-    this.editError.set(validationError);
-  }
-
-  // Try to save matrix cell edit (used on blur)
-  tryToSaveMatrixCellEdit(): void {
-    // Don't auto-save if there's already a validation error
-    if (this.editError()) {
-      return;
+  // Template Config event handlers
+  onTemplateChanged(): void {
+    // Reload templates when a field is added/edited/deleted
+    const app = this.application();
+    if (app?.id) {
+      this.loadTemplates(app.id);
     }
-    this.saveMatrixCellEdit();
   }
 
-  async saveMatrixCellEdit(): Promise<void> {
-    const editing = this.editingMatrixCell();
+  onNavigateToOverrides(templateType: 'system' | 'user'): void {
+    this.setActiveTab('overrides');
+    this.overridesTemplateType.set(templateType);
+  }
+
+  // Override Manager event handlers
+  onOverridesChanged(): void {
+    // Reload overrides when they are modified
     const app = this.application();
     const env = this.selectedEnvironment();
-    if (!editing || !app?.id || !env?.id) return;
-
-    const {identifier, attribute} = editing;
-    const newValue = this.editValue().trim();
-    const templateType = this.overridesTemplateType();
-
-    // Validate against field constraints
-    const field = this.getMatrixField(attribute);
-    if (field) {
-      const validationError = this.validateDefaultValue(field, newValue);
-      if (validationError) {
-        this.editError.set(validationError);
-        return;
-      }
+    if (app?.id && env?.id) {
+      this.loadOverrides(app.id, env.id);
     }
-
-    // Clear error
-    this.editError.set(null);
-
-    const overrides = templateType === 'system' ? this.systemOverrides() : this.userOverrides();
-    const existingOverride = overrides.find(o => o.identifier === identifier);
-    const currentValues = (existingOverride?.values as Record<string, unknown>) ?? {};
-
-    // Build updated values
-    const updatedValues: Record<string, unknown> = {...currentValues};
-    const defaultValue = this.getDefaultValue(attribute);
-
-    // Convert value based on field type
-    let finalValue: unknown = newValue;
-    if (field && newValue !== defaultValue && newValue !== '') {
-      if (this.templateService.isNumberField(field)) {
-        finalValue = parseFloat(newValue);
-      } else if (this.templateService.isBooleanField(field)) {
-        finalValue = newValue.toLowerCase() === 'true';
-      }
-    }
-
-    if (newValue === defaultValue || newValue === '') {
-      // Remove override if setting back to default or empty
-      delete updatedValues[attribute];
-    } else {
-      updatedValues[attribute] = finalValue;
-    }
-
-    try {
-      if (Object.keys(updatedValues).length === 0) {
-        // No overrides left, delete the entire override
-        await this.templateService.deleteOverride(
-          app.id,
-          templateType === 'system' ? TemplateType.System : TemplateType.User,
-          env.id,
-          identifier
-        );
-      } else {
-        // Update the override
-        await this.templateService.setOverride(
-          app.id,
-          templateType === 'system' ? TemplateType.System : TemplateType.User,
-          env.id,
-          identifier,
-          updatedValues
-        );
-      }
-      // Reload overrides
-      await this.loadOverrides(app.id, env.id);
-    } catch (error) {
-      console.error('Failed to save override:', error);
-    }
-
-    this.editingMatrixCell.set(null);
-    this.editValue.set('');
-    this.editError.set(null);
-  }
-
-  cancelMatrixCellEdit(): void {
-    this.editingMatrixCell.set(null);
-    this.editValue.set('');
-    this.editError.set(null);
   }
 
   async saveTemplateCellEdit(): Promise<void> {
@@ -1018,16 +413,6 @@ export class ApplicationOverview implements OnInit {
     this.editValue.set(currentValue ?? '');
   }
 
-  // Helper to format constraints for display
-  formatConstraints(field: TemplateField): string {
-    return this.templateService.formatConstraints(field);
-  }
-
-  // Helper to get default value as string (for templates)
-  getFieldDefaultValue(field: TemplateField): string {
-    const value = this.templateService.getDefaultValue(field);
-    return value !== undefined && value !== null ? String(value) : '';
-  }
 
   async saveSystemFieldEdit(): Promise<void> {
     // System field editing is handled via saveTemplateCellEdit now
@@ -1044,47 +429,6 @@ export class ApplicationOverview implements OnInit {
     this.showUserOverrides.update(show => !show);
   }
 
-  openAddFieldOverlay(templateType: 'system' | 'user'): void {
-    const fields = templateType === 'system'
-      ? this.systemTemplateFields()
-      : this.userTemplateFields();
-
-    const existingKeys = fields
-      .map(f => f.key)
-      .filter((k): k is string => !!k);
-
-    this.overlayService.open<AddFieldOverlayData>({
-      component: AddFieldOverlayComponent,
-      data: {
-        templateType,
-        existingFieldKeys: existingKeys,
-        onSubmit: (field: TemplateField) => this.handleAddField(field, templateType)
-      },
-      maxWidth: '500px'
-    });
-  }
-
-  openEditFieldOverlay(field: TemplateField, templateType: 'system' | 'user'): void {
-    const fields = templateType === 'system'
-      ? this.systemTemplateFields()
-      : this.userTemplateFields();
-
-    // Exclude current field key from existing keys to allow keeping the same key
-    const existingKeys = fields
-      .map(f => f.key)
-      .filter((k): k is string => !!k && k !== field.key);
-
-    this.overlayService.open<EditFieldOverlayData>({
-      component: EditFieldOverlayComponent,
-      data: {
-        templateType,
-        field,
-        existingFieldKeys: existingKeys,
-        onSubmit: (updatedField: TemplateField) => this.handleEditField(field.key!, updatedField, templateType)
-      },
-      maxWidth: '500px'
-    });
-  }
 
   // Helper to get override value for a key
   getOverrideValue(overrides: { key: string; value: string }[], key: string): string | undefined {
@@ -1107,20 +451,6 @@ export class ApplicationOverview implements OnInit {
     this.saveSystemFieldEdit();
   }
 
-  openDeleteFieldOverlay(key: string, templateType: 'system' | 'user'): void {
-    const appName = this.applicationName();
-
-    this.overlayService.open<DeleteFieldOverlayData>({
-      component: DeleteFieldOverlayComponent,
-      data: {
-        applicationName: appName,
-        fieldKey: key,
-        templateType,
-        onConfirm: () => this.handleDeleteField(key, templateType)
-      },
-      maxWidth: '450px'
-    });
-  }
 
   // --- Add Field Overlay ---
 
@@ -1176,68 +506,6 @@ export class ApplicationOverview implements OnInit {
     } finally {
       this.isSavingTemplate.set(false);
     }
-  }
-
-  async addIdentifier(): Promise<void> {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-    const identifier = this.newIdentifierName().trim();
-
-    if (!app?.id || !env?.id || !identifier) return;
-
-    // Create an empty override for both system and user templates
-    try {
-      // Create override with empty values (just to establish the identifier)
-      await this.templateService.setOverride(app.id, TemplateType.System, env.id, identifier, {});
-      await this.loadOverrides(app.id, env.id);
-    } catch (error) {
-      console.error('Failed to add identifier:', error);
-    }
-
-    this.newIdentifierName.set('');
-    this.showAddIdentifier.set(false);
-  }
-
-  // --- Delete Field Overlay ---
-
-  async deleteIdentifier(identifier: string): Promise<void> {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-    if (!app?.id || !env?.id) return;
-
-    try {
-      // Delete overrides for both system and user templates
-      await Promise.all([
-        this.templateService.deleteOverride(app.id, TemplateType.System, env.id, identifier).catch(() => {
-        }),
-        this.templateService.deleteOverride(app.id, TemplateType.User, env.id, identifier).catch(() => {
-        })
-      ]);
-      await this.loadOverrides(app.id, env.id);
-    } catch (error) {
-      console.error('Failed to delete identifier:', error);
-    }
-  }
-
-  // Copy overrides overlay methods
-  openCopyOverridesOverlay(): void {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-
-    if (!app?.id || !env?.id) return;
-
-    this.overlayService.open<CopyOverridesOverlayData>({
-      component: CopyOverridesOverlayComponent,
-      data: {
-        applicationId: app.id,
-        applicationName: app.name ?? 'Application',
-        environments: this.environments(),
-        currentEnvironmentId: env.id,
-        allIdentifiers: this.allIdentifiers(),
-        onSuccess: () => this.handleCopyOverridesSuccess()
-      },
-      maxWidth: '500px'
-    });
   }
 
   async saveIdentifierOverrideEdit(): Promise<void> {
@@ -1523,73 +791,6 @@ export class ApplicationOverview implements OnInit {
     this.saveIdentifierOverrideEdit();
   }
 
-  private async handleAddField(field: TemplateField, templateType: 'system' | 'user'): Promise<void> {
-    const app = this.application();
-    if (!app?.id) {
-      return;
-    }
-
-    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
-
-    // Allow adding fields even if template has no schema yet - we'll create a new schema
-    const existingFields = template?.schema?.fields ?? [];
-    const updatedFields = [...existingFields, field];
-
-    this.isSavingTemplate.set(true);
-    try {
-      await this.templateService.updateTemplate(
-        app.id,
-        templateType === 'system' ? TemplateType.System : TemplateType.User,
-        {
-          fields: updatedFields,
-          defaultValues: template?.schema?.defaultValues ?? {}
-        }
-      );
-      await this.loadTemplates(app.id);
-    } catch (error) {
-      console.error('Failed to add field:', error);
-    } finally {
-      this.isSavingTemplate.set(false);
-    }
-  }
-
-  private async handleEditField(originalKey: string, updatedField: TemplateField, templateType: 'system' | 'user'): Promise<void> {
-    const app = this.application();
-    if (!app?.id) {
-      return;
-    }
-
-    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
-    if (!template?.schema?.fields) {
-      return;
-    }
-
-    // Replace the field with the updated one
-    const updatedFields = template.schema.fields.map(f => {
-      if (f.key === originalKey) {
-        return updatedField;
-      }
-      return f;
-    });
-
-    this.isSavingTemplate.set(true);
-    try {
-      await this.templateService.updateTemplate(
-        app.id,
-        templateType === 'system' ? TemplateType.System : TemplateType.User,
-        {
-          fields: updatedFields,
-          defaultValues: template.schema.defaultValues ?? {}
-        }
-      );
-      await this.loadTemplates(app.id);
-    } catch (error) {
-      console.error('Failed to edit field:', error);
-    } finally {
-      this.isSavingTemplate.set(false);
-    }
-  }
-
   // --- Common Edit Helpers ---
 
   cancelEdit(): void {
@@ -1612,40 +813,5 @@ export class ApplicationOverview implements OnInit {
     } else if (event.key === 'Escape') {
       this.cancelEdit();
     }
-  }
-
-  private async handleDeleteField(key: string, templateType: 'system' | 'user'): Promise<void> {
-    const app = this.application();
-    if (!app?.id) return;
-
-    const template = templateType === 'system' ? this.systemTemplate() : this.userTemplate();
-    if (!template?.schema?.fields) return;
-
-    const updatedFields = template.schema.fields.filter(f => f.key !== key);
-
-    this.isSavingTemplate.set(true);
-    try {
-      await this.templateService.updateTemplate(
-        app.id,
-        templateType === 'system' ? TemplateType.System : TemplateType.User,
-        {
-          fields: updatedFields,
-          defaultValues: template.schema.defaultValues
-        }
-      );
-      await this.loadTemplates(app.id);
-    } catch (error) {
-      console.error('Failed to delete field:', error);
-    } finally {
-      this.isSavingTemplate.set(false);
-    }
-  }
-
-  private async handleCopyOverridesSuccess(): Promise<void> {
-    const app = this.application();
-    const env = this.selectedEnvironment();
-    if (!app?.id || !env?.id) return;
-
-    await this.loadOverrides(app.id, env.id);
   }
 }

@@ -1,0 +1,228 @@
+<div class="overrides-tab">
+  <!-- Controls Bar -->
+  <div class="overrides-controls">
+    <div class="overrides-controls__left">
+      <!-- Template Type Toggle -->
+      <div class="overrides-toggle template-toggle">
+        <button (click)="templateType.set('system')"
+                [class.overrides-toggle__btn--active]="templateType() === 'system'"
+                [class.template-toggle__btn--active]="templateType() === 'system'"
+                class="overrides-toggle__btn template-toggle__btn">
+          System
+        </button>
+        <button (click)="templateType.set('user')"
+                [class.overrides-toggle__btn--active]="templateType() === 'user'"
+                [class.template-toggle__btn--active]="templateType() === 'user'"
+                class="overrides-toggle__btn template-toggle__btn">
+          User
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="overrides-search">
+        <svg class="overrides-search__icon" fill="none" height="16" viewBox="0 0 24 24" width="16">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+          <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+        <input (ngModelChange)="searchQuery.set($event)"
+               [ngModel]="searchQuery()"
+               class="overrides-search__input"
+               placeholder="Search attributes..."
+               type="text">
+      </div>
+    </div>
+
+    <div class="overrides-controls__right">
+      <!-- Show Only Overrides Toggle -->
+      <label class="overrides-checkbox">
+        <input (change)="showOnlyOverrides.set($any($event.target).checked)"
+               [checked]="showOnlyOverrides()"
+               type="checkbox">
+        <span class="overrides-checkbox__label">Show only overrides</span>
+      </label>
+
+      <!-- Copy Overrides Button -->
+      @if (hasIdentifierOverrides()) {
+        <button
+          (click)="openCopyOverridesOverlay()"
+          class="btn btn-secondary btn-sm btn-icon overrides__copy-btn"
+          title="Copy identifier overrides to another environment">
+          <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+            <path
+              d="M5.333 5.333V3.2A1.067 1.067 0 0 1 6.4 2.133h7.467a1.067 1.067 0 0 1 1.066 1.067v7.467a1.067 1.067 0 0 1-1.066 1.066h-2.134"
+              stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="1.5"/>
+            <rect height="8.533" rx="1.067" stroke="currentColor" stroke-width="1.5" width="8.533" x="2.133"
+                  y="5.333"/>
+          </svg>
+          Copy Overrides
+        </button>
+      }
+
+      <!-- Add Identifier Button -->
+      <button (click)="showAddIdentifier.set(true)" class="btn btn-primary btn-sm btn-icon">
+        <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+        Add Identifier
+      </button>
+    </div>
+  </div>
+
+  <!-- Add Identifier Form -->
+  @if (showAddIdentifier()) {
+    <div class="overrides-add-form">
+      <input (keydown.enter)="addIdentifier()"
+             (keydown.escape)="showAddIdentifier.set(false); newIdentifierName.set('')"
+             (ngModelChange)="newIdentifierName.set($event)"
+             [ngModel]="newIdentifierName()"
+             class="overrides-add-form__input"
+             placeholder="Enter identifier name..."
+             type="text">
+      <button (click)="addIdentifier()" class="overrides-add-form__btn overrides-add-form__btn--save">Add</button>
+      <button (click)="showAddIdentifier.set(false); newIdentifierName.set('')"
+              class="overrides-add-form__btn overrides-add-form__btn--cancel">Cancel
+      </button>
+    </div>
+  }
+
+  <!-- Matrix Table -->
+  @if (matrixIdentifiers().length > 0 && matrixAttributeKeys().length > 0) {
+    <div class="matrix-wrapper">
+      <table class="matrix-table">
+        <thead>
+        <tr>
+          <th class="matrix-table__header matrix-table__header--sticky">Field</th>
+          @for (identifier of matrixIdentifiers(); track identifier) {
+            <th class="matrix-table__header">
+              <code class="matrix-table__identifier-header">{{ identifier }}</code>
+              <button
+                (click)="deleteIdentifier(identifier)"
+                class="matrix-table__identifier-delete"
+                title="Delete identifier"
+                type="button">
+                <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
+                  <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+                </svg>
+              </button>
+            </th>
+          }
+        </tr>
+        </thead>
+        <tbody>
+          @for (attr of matrixAttributeKeys(); track attr) {
+            <tr class="matrix-table__row">
+              <td class="matrix-table__cell matrix-table__cell--sticky">
+                <code class="matrix-table__field-name">{{ attr }}</code>
+                <span class="matrix-table__default">{{ getDefaultValue(attr) }}</span>
+              </td>
+              @for (identifier of matrixIdentifiers(); track identifier) {
+                <td
+                  [class.matrix-table__cell--editing]="editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr"
+                  [class.matrix-table__cell--override]="getMatrixCellValue(identifier, attr) !== null"
+                  class="matrix-table__cell">
+                  @if (editingMatrixCell()?.identifier === identifier && editingMatrixCell()?.attribute === attr) {
+                    <div class="matrix-table__edit-wrapper">
+                      @if (getMatrixField(attr); as field) {
+                        @if (templateService.isEnumField(field)) {
+                          <!-- Enum field: Dropdown -->
+                          <select
+                            (blur)="tryToSaveMatrixCellEdit()"
+                            (change)="onMatrixInputChange($any($event.target).value)"
+                            (keydown.enter)="saveMatrixCellEdit()"
+                            (keydown.escape)="cancelMatrixCellEdit()"
+                            [class.matrix-table__input--error]="editError()"
+                            [value]="editValue()"
+                            class="matrix-table__input matrix-table__input--select">
+                            <option [value]="getDefaultValue(attr)">—
+                              (default: {{ getDefaultValue(attr) }})
+                            </option>
+                            @for (option of field.options; track option) {
+                              <option [value]="option">{{ option }}</option>
+                            }
+                          </select>
+                        } @else if (templateService.isBooleanField(field)) {
+                          <!-- Boolean field: Dropdown -->
+                          <select
+                            (blur)="tryToSaveMatrixCellEdit()"
+                            (change)="onMatrixInputChange($any($event.target).value)"
+                            (keydown.enter)="saveMatrixCellEdit()"
+                            (keydown.escape)="cancelMatrixCellEdit()"
+                            [class.matrix-table__input--error]="editError()"
+                            [value]="editValue()"
+                            class="matrix-table__input matrix-table__input--select">
+                            <option [value]="getDefaultValue(attr)">—
+                              (default: {{ getDefaultValue(attr) }})
+                            </option>
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                          </select>
+                        } @else if (templateService.isNumberField(field)) {
+                          <!-- Number field: Number input -->
+                          <input (blur)="tryToSaveMatrixCellEdit()"
+                                 (input)="onMatrixInputChange($any($event.target).value)"
+                                 (keydown.enter)="saveMatrixCellEdit()"
+                                 (keydown.escape)="cancelMatrixCellEdit()"
+                                 [class.matrix-table__input--error]="editError()"
+                                 [max]="field.maxValue"
+                                 [min]="field.minValue"
+                                 [step]="field.incrementAmount ?? 1"
+                                 [value]="editValue()"
+                                 class="matrix-table__input"
+                                 type="number">
+                        } @else {
+                          <!-- String field: Text input -->
+                          <input (blur)="tryToSaveMatrixCellEdit()"
+                                 (input)="onMatrixInputChange($any($event.target).value)"
+                                 (keydown.enter)="saveMatrixCellEdit()"
+                                 (keydown.escape)="cancelMatrixCellEdit()"
+                                 [class.matrix-table__input--error]="editError()"
+                                 [value]="editValue()"
+                                 class="matrix-table__input"
+                                 type="text">
+                        }
+                      }
+                      @if (editError()) {
+                        <span class="matrix-table__error">{{ editError() }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span (click)="startEditMatrixCell(identifier, attr, getMatrixCellValue(identifier, attr))"
+                          [class.matrix-table__value--default]="getMatrixCellValue(identifier, attr) === null"
+                          class="matrix-table__value">
+                    @if (getMatrixCellValue(identifier, attr) !== null) {
+                      {{ getMatrixCellValue(identifier, attr) }}
+                    } @else {
+                      <span class="matrix-table__dash">—</span>
+                    }
+                  </span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (matrixIdentifiers().length === 0) {
+    <div class="overrides-empty">
+      <svg fill="none" height="48" viewBox="0 0 24 24" width="48">
+        <path
+          d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h2v-2h-2v2zm0-4h2V7h-2v6z"
+          fill="currentColor" opacity="0.3"/>
+      </svg>
+      <p>No identifiers configured for this environment.</p>
+      <p class="overrides-empty__hint">Add identifiers to define overrides.</p>
+    </div>
+  } @else {
+    <div class="overrides-empty">
+      <svg fill="none" height="48" viewBox="0 0 24 24" width="48">
+        <circle cx="11" cy="11" opacity="0.3" r="8" stroke="currentColor" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" opacity="0.3" stroke="currentColor" stroke-linecap="round"
+              stroke-width="2"/>
+      </svg>
+      <p>No matching attributes found.</p>
+      <p class="overrides-empty__hint">Try adjusting your search or filter criteria.</p>
+    </div>
+  }
+</div>

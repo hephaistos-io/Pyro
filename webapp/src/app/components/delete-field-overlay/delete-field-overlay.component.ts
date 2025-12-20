@@ -6,6 +6,7 @@ export interface DeleteFieldOverlayData {
   fieldKey: string;
   templateType: 'system' | 'user';
   onConfirm: () => void;
+  type?: 'field' | 'identifier'; // Optional: defaults to 'field'
 }
 
 @Component({
@@ -18,6 +19,9 @@ export interface DeleteFieldOverlayData {
 export class DeleteFieldOverlayComponent {
   data = input.required<DeleteFieldOverlayData>();
   close = input.required<() => void>();
+
+  // Computed type (defaults to 'field')
+  deleteType = computed(() => this.data().type || 'field');
 
   // Confirmation inputs
   applicationNameInput = signal('');

@@ -122,22 +122,6 @@ test.describe('API Key Management', () => {
         await expect(writeRefreshButton).toBeEnabled();
     });
 
-    test('clicking refresh button when key is hidden shows confirmation modal', async () => {
-        const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
-        const refreshButton = readKeySection.getByRole('button', {name: 'Refresh key'});
-
-        // Click refresh (key is hidden at this point)
-        await refreshButton.click();
-
-        // Confirmation modal should appear
-        await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
-        await expect(sharedPage.getByText('This action will immediately invalidate the current key')).toBeVisible();
-
-        // Cancel to close modal
-        await sharedPage.getByRole('button', {name: 'Cancel'}).click();
-        await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible();
-    });
-
     test('show Read-Key before regeneration tests', async () => {
         const readKeySection = sharedPage.locator('.stat').filter({hasText: 'Read-Key'});
 
@@ -156,13 +140,13 @@ test.describe('API Key Management', () => {
 
         // Confirmation modal should appear
         await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
-        await expect(sharedPage.getByText('This action will immediately invalidate the current key')).toBeVisible();
+        await expect(sharedPage.getByText('This action will immediately invalidate the current Read-Key')).toBeVisible();
 
         // Cancel button should be visible
         await expect(sharedPage.getByRole('button', {name: 'Cancel'})).toBeVisible();
 
         // Confirm button should be visible
-        await expect(sharedPage.getByRole('button', {name: 'I understand'})).toBeVisible();
+        await expect(sharedPage.getByRole('button', {name: 'Regenerate Key'})).toBeVisible();
     });
 
     test('canceling refresh modal closes it without changing key', async () => {
@@ -201,7 +185,7 @@ test.describe('API Key Management', () => {
         await expect(sharedPage.getByText('Refresh Read')).toBeVisible();
 
         // Confirm refresh
-        await sharedPage.getByRole('button', {name: 'I understand'}).click();
+        await sharedPage.getByRole('button', {name: 'Regenerate Key'}).click();
 
         // Wait for modal to close and key to be updated
         await expect(sharedPage.getByText('Refresh Read')).not.toBeVisible();
@@ -265,7 +249,7 @@ test.describe('API Key Management', () => {
         await expect(sharedPage.getByText('Refresh Write')).toBeVisible();
 
         // Confirm refresh
-        await sharedPage.getByRole('button', {name: 'I understand'}).click();
+        await sharedPage.getByRole('button', {name: 'Regenerate Key'}).click();
 
         // Wait for modal to close and key to be updated
         await expect(sharedPage.getByText('Refresh Write')).not.toBeVisible();

@@ -37,19 +37,20 @@ export async function addSystemField(page: Page, key: string, value: string): Pr
     // Click Add Field button
     await page.getByRole('button', {name: 'Add Field'}).click();
 
-    // Wait for inline form to appear (system form has 2 inputs, no select)
-    const form = page.locator('.template-add-form-inline').filter({hasNot: page.locator('.template-add-form-inline__select')});
-    await expect(form).toBeVisible();
+    // Wait for overlay to appear
+    await expect(page.getByRole('heading', {name: 'Add New Field'})).toBeVisible();
 
-    // Fill in key and value
-    await form.locator('.template-add-form-inline__input').first().fill(key);
-    await form.locator('.template-add-form-inline__input').last().fill(value);
+    // Fill in key (labeled as "Field Key *")
+    await page.getByLabel('Field Key *').fill(key);
 
-    // Click Add
-    await form.locator('.template-add-form-inline__save').click();
+    // Fill in default value for system fields
+    await page.getByLabel('Default Value').fill(value);
 
-    // Wait for form to close and API to complete
-    await expect(form).not.toBeVisible();
+    // Click Add Field button in the overlay (nth(1) because first one is the page button)
+    await page.getByRole('button', {name: 'Add Field'}).nth(1).click();
+
+    // Wait for overlay to close
+    await expect(page.getByRole('heading', {name: 'Add New Field'})).not.toBeVisible();
     await page.waitForTimeout(500); // Wait for API call to complete
 }
 
@@ -60,21 +61,20 @@ export async function addUserField(page: Page, key: string, type: 'STRING' | 'NU
     // Click Add Field button
     await page.getByRole('button', {name: 'Add Field'}).click();
 
-    // Wait for inline form to appear - look for the form within the user template section
-    const form = page.locator('.template-add-form-inline').filter({has: page.locator('.template-add-form-inline__select')});
-    await expect(form).toBeVisible();
+    // Wait for overlay to appear
+    await expect(page.getByRole('heading', {name: 'Add New Field'})).toBeVisible();
 
     // Fill in key
-    await form.locator('.template-add-form-inline__input').fill(key);
+    await page.getByLabel('Field Key *').fill(key);
 
     // Select type
-    await form.locator('.template-add-form-inline__select').selectOption(type);
+    await page.getByLabel('Type *').selectOption(type);
 
-    // Click Add
-    await form.locator('.template-add-form-inline__save').click();
+    // Click Add Field button in the overlay (nth(1) because first one is the page button)
+    await page.getByRole('button', {name: 'Add Field'}).nth(1).click();
 
-    // Wait for form to close and field to appear in table
-    await expect(form).not.toBeVisible();
+    // Wait for overlay to close
+    await expect(page.getByRole('heading', {name: 'Add New Field'})).not.toBeVisible();
     await page.waitForTimeout(500); // Wait for API call to complete
 }
 
@@ -83,7 +83,44 @@ export async function addUserField(page: Page, key: string, type: 'STRING' | 'NU
  */
 export async function deleteField(page: Page, fieldKey: string): Promise<void> {
     const row = page.locator('.template-matrix-table__row').filter({hasText: fieldKey});
-    await row.locator('.template-matrix-table__delete-btn').click();
+    const deleteBtn = row.locator('.template-matrix-table__delete-btn');
+
+    // Wait for button to be visible and enabled before clicking
+    await expect(deleteBtn).toBeVisible();
+    await deleteBtn.click();
+
+    // Wait for delete confirmation overlay
+    await expect(page.locator('.delete-field-overlay')).toBeVisible();
+
+    // Get application name from the overlay hint
+    const appNameHint = page.locator('.confirm-group').filter({hasText: 'Application Name'}).locator('.confirm-hint code');
+    const appName = await appNameHint.textContent();
+
+    // Fill in confirmation fields within the delete overlay
+    const overlay = page.locator('.delete-field-overlay');
+    const appNameInput = overlay.locator('input[placeholder="Enter application name"]');
+    // Find the second input by looking for the confirm group containing "Field Name" or "Identifier Name"
+    const fieldNameGroup = overlay.locator('.confirm-group').filter({hasText: /Field Name|Identifier Name/i});
+    const fieldNameInput = fieldNameGroup.locator('input');
+
+    if (appName) {
+        await appNameInput.fill(appName);
+    }
+    await fieldNameInput.fill(fieldKey);
+
+    // Wait for the delete button to be enabled (it's disabled until both fields match)
+    // Scope to the overlay to avoid matching the table delete buttons
+    const deleteButton = overlay.getByRole('button', {name: /Delete (Field|Identifier)/i});
+    await expect(deleteButton).toBeEnabled();
+
+    // Click delete button
+    await deleteButton.click();
+
+    // Wait for overlay to close
+    await expect(page.locator('.delete-field-overlay')).not.toBeVisible();
+
+    // Wait for the delete API call to complete
+    await page.waitForTimeout(500);
 }
 
 /**
@@ -205,9 +242,62 @@ export async function editOverrideValue(page: Page, fieldKey: string, identifier
     // Fill in the new value
     const input = cell.locator('.matrix-table__input');
     await expect(input).toBeVisible();
-    await input.fill(newValue);
+
+    // Check if it's a select element or input element
+    const tagName = await input.evaluate(el => el.tagName.toLowerCase());
+    if (tagName === 'select') {
+        await input.selectOption(newValue);
+    } else {
+        await input.fill(newValue);
+    }
     await input.press('Enter');
 
     // Wait for edit mode to close
     await expect(input).not.toBeVisible();
+}
+
+/**
+ * Deletes an identifier from the overrides matrix
+ */
+export async function deleteIdentifier(page: Page, identifier: string): Promise<void> {
+    // Find the identifier column and click its delete button
+    const headers = page.locator('.matrix-table__identifier-header');
+    const headerCount = await headers.count();
+    for (let i = 0; i < headerCount; i++) {
+        const text = await headers.nth(i).textContent();
+        if (text?.trim() === identifier) {
+            // Click the delete button for this column
+            await page.locator('.matrix-table__identifier-delete').nth(i).click();
+            break;
+        }
+    }
+
+    // Wait for delete confirmation overlay
+    await expect(page.locator('.delete-field-overlay')).toBeVisible();
+
+    // Get application name from the overlay hint
+    const appNameHint = page.locator('.confirm-group').filter({hasText: 'Application Name'}).locator('.confirm-hint code');
+    const appName = await appNameHint.textContent();
+
+    // Fill in confirmation fields within the delete overlay
+    const overlay = page.locator('.delete-field-overlay');
+    const appNameInput = overlay.locator('input[placeholder="Enter application name"]');
+    const identifierNameGroup = overlay.locator('.confirm-group').filter({hasText: 'Identifier Name'});
+    const identifierNameInput = identifierNameGroup.locator('input');
+
+    if (appName) {
+        await appNameInput.fill(appName);
+    }
+    await identifierNameInput.fill(identifier);
+
+    // Wait for the delete button to be enabled (it's disabled until both fields match)
+    // Scope to the overlay to avoid matching other delete buttons
+    const deleteButton = overlay.getByRole('button', {name: 'Delete Identifier'});
+    await expect(deleteButton).toBeEnabled();
+
+    // Click delete button
+    await deleteButton.click();
+
+    // Wait for overlay to close
+    await expect(page.locator('.delete-field-overlay')).not.toBeVisible();
 }
