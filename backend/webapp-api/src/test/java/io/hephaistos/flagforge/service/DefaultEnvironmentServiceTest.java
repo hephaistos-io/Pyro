@@ -204,6 +204,62 @@ class DefaultEnvironmentServiceTest {
         verify(apiKeyService, never()).createApiKey(any(), any(), any());
     }
 
+    // ========== Create Default Environments Tests (Plural) ==========
+
+    @Test
+    void createDefaultEnvironmentsCreatesBothDevelopmentAndProduction() {
+        var application = createApplicationEntity(testApplicationId);
+
+        when(environmentRepository.save(any(EnvironmentEntity.class))).thenAnswer(invocation -> {
+            EnvironmentEntity entity = invocation.getArgument(0);
+            entity.setId(UUID.randomUUID());
+            return entity;
+        });
+
+        environmentService.createDefaultEnvironments(application);
+
+        // Verify two environments were created
+        ArgumentCaptor<EnvironmentEntity> captor = ArgumentCaptor.forClass(EnvironmentEntity.class);
+        verify(environmentRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+
+        var environments = captor.getAllValues();
+        assertThat(environments).hasSize(2);
+
+        // Verify Development environment
+        assertThat(environments.stream()
+                .anyMatch(e -> e.getName()
+                        .equals("Development") && e.getTier() == PricingTier.FREE)).isTrue();
+
+        // Verify Production environment
+        assertThat(environments.stream()
+                .anyMatch(e -> e.getName()
+                        .equals("Production") && e.getTier() == PricingTier.FREE)).isTrue();
+    }
+
+    @Test
+    void createDefaultEnvironmentsCreatesApiKeysForBothEnvironments() {
+        var application = createApplicationEntity(testApplicationId);
+        UUID devEnvId = UUID.randomUUID();
+        UUID prodEnvId = UUID.randomUUID();
+
+        java.util.concurrent.atomic.AtomicInteger callCount =
+                new java.util.concurrent.atomic.AtomicInteger(0);
+        when(environmentRepository.save(any(EnvironmentEntity.class))).thenAnswer(invocation -> {
+            EnvironmentEntity entity = invocation.getArgument(0);
+            // First save is Development, second is Production
+            entity.setId(callCount.getAndIncrement() == 0 ? devEnvId : prodEnvId);
+            return entity;
+        });
+
+        environmentService.createDefaultEnvironments(application);
+
+        // Verify API keys created for both environments (2 keys per environment)
+        verify(apiKeyService).createApiKey(testApplicationId, devEnvId, KeyType.READ);
+        verify(apiKeyService).createApiKey(testApplicationId, devEnvId, KeyType.WRITE);
+        verify(apiKeyService).createApiKey(testApplicationId, prodEnvId, KeyType.READ);
+        verify(apiKeyService).createApiKey(testApplicationId, prodEnvId, KeyType.WRITE);
+    }
+
     // ========== Delete Environment Tests ==========
 
     @Test

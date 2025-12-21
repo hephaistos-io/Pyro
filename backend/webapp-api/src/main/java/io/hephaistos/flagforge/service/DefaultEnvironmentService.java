@@ -25,6 +25,9 @@ public class DefaultEnvironmentService implements EnvironmentService {
 
     private static final String DEFAULT_ENVIRONMENT_NAME = "Development";
     private static final String DEFAULT_ENVIRONMENT_DESCRIPTION = "Default development environment";
+    private static final String PRODUCTION_ENVIRONMENT_NAME = "Production";
+    private static final String PRODUCTION_ENVIRONMENT_DESCRIPTION =
+            "Default production environment";
 
     private final EnvironmentRepository environmentRepository;
     private final ApplicationRepository applicationRepository;
@@ -76,6 +79,27 @@ public class DefaultEnvironmentService implements EnvironmentService {
         createApiKeysForEnvironment(applicationId, saved.getId());
 
         return EnvironmentResponse.fromEntity(saved);
+    }
+
+    @Override
+    public void createDefaultEnvironments(ApplicationEntity application) {
+        // Create Development environment
+        var devEnvironment = new EnvironmentEntity();
+        devEnvironment.setApplication(application);
+        devEnvironment.setName(DEFAULT_ENVIRONMENT_NAME);
+        devEnvironment.setDescription(DEFAULT_ENVIRONMENT_DESCRIPTION);
+        devEnvironment.setTier(PricingTier.FREE);
+        EnvironmentEntity savedDev = environmentRepository.save(devEnvironment);
+        createApiKeysForEnvironment(application.getId(), savedDev.getId());
+
+        // Create Production environment
+        var prodEnvironment = new EnvironmentEntity();
+        prodEnvironment.setApplication(application);
+        prodEnvironment.setName(PRODUCTION_ENVIRONMENT_NAME);
+        prodEnvironment.setDescription(PRODUCTION_ENVIRONMENT_DESCRIPTION);
+        prodEnvironment.setTier(PricingTier.FREE);
+        EnvironmentEntity savedProd = environmentRepository.save(prodEnvironment);
+        createApiKeysForEnvironment(application.getId(), savedProd.getId());
     }
 
     @Override

@@ -140,20 +140,20 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a new environment
         var envResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env"), token,
                 EnvironmentResponse.class);
-        UUID productionEnvId = envResponse.getBody().id();
+        UUID stagingEnvId = envResponse.getBody().id();
 
         // Both READ and WRITE keys should exist for the new environment
-        var readKeyResponse = get(apiKeyPath(applicationId, productionEnvId, KeyType.READ), token,
+        var readKeyResponse = get(apiKeyPath(applicationId, stagingEnvId, KeyType.READ), token,
                 ApiKeyResponse.class);
-        var writeKeyResponse = get(apiKeyPath(applicationId, productionEnvId, KeyType.WRITE), token,
+        var writeKeyResponse = get(apiKeyPath(applicationId, stagingEnvId, KeyType.WRITE), token,
                 ApiKeyResponse.class);
 
         assertThat(readKeyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(writeKeyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(readKeyResponse.getBody().environmentId()).isEqualTo(productionEnvId);
-        assertThat(writeKeyResponse.getBody().environmentId()).isEqualTo(productionEnvId);
+        assertThat(readKeyResponse.getBody().environmentId()).isEqualTo(stagingEnvId);
+        assertThat(writeKeyResponse.getBody().environmentId()).isEqualTo(stagingEnvId);
     }
 
     @Test
@@ -330,7 +330,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a deletable (PAID tier) environment
         var envResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod"), token,
+                new EnvironmentCreationRequest("Staging", "Staging"), token,
                 EnvironmentResponse.class);
         UUID envId = envResponse.getBody().id();
 

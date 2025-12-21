@@ -73,7 +73,7 @@ public class DefaultApplicationService implements ApplicationService {
         updatedAppIds.add(application.getId());
         securityContext.setAccessibleApplicationIds(updatedAppIds);
 
-        environmentService.createDefaultEnvironment(application.getId());
+        environmentService.createDefaultEnvironments(application);
         templateService.createDefaultTemplates(application);
 
         return ApplicationResponse.fromEntity(application);
