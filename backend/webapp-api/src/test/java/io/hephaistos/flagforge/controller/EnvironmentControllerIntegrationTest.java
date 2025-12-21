@@ -55,13 +55,13 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         UUID applicationId = createApplication(token, "Test App");
 
         var response = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Production environment"), token,
+                new EnvironmentCreationRequest("Staging", "Staging environment"), token,
                 EnvironmentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().name()).isEqualTo("Production");
-        assertThat(response.getBody().description()).isEqualTo("Production environment");
+        assertThat(response.getBody().name()).isEqualTo("Staging");
+        assertThat(response.getBody().description()).isEqualTo("Staging environment");
         assertThat(response.getBody().tier()).isEqualTo(PricingTier.PAID);
     }
 
@@ -90,14 +90,14 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create additional environment
         post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env"), token,
                 EnvironmentResponse.class);
 
         var response = get("/v1/applications/" + applicationId + "/environments", token,
                 EnvironmentResponse[].class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).hasSize(2); // Default + Production
+        assertThat(response.getBody()).hasSize(3); // Development + Production (defaults) + Staging
     }
 
     @Test
@@ -107,7 +107,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a PAID tier environment
         var createResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env"), token,
                 EnvironmentResponse.class);
         UUID environmentId = createResponse.getBody().id();
 
@@ -122,8 +122,10 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         var listResponse = get("/v1/applications/" + applicationId + "/environments", token,
                 EnvironmentResponse[].class);
 
-        assertThat(listResponse.getBody()).hasSize(1); // Only default environment remains
+        assertThat(listResponse.getBody()).hasSize(
+                2); // Only default environments remain (Development + Production)
         assertThat(listResponse.getBody()[0].tier()).isEqualTo(PricingTier.FREE);
+        assertThat(listResponse.getBody()[1].tier()).isEqualTo(PricingTier.FREE);
     }
 
     @Test
@@ -196,7 +198,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create environment in app 1
         var createResponse = post("/v1/applications/" + applicationId1 + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod"), token,
+                new EnvironmentCreationRequest("Staging", "Staging"), token,
                 EnvironmentResponse.class);
         UUID environmentId = createResponse.getBody().id();
 
@@ -254,7 +256,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // User 2 should not be able to create environment in Company A's app
         var response = post("/v1/applications/" + appIdA + "/environments",
-                new EnvironmentCreationRequest("Production", "Prod env"), token2, String.class);
+                new EnvironmentCreationRequest("Staging", "Staging env"), token2, String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }

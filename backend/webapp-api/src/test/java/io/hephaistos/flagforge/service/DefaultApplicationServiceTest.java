@@ -85,7 +85,7 @@ class DefaultApplicationServiceTest {
         assertThat(response.name()).isEqualTo("Test App");
         assertThat(response.companyId()).isEqualTo(testCompanyId);
         assertThat(response.pricingTier()).isEqualTo(PricingTier.FREE);
-        verify(environmentService).createDefaultEnvironment(response.id());
+        verify(environmentService).createDefaultEnvironments(any(ApplicationEntity.class));
         verify(templateService).createDefaultTemplates(any(ApplicationEntity.class));
 
         // Verify the entity was saved with FREE tier
@@ -114,7 +114,7 @@ class DefaultApplicationServiceTest {
         assertThat(response.name()).isEqualTo("Second App");
         assertThat(response.companyId()).isEqualTo(testCompanyId);
         assertThat(response.pricingTier()).isEqualTo(PricingTier.PAID);
-        verify(environmentService).createDefaultEnvironment(response.id());
+        verify(environmentService).createDefaultEnvironments(any(ApplicationEntity.class));
         verify(templateService).createDefaultTemplates(any(ApplicationEntity.class));
 
         // Verify the entity was saved with PAID tier
