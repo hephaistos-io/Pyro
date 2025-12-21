@@ -13,8 +13,7 @@ import {
     navigateToTemplateTab,
     selectSystemTemplateType,
     selectUserTemplateType,
-    setupUserWithApplication,
-    uniqueName
+    setupUserWithApplication
 } from '../../utils';
 
 test.describe('System Template Management', () => {
@@ -637,17 +636,7 @@ test.describe('Copy Overrides Between Environments', () => {
         sharedPage = await context.newPage();
         await setupUserWithApplication(sharedPage);
 
-        // Create a second environment (Production) for copy overrides testing
-        await sharedPage.locator('.selector-button').click();
-        await expect(sharedPage.getByText('Create Environment')).toBeVisible();
-        await sharedPage.getByRole('button', {name: 'Create Environment'}).click();
-        await expect(sharedPage.getByText('Add New Environment')).toBeVisible();
-        await sharedPage.getByLabel('Environment Name').fill(uniqueName('Production'));
-        await sharedPage.getByLabel('Description').fill('Production environment');
-        await sharedPage.getByRole('button', {name: 'Create Environment'}).click();
-        await expect(sharedPage.getByText('Add New Environment')).not.toBeVisible();
-
-        // Switch back to Development environment
+        // Production environment already exists by default, switch to Development environment
         await sharedPage.locator('.selector-button').click();
         // Wait for dropdown to be visible before clicking
         const developmentOption = sharedPage.locator('.dropdown-item').filter({hasText: 'Development'});
@@ -667,6 +656,11 @@ test.describe('Copy Overrides Between Environments', () => {
 
         await addIdentifier(sharedPage, 'region-us');
         await editOverrideValue(sharedPage, 'api_url', 'region-us', 'https://api.us.staging.com');
+
+        // Wait for page to stabilize after all operations (especially important for Firefox)
+        await sharedPage.waitForLoadState('networkidle');
+        // Explicitly wait for the Copy Overrides button to be visible and stable
+        await expect(sharedPage.getByRole('button', {name: 'Copy Overrides'})).toBeVisible();
     });
 
     test.afterAll(async () => {
