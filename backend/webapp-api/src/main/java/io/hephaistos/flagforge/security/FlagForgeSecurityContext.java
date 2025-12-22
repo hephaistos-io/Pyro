@@ -88,16 +88,18 @@ public class FlagForgeSecurityContext implements SecurityContext {
     /**
      * Returns the customer's role from the authentication authorities.
      *
-     * @return the CustomerRole, or READ_ONLY if no role authority is found
+     * @return the CustomerRole
+     * @throws IllegalStateException if authentication is null or no valid role is found
      */
     public CustomerRole getRole() {
         if (authentication == null) {
-            return CustomerRole.READ_ONLY;
+            throw new IllegalStateException(
+                    "Cannot determine role: authentication context is null");
         }
         return authentication.getAuthorities()
                 .stream()
                 .map(GrantedAuthority::getAuthority)
-                .filter(auth -> auth.startsWith(ROLE_PREFIX))
+                .filter(auth -> auth != null && auth.startsWith(ROLE_PREFIX))
                 .map(auth -> auth.substring(ROLE_PREFIX.length()))
                 .filter(roleName -> {
                     try {
@@ -110,6 +112,7 @@ public class FlagForgeSecurityContext implements SecurityContext {
                 })
                 .findFirst()
                 .map(CustomerRole::valueOf)
-                .orElse(CustomerRole.READ_ONLY);
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot determine role: no valid role authority found in authentication"));
     }
 }
