@@ -39,6 +39,12 @@ public class EnvironmentEntity extends ApplicationOwnedEntity {
     @Column(nullable = false)
     private PricingTier tier = PricingTier.BASIC;
 
+    @Column(name = "rate_limit_requests_per_second", nullable = false)
+    private Integer rateLimitRequestsPerSecond = 5;
+
+    @Column(name = "requests_per_month", nullable = false)
+    private Integer requestsPerMonth = 500000;
+
     public UUID getId() {
         return id;
     }
@@ -80,5 +86,21 @@ public class EnvironmentEntity extends ApplicationOwnedEntity {
 
     public void setTier(PricingTier tier) {
         this.tier = tier;
+    }
+
+    public Integer getRateLimitRequestsPerSecond() {
+        return rateLimitRequestsPerSecond;
+    }
+
+    public void setRateLimitRequestsPerSecond(Integer rateLimitRequestsPerSecond) {
+        this.rateLimitRequestsPerSecond = rateLimitRequestsPerSecond;
+    }
+
+    public Integer getRequestsPerMonth() {
+        return requestsPerMonth;
+    }
+
+    public void setRequestsPerMonth(Integer requestsPerMonth) {
+        this.requestsPerMonth = requestsPerMonth;
     }
 }

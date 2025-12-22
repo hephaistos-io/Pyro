@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.customerapi.security;
 
+import io.hephaistos.flagforge.common.enums.KeyType;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -13,7 +14,10 @@ public class ApiKeySecurityContext implements SecurityContext {
     private UUID applicationId;
     private UUID companyId;
     private UUID apiKeyId;
-    private int rateLimitPerMinute;
+    private UUID environmentId;
+    private KeyType keyType;
+    private int rateLimitPerSecond;
+    private int requestsPerMonth;
 
     public static ApiKeySecurityContext getCurrent() {
         return (ApiKeySecurityContext) SecurityContextHolder.getContext();
@@ -53,11 +57,45 @@ public class ApiKeySecurityContext implements SecurityContext {
         this.apiKeyId = apiKeyId;
     }
 
-    public int getRateLimitPerMinute() {
-        return rateLimitPerMinute;
+    public UUID getEnvironmentId() {
+        return environmentId;
     }
 
-    public void setRateLimitPerMinute(int rateLimitPerMinute) {
-        this.rateLimitPerMinute = rateLimitPerMinute;
+    public void setEnvironmentId(UUID environmentId) {
+        this.environmentId = environmentId;
+    }
+
+    /**
+     * Returns the key type (READ or WRITE) for this API key.
+     *
+     * @return the KeyType
+     * @throws IllegalStateException if the security context is not properly initialized
+     */
+    public KeyType getKeyType() {
+        if (keyType == null) {
+            throw new IllegalStateException(
+                    "Cannot determine key type: security context not properly initialized");
+        }
+        return keyType;
+    }
+
+    public void setKeyType(KeyType keyType) {
+        this.keyType = keyType;
+    }
+
+    public int getRateLimitPerSecond() {
+        return rateLimitPerSecond;
+    }
+
+    public void setRateLimitPerSecond(int rateLimitPerSecond) {
+        this.rateLimitPerSecond = rateLimitPerSecond;
+    }
+
+    public int getRequestsPerMonth() {
+        return requestsPerMonth;
+    }
+
+    public void setRequestsPerMonth(int requestsPerMonth) {
+        this.requestsPerMonth = requestsPerMonth;
     }
 }

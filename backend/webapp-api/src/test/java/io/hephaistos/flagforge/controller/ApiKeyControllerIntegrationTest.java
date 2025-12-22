@@ -70,7 +70,6 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().keyType()).isEqualTo(KeyType.READ);
         assertThat(response.getBody().environmentId()).isEqualTo(environmentId);
-        assertThat(response.getBody().rateLimitRequestsPerMinute()).isEqualTo(1000);
         assertThat(response.getBody().secretKey()).isNotNull();
         assertThat(response.getBody().secretKey()).hasSize(64);
     }

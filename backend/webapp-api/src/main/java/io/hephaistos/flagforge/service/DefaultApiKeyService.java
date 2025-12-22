@@ -24,7 +24,6 @@ public class DefaultApiKeyService implements ApiKeyService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultApiKeyService.class);
     private static final int API_KEY_RANDOM_LENGTH = 64;
-    private static final int DEFAULT_RATE_LIMIT = 1000;
     private static final OffsetDateTime DEFAULT_EXPIRATION_DATE =
             OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
@@ -44,7 +43,6 @@ public class DefaultApiKeyService implements ApiKeyService {
         apiKey.setApplicationId(applicationId);
         apiKey.setEnvironmentId(environmentId);
         apiKey.setKey(generateSecretKey());
-        apiKey.setRateLimitRequestsPerMinute(DEFAULT_RATE_LIMIT);
         apiKey.setKeyType(keyType);
         apiKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
@@ -88,7 +86,6 @@ public class DefaultApiKeyService implements ApiKeyService {
         newKey.setApplicationId(applicationId);
         newKey.setEnvironmentId(environmentId);
         newKey.setKey(generateSecretKey());
-        newKey.setRateLimitRequestsPerMinute(oldKey.getRateLimitRequestsPerMinute());
         newKey.setKeyType(keyType);
         newKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
@@ -97,9 +94,8 @@ public class DefaultApiKeyService implements ApiKeyService {
                 applicationId, environmentId);
 
         var response = ApiKeyResponse.fromEntity(newKey);
-        return new ApiKeyResponse(response.id(), response.environmentId(),
-                response.rateLimitRequestsPerMinute(), response.keyType(), response.secretKey(),
-                newExpirationDateForOldKey);
+        return new ApiKeyResponse(response.id(), response.environmentId(), response.keyType(),
+                response.secretKey(), newExpirationDateForOldKey);
     }
 
     private String generateSecretKey() {
