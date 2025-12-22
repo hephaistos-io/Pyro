@@ -1,9 +1,28 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-solution-strategy]]
-== Solution Strategy
+= Solution Strategy
 
+== Payment tiers
 
+The success of an application always depends on how it can facilitate testing for interested parties, but also on having a clear and competitive pricing model.
+
+=== Facilitate Get-To-Know
+
+The first step of achieving a constant customer is to allow them to experiment with the tool.
+For this, our setup is fairly simple:
+
+- Register using your email
+* Email is not assigned to any form of SSO or company entity
+- Create your company
+* Straightforward UX path
+- Clear message that points to the creation of the first application
+* This application is free
+* includes two free environments, `development` and `production`
+- Straightforward usage: API Keys are there, clear indication of limitations
+- req/sec need to be visualized in a way that are clear and show that this is what they need to pay money for
+- no cost per seat for a company means showing and sharing of a tool is that much easier
+- show clear analytics on current req/sec usage
 
 
 

@@ -10,6 +10,15 @@ import {
   EnvironmentCreationOverlayData
 } from '../environment-creation-overlay/environment-creation-overlay.component';
 
+// Type-safe PricingTier constants extracted from API models
+const PricingTier = {
+  FREE: 'FREE',
+  BASIC: 'BASIC',
+  STANDARD: 'STANDARD',
+  PRO: 'PRO',
+  BUSINESS: 'BUSINESS'
+} as const;
+
 @Component({
   selector: 'app-environment-manager',
   standalone: true,
@@ -31,10 +40,10 @@ export class EnvironmentManagerComponent {
   // Environment deletion state
   showEnvironmentDeletion = signal(false);
   isDeletingEnvironment = signal(false);
-  // Computed: Check if selected environment can be deleted (only PAID tier)
+  // Computed: Check if selected environment can be deleted (only paid tiers, not FREE)
   canDeleteEnvironment = computed(() => {
     const env = this.selectedEnvironment();
-    return env?.tier === 'PAID';
+    return env?.tier !== PricingTier.FREE;
   });
   // Computed: Filtered environments for dropdown
   filteredEnvironments = computed(() => {
@@ -131,7 +140,7 @@ export class EnvironmentManagerComponent {
     }
 
     // Double-check tier before deletion
-    if (currentEnv.tier === 'FREE') {
+    if (currentEnv.tier === PricingTier.FREE) {
       console.error('Cannot delete FREE tier environment');
       this.showEnvironmentDeletion.set(false);
       return;

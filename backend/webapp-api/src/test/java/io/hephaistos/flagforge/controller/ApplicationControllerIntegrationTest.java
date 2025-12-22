@@ -67,7 +67,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
                         ApplicationResponse.class);
         assertThat(firstAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
 
-        // Create second application (should be PAID)
+        // Create second application (should be BASIC)
         var secondAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("Second App"), token,
                         ApplicationResponse.class);
@@ -75,28 +75,28 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(secondAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(secondAppResponse.getBody()).isNotNull();
         assertThat(secondAppResponse.getBody().name()).isEqualTo("Second App");
-        assertThat(secondAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(secondAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.BASIC);
     }
 
     @Test
-    void createThirdApplicationReturns201WithPaidPricingTier() {
+    void createThirdApplicationReturns201WithBasicPricingTier() {
         String token = registerAndAuthenticateWithCompany();
 
         // Create first application (should be FREE)
         post("/v1/applications", new ApplicationCreationRequest("First App"), token,
                 ApplicationResponse.class);
 
-        // Create second application (should be PAID)
+        // Create second application (should be BASIC)
         post("/v1/applications", new ApplicationCreationRequest("Second App"), token,
                 ApplicationResponse.class);
 
-        // Create third application (should also be PAID)
+        // Create third application (should also be BASIC)
         var thirdAppResponse =
                 post("/v1/applications", new ApplicationCreationRequest("Third App"), token,
                         ApplicationResponse.class);
 
         assertThat(thirdAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(thirdAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(thirdAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.BASIC);
     }
 
     @Test

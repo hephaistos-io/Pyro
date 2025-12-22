@@ -8,5 +8,5 @@ export interface ApplicationListResponse {
   environments?: Array<EnvironmentResponse>;
   id?: string;
   name?: string;
-  pricingTier?: 'FREE' | 'PAID';
+  pricingTier?: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'BUSINESS';
 }
