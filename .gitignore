@@ -2,6 +2,6 @@
 /.gradle/
 /build/
 /backend/build/
-/backend/webapp-api/build/
 /node_modules/
-/backend/customer-api/build/
+/backend/*/build/
+/backend/backend-common/build/
