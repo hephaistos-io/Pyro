@@ -1,6 +1,7 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.hephaistos.flagforge.common.enums.FieldType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;

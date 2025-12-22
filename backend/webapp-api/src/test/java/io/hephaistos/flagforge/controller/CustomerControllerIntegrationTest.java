@@ -2,9 +2,9 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
 import io.hephaistos.flagforge.controller.dto.TeamResponse;
-import io.hephaistos.flagforge.data.CustomerEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;

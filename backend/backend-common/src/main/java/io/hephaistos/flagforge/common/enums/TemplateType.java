@@ -1,4 +1,4 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.enums;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

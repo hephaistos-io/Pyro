@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.CompanyInviteEntity;
-import io.hephaistos.flagforge.data.CustomerRole;
+import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 
 import java.time.Instant;
 import java.util.Set;

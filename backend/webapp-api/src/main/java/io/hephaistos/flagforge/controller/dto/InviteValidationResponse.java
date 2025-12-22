@@ -1,9 +1,9 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.CompanyEntity;
-import io.hephaistos.flagforge.data.CompanyInviteEntity;
-import io.hephaistos.flagforge.data.CustomerRole;
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.CompanyEntity;
+import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.exception.InvalidInviteException.InvalidInviteReason;
 
 import java.util.List;

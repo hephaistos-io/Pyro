@@ -1,4 +1,4 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.enums;
 
 /**
  * Represents the pricing tier with associated rate limits.

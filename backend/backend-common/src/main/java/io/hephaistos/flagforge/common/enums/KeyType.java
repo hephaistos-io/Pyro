@@ -1,4 +1,4 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.enums;
 
 /**
  * Represents the type of an API key. - READ: Key can only read data (feature flags, configurations)

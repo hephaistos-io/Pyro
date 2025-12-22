@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.TemplateSchema;
-import io.hephaistos.flagforge.data.TemplateType;
+import io.hephaistos.flagforge.common.enums.TemplateType;
+import io.hephaistos.flagforge.common.types.TemplateSchema;
 
 import java.util.List;
 import java.util.Map;

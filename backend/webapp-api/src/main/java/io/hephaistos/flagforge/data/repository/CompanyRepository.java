@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.data.repository;
 
-import io.hephaistos.flagforge.data.CompanyEntity;
+import io.hephaistos.flagforge.common.data.CompanyEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

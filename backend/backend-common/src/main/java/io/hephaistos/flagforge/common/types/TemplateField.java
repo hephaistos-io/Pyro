@@ -1,8 +1,9 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.types;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.hephaistos.flagforge.common.enums.FieldType;
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 

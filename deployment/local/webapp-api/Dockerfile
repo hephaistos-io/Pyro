@@ -13,18 +13,20 @@ COPY gradle/ gradle/
 # Use Docker-specific settings that only includes webapp-api
 COPY deployment/local/webapp-api/settings.docker.gradle.kts settings.gradle.kts
 
-# Copy webapp-api build files
-COPY backend/build.gradle.kts ./
-COPY backend/webapp-api/build.gradle.kts webapp-api/
+# Copy backend build files (maintain backend: hierarchy)
+COPY backend/build.gradle.kts backend/
+COPY backend/backend-common/build.gradle.kts backend/backend-common/
+COPY backend/webapp-api/build.gradle.kts backend/webapp-api/
 
 # Download dependencies (cached layer)
-RUN chmod +x gradlew && ./gradlew webapp-api:dependencies --no-daemon || true
+RUN chmod +x gradlew && ./gradlew backend:webapp-api:dependencies --no-daemon || true
 
 # Copy source code
-COPY backend/webapp-api/src webapp-api/src
+COPY backend/backend-common/src backend/backend-common/src
+COPY backend/webapp-api/src backend/webapp-api/src
 
 # Build the JAR
-RUN ./gradlew webapp-api:bootJar --no-daemon -x test
+RUN ./gradlew backend:webapp-api:bootJar --no-daemon -x test
 
 # Stage 2: Production runtime
 FROM eclipse-temurin:21-jre-alpine AS production
@@ -36,7 +38,7 @@ RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 # Copy JAR from builder
-COPY --from=builder /app/webapp-api/build/libs/*.jar app.jar
+COPY --from=builder /app/backend/webapp-api/build/libs/*.jar app.jar
 
 # Set ownership
 RUN chown -R appuser:appgroup /app

@@ -1,8 +1,8 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
-import io.hephaistos.flagforge.data.ApplicationEntity;
 
 import java.util.List;
 import java.util.UUID;

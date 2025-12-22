@@ -1,10 +1,10 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.CompanyEntity;
+import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
 import io.hephaistos.flagforge.controller.dto.InviteValidationResponse;
-import io.hephaistos.flagforge.data.CompanyEntity;
-import io.hephaistos.flagforge.data.CompanyInviteEntity;
-import io.hephaistos.flagforge.data.CustomerRole;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
@@ -97,7 +97,7 @@ class DefaultInviteServiceTest {
                     return entity;
                 });
 
-        var response = inviteService.createInvite(request, "https://example.com");
+        inviteService.createInvite(request, "https://example.com");
 
         ArgumentCaptor<CompanyInviteEntity> captor =
                 ArgumentCaptor.forClass(CompanyInviteEntity.class);
