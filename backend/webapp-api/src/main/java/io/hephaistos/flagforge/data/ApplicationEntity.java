@@ -36,7 +36,7 @@ public class ApplicationEntity extends CompanyOwnedEntity {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "pricing_tier", nullable = false)
-    private PricingTier pricingTier = PricingTier.PAID;
+    private PricingTier pricingTier = PricingTier.BASIC;
 
     @OneToMany(mappedBy = "application", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
             orphanRemoval = true)

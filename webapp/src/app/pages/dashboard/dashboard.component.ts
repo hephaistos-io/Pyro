@@ -21,6 +21,15 @@ import {HasRoleDirective} from '../../directives/has-role.directive';
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
 const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
 
+// Type-safe PricingTier constants extracted from API models
+const PricingTier = {
+  FREE: 'FREE',
+  BASIC: 'BASIC',
+  STANDARD: 'STANDARD',
+  PRO: 'PRO',
+  BUSINESS: 'BUSINESS'
+} as const;
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -46,7 +55,7 @@ export class DashboardComponent implements OnInit {
   // Cost overview computed values - uses pricingTier from API
   applicationCosts = computed(() => {
     return this.applications().map(app => {
-      const isFree = app.pricingTier === 'FREE';
+      const isFree = app.pricingTier === PricingTier.FREE;
       return {
         id: app.id,
         name: app.name,
@@ -57,7 +66,7 @@ export class DashboardComponent implements OnInit {
   });
 
   totalMonthlyCost = computed(() => {
-    const paidApps = this.applications().filter(app => app.pricingTier === 'PAID');
+    const paidApps = this.applications().filter(app => app.pricingTier !== PricingTier.FREE);
     return paidApps.length * COST_PER_ADDITIONAL_APP;
   });
 

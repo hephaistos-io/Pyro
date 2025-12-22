@@ -62,7 +62,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().name()).isEqualTo("Staging");
         assertThat(response.getBody().description()).isEqualTo("Staging environment");
-        assertThat(response.getBody().tier()).isEqualTo(PricingTier.PAID);
+        assertThat(response.getBody().tier()).isEqualTo(PricingTier.BASIC);
     }
 
     @Test
@@ -101,11 +101,11 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void deleteEnvironmentReturns204ForPaidTier() {
+    void deleteEnvironmentReturns204ForBasicTier() {
         String token = registerAndAuthenticateWithCompany();
         UUID applicationId = createApplication(token, "Test App");
 
-        // Create a PAID tier environment
+        // Create a BASIC tier environment
         var createResponse = post("/v1/applications/" + applicationId + "/environments",
                 new EnvironmentCreationRequest("Staging", "Staging env"), token,
                 EnvironmentResponse.class);

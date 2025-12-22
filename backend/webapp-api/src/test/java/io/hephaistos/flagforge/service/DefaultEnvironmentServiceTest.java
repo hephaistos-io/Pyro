@@ -263,10 +263,10 @@ class DefaultEnvironmentServiceTest {
     // ========== Delete Environment Tests ==========
 
     @Test
-    void deleteEnvironmentSucceedsForPaidTier() {
+    void deleteEnvironmentSucceedsForBasicTier() {
         UUID environmentId = UUID.randomUUID();
         var environment =
-                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.PAID);
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
 
         when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
@@ -309,7 +309,7 @@ class DefaultEnvironmentServiceTest {
         UUID environmentId = UUID.randomUUID();
         UUID differentApplicationId = UUID.randomUUID();
         var environment =
-                createEnvironmentEntity(environmentId, differentApplicationId, PricingTier.PAID);
+                createEnvironmentEntity(environmentId, differentApplicationId, PricingTier.BASIC);
 
         when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));

@@ -1453,7 +1453,10 @@
             "type": "string",
             "enum": [
               "FREE",
-              "PAID"
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
             ]
           },
           "environments": {
@@ -1491,7 +1494,10 @@
             "type": "string",
             "enum": [
               "FREE",
-              "PAID"
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
             ]
           }
         }
@@ -1716,7 +1722,10 @@
             "type": "string",
             "enum": [
               "FREE",
-              "PAID"
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
             ]
           },
           "environments": {

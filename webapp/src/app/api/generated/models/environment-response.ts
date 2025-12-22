@@ -6,5 +6,5 @@ export interface EnvironmentResponse {
   description?: string;
   id?: string;
   name?: string;
-  tier?: 'FREE' | 'PAID';
+  tier?: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'BUSINESS';
 }

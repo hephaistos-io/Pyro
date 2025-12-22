@@ -9,6 +9,6 @@ export interface ApplicationResponse {
   environments?: Array<EnvironmentResponse>;
   id?: string;
   name?: string;
-  pricingTier?: 'FREE' | 'PAID';
+  pricingTier?: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'BUSINESS';
   templates?: Array<TemplateResponse>;
 }

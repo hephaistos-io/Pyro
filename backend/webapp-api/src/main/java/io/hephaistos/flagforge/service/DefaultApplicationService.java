@@ -54,9 +54,9 @@ public class DefaultApplicationService implements ApplicationService {
                             request.name()));
         }
 
-        // First application for a company is FREE, subsequent applications are PAID
+        // First application for a company is FREE, subsequent applications are BASIC
         boolean isFirstApplication = applicationRepository.countByCompanyId(companyId) == 0;
-        PricingTier pricingTier = isFirstApplication ? PricingTier.FREE : PricingTier.PAID;
+        PricingTier pricingTier = isFirstApplication ? PricingTier.FREE : PricingTier.BASIC;
 
         var application = new ApplicationEntity();
         application.setName(request.name());

@@ -95,7 +95,7 @@ class DefaultApplicationServiceTest {
     }
 
     @Test
-    void createSubsequentApplicationForCompanyHasPaidPricingTier() {
+    void createSubsequentApplicationForCompanyHasBasicPricingTier() {
         var request = new ApplicationCreationRequest("Second App");
         var customer = new CustomerEntity();
         customer.setId(testCustomerId);
@@ -113,14 +113,14 @@ class DefaultApplicationServiceTest {
 
         assertThat(response.name()).isEqualTo("Second App");
         assertThat(response.companyId()).isEqualTo(testCompanyId);
-        assertThat(response.pricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(response.pricingTier()).isEqualTo(PricingTier.BASIC);
         verify(environmentService).createDefaultEnvironments(any(ApplicationEntity.class));
         verify(templateService).createDefaultTemplates(any(ApplicationEntity.class));
 
-        // Verify the entity was saved with PAID tier
+        // Verify the entity was saved with BASIC tier
         ArgumentCaptor<ApplicationEntity> captor = ArgumentCaptor.forClass(ApplicationEntity.class);
         verify(applicationRepository).save(captor.capture());
-        assertThat(captor.getValue().getPricingTier()).isEqualTo(PricingTier.PAID);
+        assertThat(captor.getValue().getPricingTier()).isEqualTo(PricingTier.BASIC);
     }
 
     @Test

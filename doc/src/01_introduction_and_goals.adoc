@@ -6,9 +6,9 @@ ifndef::imagesdir[:imagesdir: ../images]
 This documentation serves not only as a technical documentation for implementations, decisions as well as integrations, but also as documentation for the less technical parts of the project.
 This can there for contain content regarding user behaviour, business related calculations and so forth.
 
-== Why are we developing Pyro?
+== Why are we developing Flagforge?
 
-The idea of Pyro is simple.
+The idea of Flagforge is simple.
 Modern systems are often bound to configurations that define their usability.
 Generally speaking, it is normal for releases of software products to introduce new features into the codebase, which are initially turned off by so-called _feature flags_.
 Once everything else is ready, flipping the flag activates the feature for the system.
@@ -37,16 +37,10 @@ When do we turn them off?
 Generally speaking, at this point in time the responsibility of creating and setting such flags is moved over to business.
 This requires additional effort; business personal will not want to meddle with developer level tooling, but will expect a comfortable dashboard and system to do this from, which also provides analytics to some degree.
 
-_Pyro_ aims to solve this issue by abstracting away this functionality.
+_Flagforge_ aims to solve this issue by abstracting away this functionality.
 Customers delegate this to us, so their internal development can focus on delivering features that generate actual monetary value.
 This is done by offering
 _configurable feature flags_ down to the user level - including templating, usage metrics and a simple API.
-
-== What does "Pyro" even mean?
-
-Pyro stands for "fire".
-In this case, we draw the connection to greek mythology, where _Prometheus_ handed humanity fire, which allowed them to prosper.
-In this case, we want to achieve the same with _Pyro_: Allow business to focus on prospering.
 
 == Requirements Overview
 
@@ -59,7 +53,8 @@ In case it's not feasible, it is of utmost importance to document this for those
 
 == Flow concept
 
-The following two diagrams demonstrate the rough idea/concept behind Pyro. They are by no means final or to be taken as correct.
+The following two diagrams demonstrate the rough idea/concept behind Flagforge.
+They are by no means final or to be taken as correct.
 
 
 ifdef::env-github[]
@@ -72,9 +67,9 @@ endif::[]
 [{MERMAID}]
 ....
 graph TB
-    subgraph "Pyro Platform"
-        Dashboard[["🖥️ Pyro Dashboard"]]
-        API[["🔌 Pyro API"]]
+    subgraph "Flagforge Platform"
+        Dashboard[["🖥️ Flagforge Dashboard"]]
+        API[["🔌 Flagforge API"]]
         
         subgraph "Data Storage"
             AppConfig[(Application Config)]
@@ -135,10 +130,10 @@ graph TB
 .... 
 sequenceDiagram
     participant C as Customer
-    participant D as Pyro Dashboard
-    participant DB as Pyro Database
+    participant D as Flagforge Dashboard
+    participant DB as Flagforge Database
     participant App as Customer App
-    participant API as Pyro API
+    participant API as Flagforge API
     participant U as End User
     
     rect rgb(240, 248, 255)
@@ -182,7 +177,7 @@ include::subchapters/setup.adoc[]
 
 Reliability:: The service needs to be reachable 24/7 since other applications may not be functional without it
 Compatibility:: The service will be integrated into other applications and needs to be widely compatible with many technologies
-EaseOfUse:: Pyro is not only catered to the developper and should also be easily configurable for non technical person to create feature sets and administering set sets
+EaseOfUse:: Flagforge is not only catered to the developper and should also be easily configurable for non technical person to create feature sets and administering set sets
 
 == Stakeholders
 
