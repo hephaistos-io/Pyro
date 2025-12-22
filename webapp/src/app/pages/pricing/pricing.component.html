@@ -1,59 +1,59 @@
 <section class="pricing">
-  <div class="pricing-content">
-    <div class="section-label">Coming Soon</div>
-    <h1>We're working on it</h1>
-    <p class="pricing-text">
-      We're crafting docs and prices that make sense for teams of all sizes.
-      Be the first to know when we launch.
+  <div class="pricing-header">
+    <div class="section-label">Pricing</div>
+    <h1>Simple, transparent pricing</h1>
+    <p class="pricing-subtitle">
+      Choose a tier for each environment independently. Mix free and paid tiers as needed.
     </p>
+  </div>
 
-      @if (!submitted()) {
-      <div class="signup-form">
-          <div class="input-group" [class.has-error]="error()">
-          <input
-            type="email"
-            [ngModel]="email()"
-            (ngModelChange)="email.set($event)"
-            placeholder="Enter your email"
-            (keyup.enter)="onSubmit()"
-          />
-          <button class="btn btn-primary" (click)="onSubmit()">
-            Notify Me
-          </button>
+  <div class="features-included">
+    <h2>Everything includes</h2>
+    <div class="features-grid">
+      @for (feature of features; track feature) {
+        <div class="feature">
+          <span class="check">✓</span>
+          <span>{{ feature }}</span>
         </div>
-          @if (error()) {
-              <span class="error-message">{{ error() }}</span>
-        }
-      </div>
-      <p class="privacy-note">We'll only email you about development updates. No spam.</p>
-    } @else {
-      <div class="success-message">
-        <div class="success-icon">✓</div>
-        <h3>You're on the list!</h3>
-          <p>We'll notify you at <strong>{{ email() }}</strong> when pricing is available.</p>
+      }
+    </div>
+  </div>
+
+  <div class="pricing-tiers">
+    @for (tier of tiers; track tier.name) {
+      <div class="pricing-card">
+        <div class="tier-header">
+          <h3>{{ tier.name }}</h3>
+          <div class="tier-price">
+            <span class="price">{{ tier.price }}</span>
+            @if (tier.price !== '$0') {
+              <span class="period">/env/month</span>
+            } @else {
+              <span class="period">/month</span>
+            }
+          </div>
+          <p class="tier-description">{{ tier.description }}</p>
+        </div>
+
+        <div class="tier-features">
+          <div class="feature-item">
+            <div class="feature-value">{{ tier.requests }}</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-value">{{ tier.rateLimit }}</div>
+          </div>
+        </div>
       </div>
     }
   </div>
 
-  <div class="features-preview">
-    <h3>What to expect</h3>
-    <ul>
-      <li>
-        <span class="check">✓</span>
-        <span>Comprehensive documentation</span>
-      </li>
-      <li>
-        <span class="check">✓</span>
-        <span>Free tier for small projects</span>
-      </li>
-      <li>
-        <span class="check">✓</span>
-        <span>Usage-based scaling</span>
-      </li>
-      <li>
-        <span class="check">✓</span>
-        <span>Enterprise options with SLAs</span>
-      </li>
-    </ul>
+  <div class="overage-note">
+    <p><strong>Overage:</strong> $5 per million requests beyond quota</p>
+  </div>
+
+  <div class="cta-section">
+    <h2>Ready to get started?</h2>
+    <p class="cta-subtitle">Start with the free tier. No credit card required.</p>
+    <a class="btn btn-primary btn-large" routerLink="/register">Create Your Account</a>
   </div>
 </section>

@@ -1,13 +1,8 @@
 @use '../../../styles/index' as *;
 
 .features {
+  @extend .section-white-bg;
   padding: 8rem 4rem;
-  background: white;
-  transition: background 0.4s ease;
-
-  @include dark-mode {
-    background: $dark-bg;
-  }
 }
 
 .features-grid {
@@ -19,26 +14,7 @@
 }
 
 .feature-card {
-  padding: 2.5rem;
-  border-radius: 16px;
-  background: $off-white;
-  transition: all 0.4s ease;
-  border: 1px solid transparent;
-
-  &:hover {
-    transform: translateY(-8px);
-    border-color: $pyro-red-light;
-    box-shadow: 0 20px 40px rgba($pyro-red, 0.08);
-  }
-
-  @include dark-mode {
-    background: $dark-card;
-    border-color: rgba($white, 0.08);
-
-    &:hover {
-      border-color: $pyro-red-light;
-    }
-  }
+  @extend .feature-card-base;
 
   &-icon {
     width: 48px;
@@ -54,7 +30,7 @@
       background: rgba($pyro-red, 0.15);
     }
 
-    :deep(svg) {
+    svg {
       width: 24px;
       height: 24px;
       color: $pyro-red;
