@@ -29,9 +29,6 @@ public class ApiKeyEntity extends ApplicationOwnedEntity {
     @Column(name = "environment_id", nullable = false)
     private UUID environmentId;
 
-    @Column(name = "rate_limit_requests_per_minute")
-    private Integer rateLimitRequestsPerMinute;
-
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "key_type", nullable = false)
@@ -54,14 +51,6 @@ public class ApiKeyEntity extends ApplicationOwnedEntity {
 
     public void setKey(String keyHash) {
         this.key = keyHash;
-    }
-
-    public Integer getRateLimitRequestsPerMinute() {
-        return rateLimitRequestsPerMinute;
-    }
-
-    public void setRateLimitRequestsPerMinute(Integer rateLimitRequestsPerMinute) {
-        this.rateLimitRequestsPerMinute = rateLimitRequestsPerMinute;
     }
 
     public KeyType getKeyType() {
