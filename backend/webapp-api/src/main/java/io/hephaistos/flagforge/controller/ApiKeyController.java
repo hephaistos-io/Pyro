@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller;
 
+import io.hephaistos.flagforge.common.enums.KeyType;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
-import io.hephaistos.flagforge.data.KeyType;
 import io.hephaistos.flagforge.service.ApiKeyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

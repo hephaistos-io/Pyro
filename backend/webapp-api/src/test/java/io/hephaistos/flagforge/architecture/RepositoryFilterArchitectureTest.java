@@ -4,7 +4,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
-import io.hephaistos.flagforge.data.CustomerEntity;
+import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import org.hibernate.annotations.Filter;
 import org.junit.jupiter.api.BeforeAll;

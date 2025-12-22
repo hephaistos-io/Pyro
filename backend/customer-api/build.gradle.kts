@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":backend:backend-common"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")

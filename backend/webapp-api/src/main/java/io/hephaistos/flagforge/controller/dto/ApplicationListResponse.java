@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.PricingTier;
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.enums.PricingTier;
 
 import java.util.List;
 import java.util.UUID;

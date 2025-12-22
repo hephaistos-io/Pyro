@@ -1,9 +1,9 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.CustomerEntity;
+import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.CustomerEntity;
-import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;

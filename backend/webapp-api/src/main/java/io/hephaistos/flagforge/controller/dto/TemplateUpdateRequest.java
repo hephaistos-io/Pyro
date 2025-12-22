@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.TemplateSchema;
+import io.hephaistos.flagforge.common.types.TemplateSchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

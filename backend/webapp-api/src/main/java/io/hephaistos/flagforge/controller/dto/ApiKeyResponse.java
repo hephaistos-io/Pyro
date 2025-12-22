@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.ApiKeyEntity;
-import io.hephaistos.flagforge.data.KeyType;
+import io.hephaistos.flagforge.common.data.ApiKeyEntity;
+import io.hephaistos.flagforge.common.enums.KeyType;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

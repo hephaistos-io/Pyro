@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "io.hephaistos.flagforge.data.repository")
-@EntityScan("io.hephaistos.flagforge.data")
+@EntityScan(basePackages = {"io.hephaistos.flagforge.common.data"})
 @EnableTransactionManagement
 public class FlagForgeApplication {
 

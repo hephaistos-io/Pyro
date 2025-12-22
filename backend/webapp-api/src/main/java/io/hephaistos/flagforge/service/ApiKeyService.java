@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.enums.KeyType;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
-import io.hephaistos.flagforge.data.KeyType;
 
 import java.util.UUID;
 

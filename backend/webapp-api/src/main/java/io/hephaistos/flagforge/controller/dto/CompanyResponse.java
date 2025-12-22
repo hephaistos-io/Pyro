@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.CompanyEntity;
+import io.hephaistos.flagforge.common.data.CompanyEntity;
 
 import java.util.UUID;
 

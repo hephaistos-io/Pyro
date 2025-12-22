@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.security;
 
-import io.hephaistos.flagforge.data.CustomerRole;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.jspecify.annotations.Nullable;

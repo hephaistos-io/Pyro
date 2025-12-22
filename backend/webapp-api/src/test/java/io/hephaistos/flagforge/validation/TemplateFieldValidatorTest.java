@@ -1,10 +1,10 @@
 package io.hephaistos.flagforge.validation;
 
-import io.hephaistos.flagforge.data.BooleanTemplateField;
-import io.hephaistos.flagforge.data.EnumTemplateField;
-import io.hephaistos.flagforge.data.FieldType;
-import io.hephaistos.flagforge.data.NumberTemplateField;
-import io.hephaistos.flagforge.data.StringTemplateField;
+import io.hephaistos.flagforge.common.enums.FieldType;
+import io.hephaistos.flagforge.common.types.BooleanTemplateField;
+import io.hephaistos.flagforge.common.types.EnumTemplateField;
+import io.hephaistos.flagforge.common.types.NumberTemplateField;
+import io.hephaistos.flagforge.common.types.StringTemplateField;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.controller.dto;
 
-import io.hephaistos.flagforge.data.CustomerEntity;
-import io.hephaistos.flagforge.data.CustomerRole;
+import io.hephaistos.flagforge.common.data.CustomerEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 
 import java.util.Optional;
 import java.util.UUID;

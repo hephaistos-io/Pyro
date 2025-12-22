@@ -13,18 +13,20 @@ COPY gradle/ gradle/
 # Use Docker-specific settings that only includes customer-api
 COPY deployment/local/customer-api/settings.docker.gradle.kts settings.gradle.kts
 
-# Copy backend build files
-COPY backend/build.gradle.kts ./
-COPY backend/customer-api/build.gradle.kts customer-api/
+# Copy backend build files (maintain backend: hierarchy)
+COPY backend/build.gradle.kts backend/
+COPY backend/backend-common/build.gradle.kts backend/backend-common/
+COPY backend/customer-api/build.gradle.kts backend/customer-api/
 
 # Download dependencies (cached layer)
-RUN chmod +x gradlew && ./gradlew customer-api:dependencies --no-daemon || true
+RUN chmod +x gradlew && ./gradlew backend:customer-api:dependencies --no-daemon || true
 
 # Copy source code
-COPY backend/customer-api/src customer-api/src
+COPY backend/backend-common/src backend/backend-common/src
+COPY backend/customer-api/src backend/customer-api/src
 
 # Build the JAR
-RUN ./gradlew customer-api:bootJar --no-daemon -x test
+RUN ./gradlew backend:customer-api:bootJar --no-daemon -x test
 
 # Stage 2: Production runtime
 FROM eclipse-temurin:21-jre-alpine AS production
@@ -36,7 +38,7 @@ RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
 # Copy JAR from builder
-COPY --from=builder /app/customer-api/build/libs/*.jar app.jar
+COPY --from=builder /app/backend/customer-api/build/libs/*.jar app.jar
 
 # Set ownership
 RUN chown -R appuser:appgroup /app

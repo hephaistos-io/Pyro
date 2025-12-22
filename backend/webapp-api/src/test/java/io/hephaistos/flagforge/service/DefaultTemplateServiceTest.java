@@ -1,17 +1,17 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.TemplateEntity;
+import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
+import io.hephaistos.flagforge.common.enums.TemplateType;
+import io.hephaistos.flagforge.common.types.BooleanTemplateField;
+import io.hephaistos.flagforge.common.types.EnumTemplateField;
+import io.hephaistos.flagforge.common.types.NumberTemplateField;
+import io.hephaistos.flagforge.common.types.StringTemplateField;
+import io.hephaistos.flagforge.common.types.TemplateSchema;
 import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.BooleanTemplateField;
-import io.hephaistos.flagforge.data.EnumTemplateField;
-import io.hephaistos.flagforge.data.NumberTemplateField;
-import io.hephaistos.flagforge.data.StringTemplateField;
-import io.hephaistos.flagforge.data.TemplateEntity;
-import io.hephaistos.flagforge.data.TemplateSchema;
-import io.hephaistos.flagforge.data.TemplateType;
-import io.hephaistos.flagforge.data.TemplateValuesEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;

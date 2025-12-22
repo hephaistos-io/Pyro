@@ -1,4 +1,4 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.data;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

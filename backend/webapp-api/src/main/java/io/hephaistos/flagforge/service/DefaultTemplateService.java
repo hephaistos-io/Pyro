@@ -1,5 +1,15 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.TemplateEntity;
+import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
+import io.hephaistos.flagforge.common.enums.TemplateType;
+import io.hephaistos.flagforge.common.types.BooleanTemplateField;
+import io.hephaistos.flagforge.common.types.EnumTemplateField;
+import io.hephaistos.flagforge.common.types.NumberTemplateField;
+import io.hephaistos.flagforge.common.types.StringTemplateField;
+import io.hephaistos.flagforge.common.types.TemplateField;
+import io.hephaistos.flagforge.common.types.TemplateSchema;
 import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
 import io.hephaistos.flagforge.controller.dto.CopyOverridesResponse;
@@ -8,16 +18,6 @@ import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.BooleanTemplateField;
-import io.hephaistos.flagforge.data.EnumTemplateField;
-import io.hephaistos.flagforge.data.NumberTemplateField;
-import io.hephaistos.flagforge.data.StringTemplateField;
-import io.hephaistos.flagforge.data.TemplateEntity;
-import io.hephaistos.flagforge.data.TemplateField;
-import io.hephaistos.flagforge.data.TemplateSchema;
-import io.hephaistos.flagforge.data.TemplateType;
-import io.hephaistos.flagforge.data.TemplateValuesEntity;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;
@@ -365,8 +365,7 @@ public class DefaultTemplateService implements TemplateService {
                         validateStringValue(key, value, stringField);
                 case NumberTemplateField numberField ->
                         validateNumberValue(key, value, numberField);
-                case BooleanTemplateField booleanField ->
-                        validateBooleanValue(key, value, booleanField);
+                case BooleanTemplateField booleanField -> validateBooleanValue(key, value);
                 case EnumTemplateField enumField -> validateEnumValue(key, value, enumField);
             }
         }
@@ -429,7 +428,7 @@ public class DefaultTemplateService implements TemplateService {
         }
     }
 
-    private void validateBooleanValue(String key, Object value, BooleanTemplateField field) {
+    private void validateBooleanValue(String key, Object value) {
         if (!(value instanceof Boolean)) {
             throw new IllegalArgumentException(
                     "Field '%s' expects a boolean value, but got %s".formatted(key,

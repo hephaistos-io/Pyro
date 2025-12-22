@@ -1,5 +1,6 @@
 // Docker-specific settings for backend build
-// Simplified structure: root -> webapp-api
-rootProject.name = "flagforge-backend"
+// Maintains backend: hierarchy for proper project references
+rootProject.name = "flagforge"
 
-include("webapp-api")
+include("backend:backend-common")
+include("backend:webapp-api")

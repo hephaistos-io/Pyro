@@ -1,5 +1,7 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.data;
 
+import io.hephaistos.flagforge.common.enums.TemplateType;
+import io.hephaistos.flagforge.common.types.TemplateSchema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

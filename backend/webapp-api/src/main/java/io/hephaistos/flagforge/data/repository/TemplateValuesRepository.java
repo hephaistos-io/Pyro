@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.data.repository;
 
-import io.hephaistos.flagforge.data.TemplateType;
-import io.hephaistos.flagforge.data.TemplateValuesEntity;
+import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
+import io.hephaistos.flagforge.common.enums.TemplateType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

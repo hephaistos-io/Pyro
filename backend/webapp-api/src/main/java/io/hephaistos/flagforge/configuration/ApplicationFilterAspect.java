@@ -1,6 +1,6 @@
 package io.hephaistos.flagforge.configuration;
 
-import io.hephaistos.flagforge.data.ApplicationOwnedEntity;
+import io.hephaistos.flagforge.common.data.ApplicationOwnedEntity;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import jakarta.persistence.EntityManager;
 import org.aspectj.lang.annotation.Aspect;

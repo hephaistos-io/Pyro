@@ -1,4 +1,4 @@
-package io.hephaistos.flagforge.data;
+package io.hephaistos.flagforge.common.types;
 
 import jakarta.validation.Valid;
 

@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
@@ -9,7 +10,6 @@ import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
 import io.hephaistos.flagforge.controller.dto.InviteCreationResponse;
 import io.hephaistos.flagforge.controller.dto.InviteValidationResponse;
 import io.hephaistos.flagforge.controller.dto.TeamResponse;
-import io.hephaistos.flagforge.data.CustomerRole;
 import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.InvalidInviteException.InvalidInviteReason;

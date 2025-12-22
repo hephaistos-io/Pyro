@@ -1,8 +1,8 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApiKeyEntity;
+import io.hephaistos.flagforge.common.enums.KeyType;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
-import io.hephaistos.flagforge.data.ApiKeyEntity;
-import io.hephaistos.flagforge.data.KeyType;
 import io.hephaistos.flagforge.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.exception.NotFoundException;

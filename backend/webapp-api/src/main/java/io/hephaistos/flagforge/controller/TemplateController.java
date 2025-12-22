@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.controller;
 
+import io.hephaistos.flagforge.common.enums.TemplateType;
 import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.CopyOverridesRequest;
 import io.hephaistos.flagforge.controller.dto.CopyOverridesResponse;
@@ -8,7 +9,6 @@ import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
-import io.hephaistos.flagforge.data.TemplateType;
 import io.hephaistos.flagforge.service.TemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -2,11 +2,11 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
-import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;

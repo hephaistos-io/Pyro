@@ -1,10 +1,10 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
+import io.hephaistos.flagforge.common.data.CustomerEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.CompanyInviteEntity;
-import io.hephaistos.flagforge.data.CustomerEntity;
-import io.hephaistos.flagforge.data.CustomerRole;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;

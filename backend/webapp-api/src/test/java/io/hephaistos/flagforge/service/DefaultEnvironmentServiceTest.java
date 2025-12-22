@@ -1,10 +1,10 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
+import io.hephaistos.flagforge.common.data.EnvironmentEntity;
+import io.hephaistos.flagforge.common.enums.KeyType;
+import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
-import io.hephaistos.flagforge.data.ApplicationEntity;
-import io.hephaistos.flagforge.data.EnvironmentEntity;
-import io.hephaistos.flagforge.data.KeyType;
-import io.hephaistos.flagforge.data.PricingTier;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
