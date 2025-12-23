@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.customerapi.configuration;
 
 import io.hephaistos.flagforge.customerapi.controller.security.ApiKeyAuthenticationEntryPoint;
 import io.hephaistos.flagforge.customerapi.controller.security.ApiKeyOncePerRequestFilter;
+import io.hephaistos.flagforge.customerapi.controller.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,13 +25,16 @@ public class ApiSecurityConfiguration {
             {"/v3/api-docs", "/v3/api-docs/**", "/health"};
 
     private final ApiKeyOncePerRequestFilter apiKeyOncePerRequestFilter;
+    private final RateLimitFilter rateLimitFilter;
 
-    public ApiSecurityConfiguration(ApiKeyOncePerRequestFilter apiKeyOncePerRequestFilter) {
+    public ApiSecurityConfiguration(ApiKeyOncePerRequestFilter apiKeyOncePerRequestFilter,
+            RateLimitFilter rateLimitFilter) {
         this.apiKeyOncePerRequestFilter = apiKeyOncePerRequestFilter;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
@@ -44,6 +48,7 @@ public class ApiSecurityConfiguration {
                         new ApiKeyAuthenticationEntryPoint()))
                 .addFilterBefore(apiKeyOncePerRequestFilter,
                         UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(rateLimitFilter, ApiKeyOncePerRequestFilter.class)
                 .build();
     }
 

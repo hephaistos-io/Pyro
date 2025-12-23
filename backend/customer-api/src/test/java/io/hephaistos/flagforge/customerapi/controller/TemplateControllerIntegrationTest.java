@@ -13,6 +13,7 @@ import io.hephaistos.flagforge.common.types.StringTemplateField;
 import io.hephaistos.flagforge.common.types.TemplateSchema;
 import io.hephaistos.flagforge.customerapi.IntegrationTestSupport;
 import io.hephaistos.flagforge.customerapi.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.customerapi.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.customerapi.controller.dto.MergedTemplateValuesResponse;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(PostgresTestContainerConfiguration.class)
+@Import({PostgresTestContainerConfiguration.class, RedisTestContainerConfiguration.class})
 @Tag("integration")
 class TemplateControllerIntegrationTest extends IntegrationTestSupport {
 

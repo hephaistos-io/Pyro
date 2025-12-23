@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.customerapi.controller;
 import io.hephaistos.flagforge.customerapi.exception.ApiKeyExpiredException;
 import io.hephaistos.flagforge.customerapi.exception.InvalidApiKeyException;
 import io.hephaistos.flagforge.customerapi.exception.NotFoundException;
+import io.hephaistos.flagforge.customerapi.exception.RateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,14 @@ public class GlobalExceptionHandler {
         LOGGER.info("Resource not found: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse("NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex) {
+        LOGGER.warn("Rate limit exceeded: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(new ErrorResponse("RATE_LIMIT_EXCEEDED", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

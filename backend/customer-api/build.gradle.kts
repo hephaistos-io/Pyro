@@ -10,8 +10,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui")
 
-    // Rate limiting
+    // Rate limiting with Redis
     implementation("com.bucket4j:bucket4j-core")
+    implementation("com.bucket4j:bucket4j-redis")
+    implementation("io.lettuce:lettuce-core")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
@@ -21,6 +23,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("com.redis:testcontainers-redis")
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

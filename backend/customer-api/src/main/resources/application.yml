@@ -31,3 +31,9 @@ logging:
   level:
     root: INFO
     io.hephaistos.flagforge: DEBUG
+
+flagforge:
+  rate-limit:
+    enabled: true
+    redis-uri: redis://localhost:6379
+    fail-open: true

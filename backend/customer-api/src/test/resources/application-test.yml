@@ -1,4 +1,7 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
+
   flyway:
     enabled: true
     # Migrations from webapp-api via sourceSets configuration
