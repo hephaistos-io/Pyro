@@ -24,10 +24,16 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // Flyway for test database migrations (migrations come from webapp-api)
+    testImplementation("org.springframework.boot:spring-boot-starter-flyway")
+    testRuntimeOnly("org.flywaydb:flyway-database-postgresql")
+    // Only include webapp-api when available (not in Docker build context)
+    findProject(":backend:webapp-api")?.let { testRuntimeOnly(it) }
 }
 
 openApi {
-    apiDocsUrl.set("http://localhost:8081/customer-api/v3/api-docs")
+    apiDocsUrl.set("http://localhost:8081/v3/api-docs")
     outputDir.set(file("$projectDir/../../contracts"))
     outputFileName.set("customer_api.json")
     waitTimeInSeconds.set(60)
