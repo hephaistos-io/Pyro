@@ -99,4 +99,8 @@ export class UsersTableComponent implements OnInit {
   isInvitedUser(user: User): boolean {
     return user.status === 'invited' || user.status === 'expired';
   }
+
+  isAdminUser(user: User): boolean {
+    return user.roles.some(role => role.type === 'admin');
+  }
 }

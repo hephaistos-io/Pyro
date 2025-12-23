@@ -298,6 +298,16 @@
       color: $dark-text-muted;
     }
   }
+
+  &__admin {
+    font-size: 0.85rem;
+    color: $charcoal;
+    font-weight: 500;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
 }
 
 .last-active-time {

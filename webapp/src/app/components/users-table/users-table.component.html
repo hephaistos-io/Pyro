@@ -53,14 +53,18 @@
           <div class="users-table__cell users-table__cell--applications">
             <div class="user-tags">
               <div class="user-tags__list">
-                @for (app of user.applications; track app.id) {
-                  <app-user-tag
-                    [label]="app.name"
-                    variant="application"
-                  />
-                }
-                @if (user.applications.length === 0) {
-                  <span class="user-tags__empty">No applications</span>
+                @if (isAdminUser(user)) {
+                  <span class="user-tags__admin">All (Admin Role)</span>
+                } @else {
+                  @for (app of user.applications; track app.id) {
+                    <app-user-tag
+                      [label]="app.name"
+                      variant="application"
+                    />
+                  }
+                  @if (user.applications.length === 0) {
+                    <span class="user-tags__empty">No applications</span>
+                  }
                 }
               </div>
             </div>

@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.common.enums.TemplateType;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
@@ -143,6 +144,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         var customerWithoutAccess =
                 customerRepository.findByEmail("user-without-access@example.com").orElseThrow();
         customerWithoutAccess.setCompanyId(customerWithAccess.getCompanyId().orElseThrow());
+        customerWithoutAccess.setRole(CustomerRole.DEV); // Set to DEV so they don't see all apps
         customerRepository.saveAndFlush(customerWithoutAccess);
 
         // Re-authenticate user without access to get token with companyId
@@ -249,12 +251,20 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
                 post("/v1/applications", new ApplicationCreationRequest("App 2"), token,
                         ApplicationResponse.class);
 
+        // Change user to DEV so M2M table matters for filtering
+        var customer = customerRepository.findByEmail("test@example.com").orElseThrow();
+        customer.setRole(CustomerRole.DEV);
+        customerRepository.saveAndFlush(customer);
+
+        // Re-authenticate to get new role in token
+        token = authenticate();
+
         // Verify user can see both applications
         var beforeRevokeResponse = get("/v1/applications", token, ApplicationListResponse[].class);
         assertThat(beforeRevokeResponse.getBody()).hasSize(2);
 
         // Revoke access to App 2 directly in the database (without re-authentication)
-        var customer = customerRepository.findByEmailWithAccessibleApplications("test@example.com")
+        customer = customerRepository.findByEmailWithAccessibleApplications("test@example.com")
                 .orElseThrow();
         var app2Entity =
                 applicationRepository.findById(createApp2Response.getBody().id()).orElseThrow();
@@ -274,6 +284,99 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(afterRevokeResponse.getBody()[0].name()).isEqualTo("App 1");
         assertThat(afterRevokeResponse.getBody()[0].id()).isEqualTo(
                 createApp1Response.getBody().id());
+    }
+
+    @Test
+    void adminUserSeesAllApplicationsInCompany() {
+        // Setup: Create ADMIN user with company and 3 applications
+        String adminToken = registerAndAuthenticateWithCompany();
+        createApplication(adminToken, "App 1");
+        createApplication(adminToken, "App 2");
+        createApplication(adminToken, "App 3");
+
+        // Verify ADMIN can see all 3 applications
+        var adminResponse = get("/v1/applications", adminToken, ApplicationListResponse[].class);
+        assertThat(adminResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(adminResponse.getBody()).hasSize(3);
+        assertThat(adminResponse.getBody()).extracting("name")
+                .containsExactlyInAnyOrder("App 1", "App 2", "App 3");
+    }
+
+    @Test
+    void devUserSeesOnlyAssignedApplications() {
+        // Setup: Create ADMIN user with company and 3 applications
+        registerUser("Admin", "User", "admin@example.com", "password123");
+        String adminToken = authenticate("admin@example.com", "password123");
+        createCompany(adminToken);
+        adminToken = authenticate("admin@example.com", "password123");
+        var app1Response =
+                post("/v1/applications", new ApplicationCreationRequest("App 1"), adminToken,
+                        ApplicationResponse.class);
+        createApplication(adminToken, "App 2");
+        createApplication(adminToken, "App 3");
+
+        // Create DEV user in same company
+        registerUser("Dev", "User", "dev@example.com", "password123");
+        var adminCustomer = customerRepository.findByEmail("admin@example.com").orElseThrow();
+        var devCustomer = customerRepository.findByEmail("dev@example.com").orElseThrow();
+        devCustomer.setCompanyId(adminCustomer.getCompanyId().orElseThrow());
+        devCustomer.setRole(CustomerRole.DEV);
+        customerRepository.saveAndFlush(devCustomer);
+
+        // Grant DEV user access to only App 1
+        var app1Entity = applicationRepository.findById(app1Response.getBody().id()).orElseThrow();
+        devCustomer = customerRepository.findByEmailWithAccessibleApplications("dev@example.com")
+                .orElseThrow();
+        devCustomer.getAccessibleApplications().add(app1Entity);
+        customerRepository.saveAndFlush(devCustomer);
+
+        // Authenticate DEV user and verify they only see App 1
+        String devToken = authenticate("dev@example.com", "password123");
+        var devResponse = get("/v1/applications", devToken, ApplicationListResponse[].class);
+        assertThat(devResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(devResponse.getBody()).hasSize(1);
+        assertThat(devResponse.getBody()[0].name()).isEqualTo("App 1");
+    }
+
+    @Test
+    void adminAndDevInSameCompanySeeDifferentApplications() {
+        // Setup: Create company with 3 applications
+        registerUser("Admin", "User", "admin@example.com", "password123");
+        String adminToken = authenticate("admin@example.com", "password123");
+        createCompany(adminToken);
+        adminToken = authenticate("admin@example.com", "password123");
+        var app1Response =
+                post("/v1/applications", new ApplicationCreationRequest("App 1"), adminToken,
+                        ApplicationResponse.class);
+        createApplication(adminToken, "App 2");
+        createApplication(adminToken, "App 3");
+
+        // Create DEV user in same company with access to only App 1
+        registerUser("Dev", "User", "dev@example.com", "password123");
+        var adminCustomer = customerRepository.findByEmail("admin@example.com").orElseThrow();
+        var devCustomer = customerRepository.findByEmail("dev@example.com").orElseThrow();
+        devCustomer.setCompanyId(adminCustomer.getCompanyId().orElseThrow());
+        devCustomer.setRole(CustomerRole.DEV);
+        customerRepository.saveAndFlush(devCustomer);
+
+        var app1Entity = applicationRepository.findById(app1Response.getBody().id()).orElseThrow();
+        devCustomer = customerRepository.findByEmailWithAccessibleApplications("dev@example.com")
+                .orElseThrow();
+        devCustomer.getAccessibleApplications().add(app1Entity);
+        customerRepository.saveAndFlush(devCustomer);
+
+        // Verify ADMIN sees all 3 applications
+        adminToken = authenticate("admin@example.com", "password123");
+        var adminResponse = get("/v1/applications", adminToken, ApplicationListResponse[].class);
+        assertThat(adminResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(adminResponse.getBody()).hasSize(3);
+
+        // Verify DEV sees only App 1
+        String devToken = authenticate("dev@example.com", "password123");
+        var devResponse = get("/v1/applications", devToken, ApplicationListResponse[].class);
+        assertThat(devResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(devResponse.getBody()).hasSize(1);
+        assertThat(devResponse.getBody()[0].name()).isEqualTo("App 1");
     }
 
     private void createApplication(String token, String name) {

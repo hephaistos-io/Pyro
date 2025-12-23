@@ -119,10 +119,9 @@ test.describe('Application Access Management', () => {
         await expect(dev2Row.getByText(app2Name)).toBeVisible();
         await expect(dev2Row.getByText(app1Name)).not.toBeVisible();
 
-        // Admin should have access to all applications
+        // Admin should have access to all applications (displayed as "All (Admin Role)")
         const adminRow = getUserRow(page, adminEmail);
-        await expect(adminRow.getByText(app1Name)).toBeVisible();
-        await expect(adminRow.getByText(app2Name)).toBeVisible();
+        await expect(adminRow.getByText('All (Admin Role)')).toBeVisible();
     });
 
     test('admin can edit user application access via edit form', async ({page}) => {
@@ -333,8 +332,8 @@ test.describe('Application Access Management', () => {
         await page.reload();
         await navigateToUsersTab(page);
 
-        // Verify admin has access to the application they created
+        // Verify admin has access to all applications (displayed as "All (Admin Role)")
         const adminRow = getUserRow(page, adminEmail);
-        await expect(adminRow.getByText(appName)).toBeVisible();
+        await expect(adminRow.getByText('All (Admin Role)')).toBeVisible();
     });
 });
