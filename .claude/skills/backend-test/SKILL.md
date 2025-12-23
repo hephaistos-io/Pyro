@@ -1,15 +1,24 @@
 ---
 name: backend-test
-description: Run the backend tests to assess if everything works as expected
-allowed-tools: ./gradlew backend:architectureTest, ./gradlew backend:test
+description: Run backend unit and architecture tests to verify functionality. Use when testing backend Java code, checking architecture compliance, running unit tests, or verifying Spring Boot services.
+allowed-tools: Bash
 ---
 
-# Backend Test
+# Backend Tests
 
-This Skill provides the commands to run backend tests, to verify functionality.
+This Skill runs backend tests to verify functionality and architecture compliance.
 
 ## Instructions
 
-1. Go to the project root
-2. run `./gradlew backend:architectureTest`
-3. run `./gradlew backend:test`
+1. From the project root, run these commands:
+   - `./gradlew backend:architectureTest` - Verify architecture rules
+   - `./gradlew backend:test` - Run all backend unit tests
+
+## When to use
+
+Use this Skill when:
+
+- Making backend changes
+- Verifying Java code functionality
+- Checking architecture compliance
+- Running Spring Boot service tests
