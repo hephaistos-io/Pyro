@@ -34,7 +34,7 @@
                       <input
                               id="email"
                               type="email"
-                              [value]="email"
+                              [value]="email()"
                               name="email"
                               disabled
                               class="email-readonly"
@@ -48,7 +48,8 @@
                           <input
                                   id="firstName"
                                   type="text"
-                                  [(ngModel)]="firstName"
+                                  (ngModelChange)="firstName.set($event)"
+                                  [ngModel]="firstName()"
                                   name="firstName"
                                   placeholder="John"
                                   [disabled]="isLoading()"
@@ -59,7 +60,8 @@
                           <input
                                   id="lastName"
                                   type="text"
-                                  [(ngModel)]="lastName"
+                                  (ngModelChange)="lastName.set($event)"
+                                  [ngModel]="lastName()"
                                   name="lastName"
                                   placeholder="Doe"
                                   [disabled]="isLoading()"
@@ -73,12 +75,13 @@
                       <input
                               id="password"
                               type="password"
-                              [(ngModel)]="password"
+                              (ngModelChange)="password.set($event)"
+                              [ngModel]="password()"
                               name="password"
                               placeholder="••••••••"
                               [disabled]="isLoading()"
                       />
-                      @if (password) {
+                    @if (password()) {
                           <div class="password-strength">
                               <div class="strength-bar">
                                   <div
@@ -103,7 +106,8 @@
                       <input
                               id="confirmPassword"
                               type="password"
-                              [(ngModel)]="confirmPassword"
+                              (ngModelChange)="confirmPassword.set($event)"
+                              [ngModel]="confirmPassword()"
                               name="confirmPassword"
                               placeholder="••••••••"
                               [disabled]="isLoading()"
@@ -135,7 +139,7 @@
               <div class="success-message">
                   <div class="success-icon">✓</div>
                   <h3>Account created!</h3>
-                  <p>Welcome to {{ inviteData()!.companyName }}, <strong>{{ firstName }}</strong>!</p>
+                <p>Welcome to {{ inviteData()!.companyName }}, <strong>{{ firstName() }}</strong>!</p>
                   <p class="next-steps">You can now log in to access your team's dashboard.</p>
               </div>
           }
@@ -155,7 +159,8 @@
                           <input
                                   id="firstName"
                                   type="text"
-                                  [(ngModel)]="firstName"
+                                  (ngModelChange)="firstName.set($event)"
+                                  [ngModel]="firstName()"
                                   name="firstName"
                                   placeholder="John"
                                   [disabled]="isLoading()"
@@ -166,7 +171,8 @@
                           <input
                                   id="lastName"
                                   type="text"
-                                  [(ngModel)]="lastName"
+                                  (ngModelChange)="lastName.set($event)"
+                                  [ngModel]="lastName()"
                                   name="lastName"
                                   placeholder="Doe"
                                   [disabled]="isLoading()"
@@ -180,7 +186,8 @@
                       <input
                               id="email"
                               type="email"
-                              [(ngModel)]="email"
+                              (ngModelChange)="email.set($event)"
+                              [ngModel]="email()"
                               name="email"
                               placeholder="john@company.com"
                               [disabled]="isLoading()"
@@ -193,12 +200,13 @@
                       <input
                               id="password"
                               type="password"
-                              [(ngModel)]="password"
+                              (ngModelChange)="password.set($event)"
+                              [ngModel]="password()"
                               name="password"
                               placeholder="••••••••"
                               [disabled]="isLoading()"
                       />
-                      @if (password) {
+                    @if (password()) {
                           <div class="password-strength">
                               <div class="strength-bar">
                                   <div
@@ -223,7 +231,8 @@
                       <input
                               id="confirmPassword"
                               type="password"
-                              [(ngModel)]="confirmPassword"
+                              (ngModelChange)="confirmPassword.set($event)"
+                              [ngModel]="confirmPassword()"
                               name="confirmPassword"
                               placeholder="••••••••"
                               [disabled]="isLoading()"
@@ -255,8 +264,8 @@
               <div class="success-message">
                   <div class="success-icon">✓</div>
                   <h3>Account created!</h3>
-                  <p>Welcome to Flagforge, <strong>{{ firstName }}</strong>!</p>
-                  <p class="next-steps">Check your email at <strong>{{ email }}</strong> to verify your account.</p>
+                <p>Welcome to Flagforge, <strong>{{ firstName() }}</strong>!</p>
+                <p class="next-steps">Check your email at <strong>{{ email() }}</strong> to verify your account.</p>
               </div>
           }
     }

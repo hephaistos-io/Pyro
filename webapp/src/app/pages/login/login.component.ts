@@ -16,8 +16,8 @@ import {isValidEmail} from '../../utils/validators.util';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
-  email = '';
-  password = '';
+  email = signal('');
+  password = signal('');
   error = signal('');
   isLoading = signal(false);
   private returnUrl = '/dashboard';
@@ -53,8 +53,8 @@ export class LoginComponent implements OnInit {
     try {
       // Call API
       const authRequest: CustomerAuthenticationRequest = {
-        email: this.email,
-        password: this.password
+        email: this.email(),
+        password: this.password()
       };
 
       const response = await this.api.invoke(authenticate, {body: authRequest});
@@ -75,11 +75,11 @@ export class LoginComponent implements OnInit {
   }
 
   private validateForm(): string | null {
-    if (!this.email || !this.password) {
+    if (!this.email() || !this.password()) {
       return 'Email and password are required';
     }
 
-    if (!isValidEmail(this.email)) {
+    if (!isValidEmail(this.email())) {
       return 'Please enter a valid email address';
     }
 

@@ -2,7 +2,6 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.common.data.ApiKeyEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
-import io.hephaistos.flagforge.common.util.ApiKeyHasher;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
@@ -40,13 +39,12 @@ public class DefaultApiKeyService implements ApiKeyService {
 
     @Override
     public ApiKeyResponse createApiKey(UUID applicationId, UUID environmentId, KeyType keyType) {
-        String plaintextKey = generateSecretKey();
-        String hashedKey = ApiKeyHasher.hash(plaintextKey);
+        String secretKey = generateSecretKey();
 
         var apiKey = new ApiKeyEntity();
         apiKey.setApplicationId(applicationId);
         apiKey.setEnvironmentId(environmentId);
-        apiKey.setKey(hashedKey);
+        apiKey.setKey(secretKey);
         apiKey.setKeyType(keyType);
         apiKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
@@ -54,7 +52,7 @@ public class DefaultApiKeyService implements ApiKeyService {
         LOGGER.info("Created API key (type: {}) for application {} and environment {}", keyType,
                 applicationId, environmentId);
 
-        return ApiKeyResponse.fromEntityWithSecret(saved, plaintextKey);
+        return ApiKeyResponse.fromEntity(saved);
     }
 
     @Override
@@ -88,13 +86,12 @@ public class DefaultApiKeyService implements ApiKeyService {
         oldKey.setExpirationDate(newExpirationDateForOldKey);
         apiKeyRepository.save(oldKey);
 
-        String plaintextKey = generateSecretKey();
-        String hashedKey = ApiKeyHasher.hash(plaintextKey);
+        String secretKey = generateSecretKey();
 
         var newKey = new ApiKeyEntity();
         newKey.setApplicationId(applicationId);
         newKey.setEnvironmentId(environmentId);
-        newKey.setKey(hashedKey);
+        newKey.setKey(secretKey);
         newKey.setKeyType(keyType);
         newKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
@@ -103,7 +100,7 @@ public class DefaultApiKeyService implements ApiKeyService {
                 applicationId, environmentId);
 
         return new ApiKeyResponse(saved.getId(), saved.getEnvironmentId(), saved.getKeyType(),
-                plaintextKey, newExpirationDateForOldKey);
+                secretKey, newExpirationDateForOldKey);
     }
 
     private String generateSecretKey() {

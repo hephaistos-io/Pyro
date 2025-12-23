@@ -10,7 +10,8 @@
       <div class="form-group">
         <label for="email">Email</label>
         <input
-          [(ngModel)]="email"
+          (ngModelChange)="email.set($event)"
+          [ngModel]="email()"
           [disabled]="isLoading()"
           id="email"
           name="email"
@@ -23,7 +24,8 @@
       <div class="form-group">
         <label for="password">Password</label>
         <input
-          [(ngModel)]="password"
+          (ngModelChange)="password.set($event)"
+          [ngModel]="password()"
           [disabled]="isLoading()"
           id="password"
           name="password"

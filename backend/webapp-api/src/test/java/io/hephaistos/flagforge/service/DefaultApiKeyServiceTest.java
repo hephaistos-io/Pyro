@@ -2,7 +2,6 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.common.data.ApiKeyEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
-import io.hephaistos.flagforge.common.util.ApiKeyHasher;
 import io.hephaistos.flagforge.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.exception.NotFoundException;
@@ -100,7 +99,7 @@ class DefaultApiKeyServiceTest {
     }
 
     @Test
-    void createApiKeyGeneratesSecretKeyAndStoresHash() {
+    void createApiKeyGeneratesSecretKeyAndStoresPlaintext() {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
 
@@ -116,15 +115,15 @@ class DefaultApiKeyServiceTest {
         assertThat(result.secretKey()).isNotNull();
         assertThat(result.secretKey()).hasSize(64);
 
-        // Verify the entity stores the SHA-256 hash (also 64 hex chars)
+        // Verify the entity stores the plaintext key (64 hex chars)
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository).save(captor.capture());
-        String storedHash = captor.getValue().getKey();
-        assertThat(storedHash).isNotNull();
-        assertThat(storedHash).hasSize(64);
+        String storedKey = captor.getValue().getKey();
+        assertThat(storedKey).isNotNull();
+        assertThat(storedKey).hasSize(64);
 
-        // Verify the stored hash matches the hash of the returned plaintext key
-        assertThat(storedHash).isEqualTo(ApiKeyHasher.hash(result.secretKey()));
+        // Verify the stored key matches the returned plaintext key (plaintext storage)
+        assertThat(storedKey).isEqualTo(result.secretKey());
     }
 
     @Test
@@ -191,7 +190,7 @@ class DefaultApiKeyServiceTest {
     // ========== Get API Key by Type Tests ==========
 
     @Test
-    void getApiKeyByTypeReturnsMetadataWithoutSecretKey() {
+    void getApiKeyByTypeReturnsMetadataWithSecretKey() {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
         UUID keyId = UUID.randomUUID();
@@ -207,8 +206,9 @@ class DefaultApiKeyServiceTest {
         assertThat(result.id()).isEqualTo(keyId);
         assertThat(result.environmentId()).isEqualTo(environmentId);
         assertThat(result.keyType()).isEqualTo(KeyType.READ);
-        // Secret key is null because it's stored as a hash and cannot be retrieved
-        assertThat(result.secretKey()).isNull();
+        // Secret key is returned since we store plaintext
+        assertThat(result.secretKey()).isNotNull();
+        assertThat(result.secretKey()).hasSize(64);
     }
 
     @Test
@@ -248,11 +248,11 @@ class DefaultApiKeyServiceTest {
         UUID applicationId = UUID.randomUUID();
         UUID environmentId = UUID.randomUUID();
         UUID oldKeyId = UUID.randomUUID();
-        String originalKeyHash = "originalhash12345678901234567890123456789012345678901234567890ab";
+        String originalKey = "originalkey12345678901234567890123456789012345678901234567890ab";
 
         var oldApiKeyEntity =
                 createApiKeyEntity(oldKeyId, applicationId, environmentId, KeyType.READ);
-        oldApiKeyEntity.setKey(originalKeyHash);
+        oldApiKeyEntity.setKey(originalKey);
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
         when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
@@ -266,13 +266,13 @@ class DefaultApiKeyServiceTest {
         // Verify result contains new plaintext key
         assertThat(result.secretKey()).isNotNull();
         assertThat(result.secretKey()).hasSize(64);
-        // Verify the stored hash differs from original (it's a new key)
+        // Verify the stored key differs from original (it's a new key)
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository, org.mockito.Mockito.times(2)).save(captor.capture());
         var newKeyEntity = captor.getAllValues().get(1);
-        assertThat(newKeyEntity.getKey()).isNotEqualTo(originalKeyHash);
-        // Verify the stored hash matches the hash of the returned plaintext
-        assertThat(newKeyEntity.getKey()).isEqualTo(ApiKeyHasher.hash(result.secretKey()));
+        assertThat(newKeyEntity.getKey()).isNotEqualTo(originalKey);
+        // Verify the stored key matches the returned plaintext (plaintext storage)
+        assertThat(newKeyEntity.getKey()).isEqualTo(result.secretKey());
         // Verify expiration date is old key's new expiration (about 1 week from now)
         assertThat(result.expirationDate()).isAfter(OffsetDateTime.now());
         assertThat(result.expirationDate()).isBefore(
@@ -374,7 +374,7 @@ class DefaultApiKeyServiceTest {
         entity.setApplicationId(applicationId);
         entity.setEnvironmentId(environmentId);
         entity.setKeyType(keyType);
-        entity.setKey("testkey123456789012345678901234567890123456789012345678901234");
+        entity.setKey("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
         entity.setExpirationDate(OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
         return entity;
     }
