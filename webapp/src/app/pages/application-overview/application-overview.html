@@ -201,83 +201,45 @@
                             </app-api-keys-card>
                         }
 
-                        <!-- API Tiers -->
-                        <div class="tier-section">
-                            <span class="tier-section__label">Pricing</span>
-                            <div class="tier-sliders">
-                                <!-- Max Requests per Day -->
-                                <div class="tier-slider-wrapper">
-                                    <span class="tier-slider-wrapper__title">Max. Requests per day</span>
-                                    <div class="tier-slider">
-                                        <div class="tier-slider__track">
-                                            <input
-                                                    type="range"
-                                                    min="0"
-                                                    [max]="requestTiers().length - 1"
-                                                    [value]="selectedRequestTierIndex()"
-                                                    (input)="onRequestTierSliderChange($event)"
-                                                    class="tier-slider__input"
-                                                    aria-label="Select request tier">
-                                            <div class="tier-slider__labels">
-                                                @for (tier of requestTiers(); track tier.id; let i = $index) {
-                                                    <button
-                                                            class="tier-slider__tick"
-                                                            [class.tier-slider__tick--active]="i === selectedRequestTierIndex()"
-                                                            (click)="selectedRequestTierIndex.set(i)">
-                                                        {{ tier.name }}
-                                                    </button>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div class="tier-display tier-display--compact">
-                                            <span class="tier-display__limit-value">{{ formatLimit(currentRequestTier().dailyLimit) }}</span>
-                                            <span class="tier-display__limit-label">requests/day</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Max Users -->
-                                <div class="tier-slider-wrapper">
-                                    <span class="tier-slider-wrapper__title">Max. Users</span>
-                                    <div class="tier-slider">
-                                        <div class="tier-slider__track">
-                                            <input
-                                                    type="range"
-                                                    min="0"
-                                                    [max]="userTiers().length - 1"
-                                                    [value]="selectedUserTierIndex()"
-                                                    (input)="onUserTierSliderChange($event)"
-                                                    class="tier-slider__input"
-                                                    aria-label="Select user tier">
-                                            <div class="tier-slider__labels">
-                                                @for (tier of userTiers(); track tier.id; let i = $index) {
-                                                    <button
-                                                            class="tier-slider__tick"
-                                                            [class.tier-slider__tick--active]="i === selectedUserTierIndex()"
-                                                            (click)="selectedUserTierIndex.set(i)">
-                                                        {{ tier.name }}
-                                                    </button>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div class="tier-display tier-display--compact">
-                                            <span class="tier-display__limit-value">{{ formatLimit(currentUserTier().maxUsers) }}</span>
-                                            <span class="tier-display__limit-label">users</span>
-                                        </div>
-                                    </div>
-                                </div>
+                      <!-- Rate Limit Tier (Admin only) -->
+                      <div *hasRole="CustomerRole.Admin" class="tier-section">
+                        <span class="tier-section__label">Rate Limit</span>
+                        <div class="tier-slider-wrapper">
+                          <div class="tier-slider">
+                            <div class="tier-slider__track tier-slider__track--five">
+                              <input
+                                (input)="onRateLimitTierSliderChange($event)"
+                                [max]="rateLimitTiers().length - 1"
+                                [value]="selectedRateLimitTierIndex()"
+                                aria-label="Select rate limit tier"
+                                class="tier-slider__input"
+                                min="0"
+                                type="range">
+                              <div class="tier-slider__labels tier-slider__labels--five">
+                                @for (tier of rateLimitTiers(); track tier.id; let i = $index) {
+                                  <button
+                                    (click)="selectedRateLimitTierIndex.set(i)"
+                                    [class.tier-slider__tick--active]="i === selectedRateLimitTierIndex()"
+                                    class="tier-slider__tick">
+                                    {{ tier.name }}
+                                  </button>
+                                }
+                              </div>
                             </div>
-
-                            <!-- Combined Price -->
-                            <div class="tier-price-summary">
-                                <span class="tier-price-summary__label">Total</span>
-                                <span class="tier-price-summary__value">
-                  @if (totalMonthlyPrice() === 0) {
-                      Free
-                  } @else {
-                      ${{ totalMonthlyPrice() }}<span class="tier-price-summary__period">/mo</span>
-                  }
-                </span>
+                            <div class="tier-display">
+                              <div class="tier-display__main">
+                                <span
+                                  class="tier-display__limit-value">{{ formatRateLimit(currentRateLimitTier().rateLimit) }}</span>
+                                <span class="tier-display__limit-label">req/sec</span>
+                                        </div>
+                              <div class="tier-display__details">
+                                <span class="tier-display__price">{{ currentRateLimitTier().price }}<span
+                                  class="tier-display__period">/env/mo</span></span>
+                                <span
+                                  class="tier-display__requests">{{ currentRateLimitTier().requestsPerMonth }}</span>
+                              </div>
+                            </div>
+                          </div>
                             </div>
                         </div>
                     </div>
