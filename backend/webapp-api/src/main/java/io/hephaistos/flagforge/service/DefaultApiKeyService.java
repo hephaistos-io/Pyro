@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.common.data.ApiKeyEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
+import io.hephaistos.flagforge.common.util.ApiKeyHasher;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
@@ -38,17 +39,22 @@ public class DefaultApiKeyService implements ApiKeyService {
     }
 
     @Override
-    public void createApiKey(UUID applicationId, UUID environmentId, KeyType keyType) {
+    public ApiKeyResponse createApiKey(UUID applicationId, UUID environmentId, KeyType keyType) {
+        String plaintextKey = generateSecretKey();
+        String hashedKey = ApiKeyHasher.hash(plaintextKey);
+
         var apiKey = new ApiKeyEntity();
         apiKey.setApplicationId(applicationId);
         apiKey.setEnvironmentId(environmentId);
-        apiKey.setKey(generateSecretKey());
+        apiKey.setKey(hashedKey);
         apiKey.setKeyType(keyType);
         apiKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
-        apiKeyRepository.save(apiKey);
+        ApiKeyEntity saved = apiKeyRepository.save(apiKey);
         LOGGER.info("Created API key (type: {}) for application {} and environment {}", keyType,
                 applicationId, environmentId);
+
+        return ApiKeyResponse.fromEntityWithSecret(saved, plaintextKey);
     }
 
     @Override
@@ -82,20 +88,22 @@ public class DefaultApiKeyService implements ApiKeyService {
         oldKey.setExpirationDate(newExpirationDateForOldKey);
         apiKeyRepository.save(oldKey);
 
+        String plaintextKey = generateSecretKey();
+        String hashedKey = ApiKeyHasher.hash(plaintextKey);
+
         var newKey = new ApiKeyEntity();
         newKey.setApplicationId(applicationId);
         newKey.setEnvironmentId(environmentId);
-        newKey.setKey(generateSecretKey());
+        newKey.setKey(hashedKey);
         newKey.setKeyType(keyType);
         newKey.setExpirationDate(DEFAULT_EXPIRATION_DATE);
 
-        apiKeyRepository.save(newKey);
+        ApiKeyEntity saved = apiKeyRepository.save(newKey);
         LOGGER.info("Regenerated API key (type: {}) for application {} and environment {}", keyType,
                 applicationId, environmentId);
 
-        var response = ApiKeyResponse.fromEntity(newKey);
-        return new ApiKeyResponse(response.id(), response.environmentId(), response.keyType(),
-                response.secretKey(), newExpirationDateForOldKey);
+        return new ApiKeyResponse(saved.getId(), saved.getEnvironmentId(), saved.getKeyType(),
+                plaintextKey, newExpirationDateForOldKey);
     }
 
     private String generateSecretKey() {

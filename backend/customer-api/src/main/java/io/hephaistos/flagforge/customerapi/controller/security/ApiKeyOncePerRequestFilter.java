@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.customerapi.controller.security;
 import io.hephaistos.flagforge.common.data.ApiKeyEntity;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.EnvironmentEntity;
+import io.hephaistos.flagforge.common.util.ApiKeyHasher;
 import io.hephaistos.flagforge.customerapi.data.repository.ApiKeyRepository;
 import io.hephaistos.flagforge.customerapi.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.customerapi.data.repository.EnvironmentRepository;
@@ -61,8 +62,9 @@ public class ApiKeyOncePerRequestFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Query database for API key
-        ApiKeyEntity apiKeyEntity = apiKeyRepository.findByKey(apiKey)
+        // Hash the API key and query database
+        String hashedApiKey = ApiKeyHasher.hash(apiKey);
+        ApiKeyEntity apiKeyEntity = apiKeyRepository.findByKey(hashedApiKey)
                 .orElseThrow(() -> new InvalidApiKeyException("Invalid API key"));
 
         // Validate expiration

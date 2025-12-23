@@ -67,39 +67,29 @@ public class DefaultEnvironmentService implements EnvironmentService {
     @Override
     public EnvironmentResponse createDefaultEnvironment(UUID applicationId) {
         var application = getApplicationOrThrow(applicationId);
-
-        var environment = new EnvironmentEntity();
-        environment.setApplication(application);
-        environment.setName(DEFAULT_ENVIRONMENT_NAME);
-        environment.setDescription(DEFAULT_ENVIRONMENT_DESCRIPTION);
-        environment.setTier(PricingTier.FREE);
-
-        EnvironmentEntity saved = environmentRepository.save(environment);
-
-        createApiKeysForEnvironment(applicationId, saved.getId());
-
+        EnvironmentEntity saved = createEnvironmentInternal(application, DEFAULT_ENVIRONMENT_NAME,
+                DEFAULT_ENVIRONMENT_DESCRIPTION, PricingTier.FREE);
         return EnvironmentResponse.fromEntity(saved);
     }
 
     @Override
     public void createDefaultEnvironments(ApplicationEntity application) {
-        // Create Development environment
-        var devEnvironment = new EnvironmentEntity();
-        devEnvironment.setApplication(application);
-        devEnvironment.setName(DEFAULT_ENVIRONMENT_NAME);
-        devEnvironment.setDescription(DEFAULT_ENVIRONMENT_DESCRIPTION);
-        devEnvironment.setTier(PricingTier.FREE);
-        EnvironmentEntity savedDev = environmentRepository.save(devEnvironment);
-        createApiKeysForEnvironment(application.getId(), savedDev.getId());
+        createEnvironmentInternal(application, DEFAULT_ENVIRONMENT_NAME,
+                DEFAULT_ENVIRONMENT_DESCRIPTION, PricingTier.FREE);
+        createEnvironmentInternal(application, PRODUCTION_ENVIRONMENT_NAME,
+                PRODUCTION_ENVIRONMENT_DESCRIPTION, PricingTier.FREE);
+    }
 
-        // Create Production environment
-        var prodEnvironment = new EnvironmentEntity();
-        prodEnvironment.setApplication(application);
-        prodEnvironment.setName(PRODUCTION_ENVIRONMENT_NAME);
-        prodEnvironment.setDescription(PRODUCTION_ENVIRONMENT_DESCRIPTION);
-        prodEnvironment.setTier(PricingTier.FREE);
-        EnvironmentEntity savedProd = environmentRepository.save(prodEnvironment);
-        createApiKeysForEnvironment(application.getId(), savedProd.getId());
+    private EnvironmentEntity createEnvironmentInternal(ApplicationEntity application, String name,
+            String description, PricingTier tier) {
+        var environment = new EnvironmentEntity();
+        environment.setApplication(application);
+        environment.setName(name);
+        environment.setDescription(description);
+        environment.setTier(tier);
+        EnvironmentEntity saved = environmentRepository.save(environment);
+        createApiKeysForEnvironment(application.getId(), saved.getId());
+        return saved;
     }
 
     @Override

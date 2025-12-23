@@ -130,18 +130,21 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<CustomerEntity> getCustomerByEmail(String email) {
         return customerRepository.findByEmail(email);
     }
 
     @Override
     @RequireAdmin
+    @Transactional(readOnly = true)
     public List<CustomerEntity> getAllCustomers() {
         return customerRepository.findAll();
     }
 
     @Override
     @NullMarked
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return customerRepository.findByEmailWithAccessibleApplications(username)
                 .map(this::toUserDetails)

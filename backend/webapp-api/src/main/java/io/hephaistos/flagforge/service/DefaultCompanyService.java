@@ -14,6 +14,8 @@ import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,8 @@ import java.util.UUID;
 @Service
 @Transactional
 public class DefaultCompanyService implements CompanyService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCompanyService.class);
 
     private final CompanyRepository companyRepository;
     private final CustomerRepository customerRepository;
@@ -38,12 +42,14 @@ public class DefaultCompanyService implements CompanyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<CompanyEntity> getCompanyForCurrentCustomer() {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         return securityContext.getCompanyId().flatMap(companyRepository::findById);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<CompanyEntity> getCompany(UUID companyId) {
         return companyRepository.findById(companyId);
     }
@@ -52,9 +58,13 @@ public class DefaultCompanyService implements CompanyService {
     public CompanyResponse createCompanyForCurrentCustomer(
             CompanyCreationRequest companyCreationRequest) {
         var securityContext = FlagForgeSecurityContext.getCurrent();
+        LOGGER.info("Creating company '{}' for customer: {}", companyCreationRequest.companyName(),
+                securityContext.getCustomerName());
 
         // Check security context first to avoid unnecessary customer lookup
         if (securityContext.getCompanyId().isPresent()) {
+            LOGGER.warn("Customer {} already has a company assigned",
+                    securityContext.getCustomerName());
             throw new CompanyAlreadyAssignedException(
                     "Can't create company, the customer already has one assigned!");
         }
@@ -70,10 +80,12 @@ public class DefaultCompanyService implements CompanyService {
         // Update the security context's cached companyId
         securityContext.setCompanyId(company.getId());
 
+        LOGGER.info("Created company '{}' with ID: {}", company.getName(), company.getId());
         return CompanyResponse.fromEntity(company);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CompanyStatisticsResponse getCompanyStatistics() {
         var securityContext = FlagForgeSecurityContext.getCurrent();
         UUID companyId = securityContext.getCompanyId()

@@ -75,6 +75,7 @@ public class DefaultApplicationService implements ApplicationService {
 
     @Override
     @RequireReadOnly
+    @Transactional(readOnly = true)
     public List<ApplicationListResponse> getApplications() {
         return applicationRepository.findAll()
                 .stream().map(ApplicationListResponse::fromEntity)

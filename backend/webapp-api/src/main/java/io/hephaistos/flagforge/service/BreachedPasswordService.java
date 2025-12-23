@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -16,8 +17,8 @@ public class BreachedPasswordService {
     private static final String HIBP_API_URL = "https://api.pwnedpasswords.com/range/";
     private final RestClient restClient;
 
-    public BreachedPasswordService() {
-        this.restClient = RestClient.create();
+    public BreachedPasswordService(RestClient.Builder restClientBuilder) {
+        this.restClient = restClientBuilder.build();
     }
 
     /**
@@ -28,11 +29,11 @@ public class BreachedPasswordService {
      * @return true if password found in breaches, false otherwise
      */
     public boolean isPasswordBreached(String password) {
-        try {
-            String sha1Hash = sha1Hex(password).toUpperCase();
-            String prefix = sha1Hash.substring(0, 5);
-            String suffix = sha1Hash.substring(5);
+        String sha1Hash = sha1Hex(password).toUpperCase();
+        String prefix = sha1Hash.substring(0, 5);
+        String suffix = sha1Hash.substring(5);
 
+        try {
             String response =
                     restClient.get().uri(HIBP_API_URL + prefix).retrieve().body(String.class);
 
@@ -43,9 +44,8 @@ public class BreachedPasswordService {
             }
 
             return breached;
-
         }
-        catch (Exception e) {
+        catch (RestClientException e) {
             // Fail open - don't block registration if API is down
             LOGGER.error("Failed to check password against HIBP API - allowing registration", e);
             return false;
@@ -58,18 +58,23 @@ public class BreachedPasswordService {
      *
      * @param input The string to hash
      * @return Hex representation of SHA-1 hash
-     * @throws NoSuchAlgorithmException if SHA-1 algorithm is not available
      */
-    private String sha1Hex(String input) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        byte[] hashBytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+    private String sha1Hex(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] hashBytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
 
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hashBytes) {
-            String hex = String.format("%02x", b);
-            hexString.append(hex);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = String.format("%02x", b);
+                hexString.append(hex);
+            }
+
+            return hexString.toString();
         }
-
-        return hexString.toString();
+        catch (NoSuchAlgorithmException e) {
+            // SHA-1 is always available in Java, this should never happen
+            throw new IllegalStateException("SHA-1 algorithm not available", e);
+        }
     }
 }

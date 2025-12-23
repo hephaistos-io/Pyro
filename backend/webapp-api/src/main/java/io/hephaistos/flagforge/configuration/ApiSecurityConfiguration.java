@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.configuration;
 
 import io.hephaistos.flagforge.controller.security.DefaultAuthenticationEntryPoint;
 import io.hephaistos.flagforge.controller.security.JwtOncePerRequestFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,6 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -29,9 +33,12 @@ public class ApiSecurityConfiguration {
     private static final String[] WHITELIST_GET_ENDPOINTS = {"/v3/api-docs", "/v1/invite/**"};
 
     private final JwtOncePerRequestFilter jwtOncePerRequestFilter;
+    private final String allowedOrigins;
 
-    public ApiSecurityConfiguration(JwtOncePerRequestFilter jwtOncePerRequestFilter) {
+    public ApiSecurityConfiguration(JwtOncePerRequestFilter jwtOncePerRequestFilter,
+            @Value("${flagforge.security.cors.allowed-origins}") String allowedOrigins) {
         this.jwtOncePerRequestFilter = jwtOncePerRequestFilter;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
@@ -40,6 +47,16 @@ public class ApiSecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers
+                        // Prevent clickjacking attacks
+                        .frameOptions(frame -> frame.deny())
+                        // Prevent MIME type sniffing
+                        .contentTypeOptions(Customizer.withDefaults())
+                        // Enable XSS protection (legacy, but still useful for older browsers)
+                        .xssProtection(Customizer.withDefaults())
+                        // HTTP Strict Transport Security - only over HTTPS
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true)
+                                .maxAgeInSeconds(31536000))) // 1 year
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(HttpMethod.POST, WHITELIST_POST_ENDPOINTS)
                                 .permitAll()
@@ -54,10 +71,36 @@ public class ApiSecurityConfiguration {
                 .build();
     }
 
+    /**
+     * Configures CORS with explicit allowed origins instead of permitting all. Origins are
+     * configured via the flagforge.security.cors.allowed-origins property. Multiple origins can be
+     * specified as a comma-separated list.
+     */
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Parse comma-separated origins and set them explicitly
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        configuration.setAllowedOrigins(origins);
+
+        // Allow standard HTTP methods
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Allow common headers including Authorization for JWT
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+
+        // Allow credentials (cookies, authorization headers)
+        configuration.setAllowCredentials(true);
+
+        // Cache preflight response for 1 hour
+        configuration.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", new CorsConfiguration().applyPermitDefaultValues());
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
