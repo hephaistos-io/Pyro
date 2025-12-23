@@ -31,6 +31,8 @@ export {
 } from './fn/company/create-company-for-current-customer';
 export type {GetCompanyById$Params as GetCompanyById$Params} from './fn/company/get-company-by-id';
 export {getCompanyById as getCompanyById} from './fn/company/get-company-by-id';
+export type {GetCompanyStatistics$Params as GetCompanyStatistics$Params} from './fn/company/get-company-statistics';
+export {getCompanyStatistics as getCompanyStatistics} from './fn/company/get-company-statistics';
 export type {CreateInvite$Params as CreateInvite$Params} from './fn/invite/create-invite';
 export {createInvite as createInvite} from './fn/invite/create-invite';
 export type {RegenerateInvite$Params as RegenerateInvite$Params} from './fn/invite/regenerate-invite';

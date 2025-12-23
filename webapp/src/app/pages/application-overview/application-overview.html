@@ -88,9 +88,7 @@
                          [class.pricing-chart__row--active]="selectedEnvironment()?.id === env.id">
                         <div class="pricing-chart__label">
                             <span class="pricing-chart__name">{{ env.name }}</span>
-                            @if (env.tier === 'FREE') {
-                                <span class="pricing-chart__detail pricing-chart__detail--free">Free tier</span>
-                            } @else if (env.description) {
+                          @if (env.description) {
                                 <span class="pricing-chart__detail">{{ env.description }}</span>
                             }
                         </div>
@@ -144,6 +142,7 @@
                 (environmentDeleted)="onEnvironmentDeleted($event)"
                 [(selectedEnvironment)]="selectedEnvironment"
                 [applicationId]="application()!.id!"
+                [applicationName]="applicationName()"
                 [environments]="environments()">
         </app-environment-manager>
     }

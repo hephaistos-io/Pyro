@@ -9,6 +9,10 @@ import {
   EnvironmentCreationOverlayComponent,
   EnvironmentCreationOverlayData
 } from '../environment-creation-overlay/environment-creation-overlay.component';
+import {
+  DeleteFieldOverlayComponent,
+  DeleteFieldOverlayData
+} from '../delete-field-overlay/delete-field-overlay.component';
 
 // Type-safe PricingTier constants extracted from API models
 const PricingTier = {
@@ -29,6 +33,7 @@ const PricingTier = {
 export class EnvironmentManagerComponent {
   // Inputs
   applicationId = input.required<string>();
+  applicationName = input.required<string>();
   environments = input.required<EnvironmentResponse[]>();
   selectedEnvironment = model.required<EnvironmentResponse | null>();
   // Outputs
@@ -37,9 +42,6 @@ export class EnvironmentManagerComponent {
   // Environment dropdown state
   showEnvironmentDropdown = signal(false);
   environmentSearchQuery = signal('');
-  // Environment deletion state
-  showEnvironmentDeletion = signal(false);
-  isDeletingEnvironment = signal(false);
   // Computed: Check if selected environment can be deleted (only paid tiers, not FREE)
   canDeleteEnvironment = computed(() => {
     const env = this.selectedEnvironment();
@@ -122,51 +124,53 @@ export class EnvironmentManagerComponent {
   }
 
   requestEnvironmentDeletion(): void {
-    if (this.canDeleteEnvironment()) {
-      this.showEnvironmentDeletion.set(true);
+    if (!this.canDeleteEnvironment()) {
+      return;
     }
-  }
 
-  cancelEnvironmentDeletion(): void {
-    this.showEnvironmentDeletion.set(false);
-  }
-
-  async confirmEnvironmentDeletion(): Promise<void> {
     const appId = this.applicationId();
+    const appName = this.applicationName();
     const currentEnv = this.selectedEnvironment();
 
-    if (!appId || !currentEnv?.id) {
+    if (!appId || !currentEnv?.id || !currentEnv.name) {
       return;
     }
 
-    // Double-check tier before deletion
+    // Double-check tier before showing overlay
     if (currentEnv.tier === PricingTier.FREE) {
       console.error('Cannot delete FREE tier environment');
-      this.showEnvironmentDeletion.set(false);
       return;
     }
 
-    this.isDeletingEnvironment.set(true);
-    try {
-      await this.api.invoke(deleteEnvironment, {
-        applicationId: appId,
-        environmentId: currentEnv.id
-      });
+    this.overlayService.open<DeleteFieldOverlayData>({
+      component: DeleteFieldOverlayComponent,
+      data: {
+        applicationName: appName,
+        fieldKey: currentEnv.name,
+        type: 'environment',
+        onConfirm: async () => {
+          try {
+            await this.api.invoke(deleteEnvironment, {
+              applicationId: appId,
+              environmentId: currentEnv.id!
+            });
 
-      // Select another environment if available
-      const remaining = this.environments().filter(env => env.id !== currentEnv.id);
-      if (remaining.length > 0) {
-        this.selectedEnvironment.set(remaining[0]);
-      } else {
-        this.selectedEnvironment.set(null);
-      }
+            // Select another environment if available
+            const remaining = this.environments().filter(env => env.id !== currentEnv.id);
+            if (remaining.length > 0) {
+              this.selectedEnvironment.set(remaining[0]);
+            } else {
+              this.selectedEnvironment.set(null);
+            }
 
-      this.showEnvironmentDeletion.set(false);
-      this.environmentDeleted.emit(currentEnv.id);
-    } catch (error) {
-      console.error('Failed to delete environment:', error);
-    } finally {
-      this.isDeletingEnvironment.set(false);
-    }
+            this.environmentDeleted.emit(currentEnv.id!);
+          } catch (error) {
+            console.error('Failed to delete environment:', error);
+            alert('Failed to delete environment');
+          }
+        }
+      },
+      maxWidth: '500px'
+    });
   }
 }

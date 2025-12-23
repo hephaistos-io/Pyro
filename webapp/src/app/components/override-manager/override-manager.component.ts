@@ -29,6 +29,7 @@ import {
 })
 export class OverrideManagerComponent {
   templateService = inject(TemplateService);
+  isAddingIdentifier = signal(false);
   // Inputs
   applicationId = input.required<string>();
   applicationName = input.required<string>();
@@ -105,7 +106,6 @@ export class OverrideManagerComponent {
   matrixIdentifiers = computed<string[]>(() => {
     return this.allIdentifiers();
   });
-  private overlayService = inject(OverlayService);
 
   // Get matrix cell value (override value or null if using default)
   getMatrixCellValue(identifier: string, attribute: string): string | null {
@@ -160,6 +160,20 @@ export class OverrideManagerComponent {
     const error = this.validateDefaultValue(field, newValue.trim());
     this.editError.set(error);
   }
+  private overlayService = inject(OverlayService);
+
+  tryToSaveMatrixCellEdit(): void {
+    if (this.editError()) {
+      return;
+    }
+    this.saveMatrixCellEdit();
+  }
+
+  cancelMatrixCellEdit(): void {
+    this.editingMatrixCell.set(null);
+    this.editValue.set('');
+    this.editError.set(null);
+  }
 
   async saveMatrixCellEdit(): Promise<void> {
     const editing = this.editingMatrixCell();
@@ -193,42 +207,41 @@ export class OverrideManagerComponent {
     const updatedValues: Record<string, unknown> = {...currentValues};
     const defaultValue = this.getDefaultValue(attribute);
 
-    // Convert value based on field type
+    // Convert value based on field type before comparison
     let finalValue: unknown = newValue;
-    if (field && newValue !== defaultValue && newValue !== '') {
-      if (this.templateService.isNumberField(field)) {
-        finalValue = parseFloat(newValue);
-      } else if (this.templateService.isBooleanField(field)) {
-        finalValue = newValue.toLowerCase() === 'true';
-      }
+    let convertedDefaultValue: unknown = defaultValue;
+
+    if (this.templateService.isNumberField(field)) {
+      finalValue = newValue ? parseFloat(newValue) : 0;
+      convertedDefaultValue = defaultValue ? parseFloat(defaultValue) : 0;
+    } else if (this.templateService.isBooleanField(field)) {
+      finalValue = newValue.toLowerCase() === 'true';
+      convertedDefaultValue = defaultValue.toLowerCase() === 'true';
     }
 
-    if (newValue === defaultValue || newValue === '') {
-      // Remove override if setting back to default or empty
+    // Only remove the attribute if the value matches the default
+    // Use strict equality after type conversion
+    if (finalValue === convertedDefaultValue && newValue !== '') {
+      // Setting to default value - remove the override for this attribute
+      delete updatedValues[attribute];
+    } else if (newValue === '') {
+      // Empty value - remove the override for this attribute
       delete updatedValues[attribute];
     } else {
+      // Custom value - set the override
       updatedValues[attribute] = finalValue;
     }
 
     try {
-      if (Object.keys(updatedValues).length === 0) {
-        // No overrides left, delete the entire override
-        await this.templateService.deleteOverride(
-          appId,
-          templateType === 'system' ? TemplateType.System : TemplateType.User,
-          envId,
-          identifier
-        );
-      } else {
-        // Update the override
-        await this.templateService.setOverride(
-          appId,
-          templateType === 'system' ? TemplateType.System : TemplateType.User,
-          envId,
-          identifier,
-          updatedValues
-        );
-      }
+      // Always use setOverride to update values, even if empty
+      // The identifier itself should remain unless explicitly deleted by the user
+      await this.templateService.setOverride(
+        appId,
+        templateType === 'system' ? TemplateType.System : TemplateType.User,
+        envId,
+        identifier,
+        updatedValues
+      );
       this.overridesChanged.emit();
     } catch (error) {
       console.error('Error saving matrix cell:', error);
@@ -241,25 +254,15 @@ export class OverrideManagerComponent {
     this.editError.set(null);
   }
 
-  tryToSaveMatrixCellEdit(): void {
-    if (this.editError()) {
-      return;
-    }
-    this.saveMatrixCellEdit();
-  }
-
-  cancelMatrixCellEdit(): void {
-    this.editingMatrixCell.set(null);
-    this.editValue.set('');
-    this.editError.set(null);
-  }
-
   async addIdentifier(): Promise<void> {
     const appId = this.applicationId();
     const envId = this.environmentId();
     const identifier = this.newIdentifierName().trim();
 
     if (!appId || !envId || !identifier) return;
+
+    // Prevent concurrent additions
+    if (this.isAddingIdentifier()) return;
 
     // Check if identifier already exists
     if (this.allIdentifiers().includes(identifier)) {
@@ -269,6 +272,7 @@ export class OverrideManagerComponent {
 
     const templateType = this.templateType();
 
+    this.isAddingIdentifier.set(true);
     try {
       // Create override with empty values (just to establish the identifier)
       await this.templateService.setOverride(
@@ -285,6 +289,8 @@ export class OverrideManagerComponent {
     } catch (error) {
       console.error('Error adding identifier:', error);
       alert('Failed to add identifier');
+    } finally {
+      this.isAddingIdentifier.set(false);
     }
   }
 

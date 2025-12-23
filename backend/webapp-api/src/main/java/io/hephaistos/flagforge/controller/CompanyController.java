@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.controller.dto.CompanyCreationRequest;
 import io.hephaistos.flagforge.controller.dto.CompanyResponse;
+import io.hephaistos.flagforge.controller.dto.CompanyStatisticsResponse;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.service.CompanyService;
@@ -58,5 +59,13 @@ public class CompanyController {
                 .map(CompanyResponse::fromEntity)
                 .orElseThrow(() -> new NotFoundException(
                         "Couldn't find company for id %s!".formatted(companyId)));
+    }
+
+    @Operation(
+            summary = "Retrieve pricing statistics for all applications and environments in the company")
+    @GetMapping(value = "/statistics", produces = APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public CompanyStatisticsResponse getCompanyStatistics() {
+        return companyService.getCompanyStatistics();
     }
 }

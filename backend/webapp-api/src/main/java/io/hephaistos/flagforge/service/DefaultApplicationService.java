@@ -2,7 +2,6 @@ package io.hephaistos.flagforge.service;
 
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.CustomerEntity;
-import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
@@ -54,14 +53,9 @@ public class DefaultApplicationService implements ApplicationService {
                             request.name()));
         }
 
-        // First application for a company is FREE, subsequent applications are BASIC
-        boolean isFirstApplication = applicationRepository.countByCompanyId(companyId) == 0;
-        PricingTier pricingTier = isFirstApplication ? PricingTier.FREE : PricingTier.BASIC;
-
         var application = new ApplicationEntity();
         application.setName(request.name());
         application.setCompanyId(companyId);
-        application.setPricingTier(pricingTier);
         applicationRepository.save(application);
 
         // Grant the creator access to the application

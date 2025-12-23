@@ -1,11 +1,8 @@
 package io.hephaistos.flagforge.common.data;
 
-import io.hephaistos.flagforge.common.enums.PricingTier;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,8 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +28,6 @@ public class ApplicationEntity extends CompanyOwnedEntity {
 
     @Column(nullable = false)
     private String name;
-
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "pricing_tier", nullable = false)
-    private PricingTier pricingTier = PricingTier.BASIC;
 
     @OneToMany(mappedBy = "application", fetch = FetchType.LAZY, cascade = CascadeType.ALL,
             orphanRemoval = true)
@@ -82,14 +72,6 @@ public class ApplicationEntity extends CompanyOwnedEntity {
     public void addTemplate(TemplateEntity template) {
         templates.add(template);
         template.setApplication(this);
-    }
-
-    public PricingTier getPricingTier() {
-        return pricingTier;
-    }
-
-    public void setPricingTier(PricingTier pricingTier) {
-        this.pricingTier = pricingTier;
     }
 
     @Override

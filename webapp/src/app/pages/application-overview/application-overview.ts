@@ -313,12 +313,12 @@ export class ApplicationOverview implements OnInit {
   }
 
   // Override Manager event handlers
-  onOverridesChanged(): void {
+  async onOverridesChanged(): Promise<void> {
     // Reload overrides when they are modified
     const app = this.application();
     const env = this.selectedEnvironment();
     if (app?.id && env?.id) {
-      this.loadOverrides(app.id, env.id);
+      await this.loadOverrides(app.id, env.id);
     }
   }
 

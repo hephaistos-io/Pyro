@@ -60,7 +60,8 @@
       }
 
       <!-- Add Identifier Button -->
-      <button (click)="showAddIdentifier.set(true)" class="btn btn-primary btn-sm btn-icon">
+      <button (click)="showAddIdentifier.set(true); newIdentifierName.set('')" [disabled]="isAddingIdentifier()"
+              class="btn btn-primary btn-sm btn-icon">
         <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
           <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
         </svg>
@@ -72,15 +73,25 @@
   <!-- Add Identifier Form -->
   @if (showAddIdentifier()) {
     <div class="overrides-add-form">
-      <input (keydown.enter)="addIdentifier()"
+      <input #identifierInput
+             (keydown.enter)="!isAddingIdentifier() && addIdentifier()"
              (keydown.escape)="showAddIdentifier.set(false); newIdentifierName.set('')"
              (ngModelChange)="newIdentifierName.set($event)"
              [ngModel]="newIdentifierName()"
+             [disabled]="isAddingIdentifier()"
              class="overrides-add-form__input"
              placeholder="Enter identifier name..."
              type="text">
-      <button (click)="addIdentifier()" class="overrides-add-form__btn overrides-add-form__btn--save">Add</button>
+      <button (click)="addIdentifier()" [disabled]="isAddingIdentifier() || !newIdentifierName().trim()"
+              class="overrides-add-form__btn overrides-add-form__btn--save">
+        @if (isAddingIdentifier()) {
+          Adding...
+        } @else {
+          Add
+        }
+      </button>
       <button (click)="showAddIdentifier.set(false); newIdentifierName.set('')"
+              [disabled]="isAddingIdentifier()"
               class="overrides-add-form__btn overrides-add-form__btn--cancel">Cancel
       </button>
     </div>

@@ -10,6 +10,7 @@ import {UserCreationFormComponent} from '../../components/user-creation-form/use
 import {UserEditFormComponent} from '../../components/user-edit-form/user-edit-form.component';
 import {AppCardComponent} from '../../components/app-card/app-card.component';
 import {UsersTableComponent} from '../../components/users-table/users-table.component';
+import {PricingStatisticsComponent} from '../../components/pricing-statistics/pricing-statistics.component';
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
@@ -19,21 +20,11 @@ import {CommonModule} from '@angular/common';
 import {HasRoleDirective} from '../../directives/has-role.directive';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
-const COST_PER_ADDITIONAL_APP = 29; // $29/month per additional app
-
-// Type-safe PricingTier constants extracted from API models
-const PricingTier = {
-  FREE: 'FREE',
-  BASIC: 'BASIC',
-  STANDARD: 'STANDARD',
-  PRO: 'PRO',
-  BUSINESS: 'BUSINESS'
-} as const;
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent, HasRoleDirective],
+  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent, PricingStatisticsComponent, HasRoleDirective],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -51,28 +42,6 @@ export class DashboardComponent implements OnInit {
   applications = signal<ApplicationListResponse[]>([]);
   private api = inject(Api);
   activeTab = signal<'applications' | 'users'>('applications');
-
-  // Cost overview computed values - uses pricingTier from API
-  applicationCosts = computed(() => {
-    return this.applications().map(app => {
-      const isFree = app.pricingTier === PricingTier.FREE;
-      return {
-        id: app.id,
-        name: app.name,
-        cost: isFree ? 0 : COST_PER_ADDITIONAL_APP,
-        isFree
-      };
-    });
-  });
-
-  totalMonthlyCost = computed(() => {
-    const paidApps = this.applications().filter(app => app.pricingTier !== PricingTier.FREE);
-    return paidApps.length * COST_PER_ADDITIONAL_APP;
-  });
-
-  maxAppCost = computed(() => {
-    return Math.max(COST_PER_ADDITIONAL_APP, ...this.applicationCosts().map(a => a.cost));
-  });
 
   showCompanyOnboarding = computed(() =>
     !this.customerService.isProfileLoading() && !this.customerService.hasCompany()
@@ -103,6 +72,8 @@ export class DashboardComponent implements OnInit {
     await this.customerService.fetchProfile();
     if (this.customerService.hasCompany()) {
       await this.fetchApplications();
+      // Preload applications for user management
+      await this.usersService.fetchApplications();
     }
   }
 

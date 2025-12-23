@@ -29,6 +29,7 @@
   }
 }
 
+.add-env-btn,
 .delete-env-btn {
   display: flex;
   align-items: center;
@@ -44,6 +45,13 @@
   transition: all 0.3s ease;
   flex-shrink: 0;
 
+  @include dark-mode {
+    border-color: $dark-border;
+    color: $dark-text-muted;
+  }
+}
+
+.add-env-btn {
   &:hover {
     border-color: $pyro-red;
     color: $pyro-red;
@@ -51,9 +59,22 @@
   }
 
   @include dark-mode {
-    border-color: $dark-border;
-    color: $dark-text-muted;
+    &:hover {
+      border-color: $pyro-red;
+      color: $pyro-red-light;
+      background: rgba($pyro-red, 0.1);
+    }
+  }
+}
 
+.delete-env-btn {
+  &:hover {
+    border-color: $pyro-red;
+    color: $pyro-red;
+    background: rgba($pyro-red, 0.05);
+  }
+
+  @include dark-mode {
     &:hover {
       border-color: $pyro-red;
       color: $pyro-red-light;

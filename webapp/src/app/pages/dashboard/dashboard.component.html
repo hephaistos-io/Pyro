@@ -33,62 +33,10 @@
           }
         </div>
 
-        <!-- Costs Overview Section (Admin only) -->
+        <!-- Pricing Statistics Section (Admin only) -->
         <ng-container *hasRole="CustomerRole.Admin">
           @if (applications().length > 0) {
-            <div class="costs-overview">
-            <div class="costs-overview__header">
-              <h3 class="costs-overview__title">Monthly Cost Breakdown</h3>
-              <span class="costs-overview__total">
-                @if (totalMonthlyCost() === 0) {
-                  Free
-                } @else {
-                  ${{ totalMonthlyCost() }}<span class="costs-overview__period">/mo</span>
-                }
-              </span>
-            </div>
-
-            <div class="costs-chart">
-              @for (appCost of applicationCosts(); track appCost.id) {
-                <div class="costs-chart__row">
-                  <div class="costs-chart__label">
-                    <span class="costs-chart__name">{{ appCost.name }}</span>
-                    @if (appCost.isFree) {
-                      <span class="costs-chart__detail costs-chart__detail--free">Free tier included</span>
-                    } @else {
-                      <span class="costs-chart__detail">Additional application</span>
-                    }
-                  </div>
-                  <div class="costs-chart__bar-wrapper">
-                    @if (!appCost.isFree) {
-                      <div
-                        class="costs-chart__bar"
-                        [style.width.%]="(appCost.cost / maxAppCost()) * 100">
-                      </div>
-                    }
-                  </div>
-                  <span class="costs-chart__amount">
-                    @if (appCost.isFree) {
-                      Free
-                    } @else {
-                      ${{ appCost.cost }}
-                    }
-                  </span>
-                </div>
-              }
-            </div>
-
-            <div class="costs-legend">
-              <div class="costs-legend__item">
-                <span class="costs-legend__dot costs-legend__dot--free"></span>
-                <span class="costs-legend__text">First app (free)</span>
-              </div>
-              <div class="costs-legend__item">
-                <span class="costs-legend__dot costs-legend__dot--paid"></span>
-                <span class="costs-legend__text">Additional apps ($29/mo each)</span>
-              </div>
-            </div>
-          </div>
+            <app-pricing-statistics/>
           }
         </ng-container>
       } @else if (activeTab() === 'users') {
