@@ -36,6 +36,7 @@ interface UserTier {
 
 @Component({
     selector: 'app-application-overview',
+  standalone: true,
   imports: [FormsModule, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent],
     templateUrl: './application-overview.html',
     styleUrl: './application-overview.scss',

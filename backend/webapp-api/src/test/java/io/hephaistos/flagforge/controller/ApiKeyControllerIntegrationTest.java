@@ -58,7 +58,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
     // ========== Get API Key by Type ==========
 
     @Test
-    void getApiKeyByTypeReturnsReadKeyMetadataWithoutSecret() {
+    void getApiKeyByTypeReturnsReadKeyWithSecret() {
         String token = registerAndAuthenticateWithCompany();
         UUID applicationId = createApplication(token, "Test App");
         UUID environmentId = getDefaultEnvironmentId(token, applicationId);
@@ -70,9 +70,9 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().keyType()).isEqualTo(KeyType.READ);
         assertThat(response.getBody().environmentId()).isEqualTo(environmentId);
-        // Secret key is null because keys are stored as hashes and cannot be retrieved
-        // Users must use regenerate to get a new key if they need it
-        assertThat(response.getBody().secretKey()).isNull();
+        // Secret key is returned since we store plaintext
+        assertThat(response.getBody().secretKey()).isNotNull();
+        assertThat(response.getBody().secretKey()).hasSize(64);
     }
 
     @Test
@@ -227,11 +227,14 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
                 ApiKeyResponse.class).getBody();
 
         assertThat(newKeyMetadata.id()).isNotEqualTo(originalKey.id());
-        // The GET endpoint returns null for secretKey (hashed in DB)
-        assertThat(newKeyMetadata.secretKey()).isNull();
-        // But the regenerate response contains the plaintext key
+        // GET endpoint returns the secret key (plaintext storage)
+        assertThat(newKeyMetadata.secretKey()).isNotNull();
+        assertThat(newKeyMetadata.secretKey()).hasSize(64);
+        // The regenerate response also contains the plaintext key
         assertThat(regeneratedKey.secretKey()).isNotNull();
         assertThat(regeneratedKey.secretKey()).hasSize(64);
+        // Both should return the same key
+        assertThat(newKeyMetadata.secretKey()).isEqualTo(regeneratedKey.secretKey());
     }
 
     @Test

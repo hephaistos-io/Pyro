@@ -18,11 +18,11 @@ import {AuthService} from '../../services/auth.service';
   styleUrl: './register.component.scss'
 })
 export class RegisterComponent implements OnInit {
-  email = '';
-  firstName = '';
-  lastName = '';
-  password = '';
-  confirmPassword = '';
+  email = signal('');
+  firstName = signal('');
+  lastName = signal('');
+  password = signal('');
+  confirmPassword = signal('');
   submitted = signal(false);
   error = signal('');
   isLoading = signal(false);
@@ -57,6 +57,27 @@ export class RegisterComponent implements OnInit {
     return this.inviteToken() !== null && this.inviteData() !== null;
   }
 
+  get passwordStrength(): { score: number; label: string; feedback: string } {
+    const pwd = this.password();
+    if (!pwd) {
+      return {score: 0, label: '', feedback: ''};
+    }
+
+    if (pwd.length < 8) {
+      return {score: 0, label: 'Too short', feedback: 'At least 8 characters required'};
+    }
+
+    const result = zxcvbn(pwd);
+    const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const feedback = result.feedback.warning || result.feedback.suggestions[0] || '';
+
+    return {
+      score: result.score,
+      label: labels[result.score],
+      feedback: feedback
+    };
+  }
+
   async onSubmit(): Promise<void> {
     // Validate form
     const validationError = this.validateForm();
@@ -71,16 +92,16 @@ export class RegisterComponent implements OnInit {
     try {
       // Build registration request
       const registrationRequest: CustomerRegistrationRequest = {
-        firstName: this.firstName,
-        lastName: this.lastName,
-        password: this.password
+        firstName: this.firstName(),
+        lastName: this.lastName(),
+        password: this.password()
       };
 
       // Include invite token or email depending on flow
       if (this.isInviteFlow()) {
         registrationRequest.inviteToken = this.inviteToken()!;
       } else {
-        registrationRequest.email = this.email;
+        registrationRequest.email = this.email();
       }
 
       await this.api.invoke(register, {body: registrationRequest});
@@ -97,26 +118,6 @@ export class RegisterComponent implements OnInit {
     }
   }
 
-  get passwordStrength(): { score: number; label: string; feedback: string } {
-    if (!this.password) {
-      return {score: 0, label: '', feedback: ''};
-    }
-
-    if (this.password.length < 8) {
-      return {score: 0, label: 'Too short', feedback: 'At least 8 characters required'};
-    }
-
-    const result = zxcvbn(this.password);
-    const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
-    const feedback = result.feedback.warning || result.feedback.suggestions[0] || '';
-
-    return {
-      score: result.score,
-      label: labels[result.score],
-      feedback: feedback
-    };
-  }
-
   private async validateInviteToken(token: string): Promise<void> {
     this.isValidatingInvite.set(true);
     this.inviteError.set(null);
@@ -126,7 +127,7 @@ export class RegisterComponent implements OnInit {
       if (response.valid) {
         this.inviteData.set(response);
         // Pre-fill email from invite
-        this.email = response.email ?? '';
+        this.email.set(response.email ?? '');
       } else {
         // Handle invalid invite
         const reason = response.reason;
@@ -150,33 +151,33 @@ export class RegisterComponent implements OnInit {
   private validateForm(): string | null {
     // For invite flow, we only need name and password
     if (this.isInviteFlow()) {
-      if (!this.firstName || !this.lastName || !this.password || !this.confirmPassword) {
+      if (!this.firstName() || !this.lastName() || !this.password() || !this.confirmPassword()) {
         return 'All fields are required';
       }
     } else {
-      if (!this.firstName || !this.lastName || !this.email || !this.password || !this.confirmPassword) {
+      if (!this.firstName() || !this.lastName() || !this.email() || !this.password() || !this.confirmPassword()) {
         return 'All fields are required';
       }
 
-      if (!isValidEmail(this.email)) {
+      if (!isValidEmail(this.email())) {
         return 'Please enter a valid email address';
       }
     }
 
-    if (!this.isValidName(this.firstName)) {
+    if (!this.isValidName(this.firstName())) {
       return 'First name must be 2-50 characters and contain only letters';
     }
 
-    if (!this.isValidName(this.lastName)) {
+    if (!this.isValidName(this.lastName())) {
       return 'Last name must be 2-50 characters and contain only letters';
     }
 
-    const passwordValidation = this.isValidPassword(this.password);
+    const passwordValidation = this.isValidPassword(this.password());
     if (!passwordValidation.valid) {
       return passwordValidation.message || 'Password is invalid';
     }
 
-    if (this.password !== this.confirmPassword) {
+    if (this.password() !== this.confirmPassword()) {
       return 'Passwords do not match';
     }
 
