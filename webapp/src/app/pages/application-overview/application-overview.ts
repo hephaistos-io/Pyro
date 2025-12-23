@@ -3,6 +3,7 @@ import {Router} from '@angular/router';
 import {
   ApplicationResponse,
   BooleanTemplateField,
+  CustomerRole,
   EnumTemplateField,
   EnvironmentResponse,
   NumberTemplateField,
@@ -19,25 +20,21 @@ import {EnvironmentManagerComponent} from '../../components/environment-manager/
 import {UsageStatsCardComponent} from '../../components/usage-stats-card/usage-stats-card.component';
 import {TemplateConfigComponent} from '../../components/template-config/template-config.component';
 import {OverrideManagerComponent} from '../../components/override-manager/override-manager.component';
+import {HasRoleDirective} from '../../directives/has-role.directive';
 
-interface RequestTier {
+interface RateLimitTier {
     id: string;
     name: string;
-    dailyLimit: number;
-    monthlyPrice: number;
-}
-
-interface UserTier {
-    id: string;
-    name: string;
-    maxUsers: number;
-    monthlyPrice: number;
+  price: string;
+  requestsPerMonth: string;
+  rateLimit: number;
+  description: string;
 }
 
 @Component({
     selector: 'app-application-overview',
   standalone: true,
-  imports: [FormsModule, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent],
+  imports: [FormsModule, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent, HasRoleDirective],
     templateUrl: './application-overview.html',
     styleUrl: './application-overview.scss',
 })
@@ -60,30 +57,33 @@ export class ApplicationOverview implements OnInit {
     // Mock total hits this month - Replace with actual stats from backend
     totalHitsThisMonth = signal(0);
 
-    // Mock request tiers - Replace with: this.api.invoke(getRequestTiers)
-    requestTiers = signal<RequestTier[]>([
-        {id: 'tier1', name: '1k', dailyLimit: 1000, monthlyPrice: 0},
-        {id: 'tier2', name: '10k', dailyLimit: 10000, monthlyPrice: 19},
-        {id: 'tier3', name: '50k', dailyLimit: 50000, monthlyPrice: 49},
-        {id: 'tier4', name: '500k', dailyLimit: 500000, monthlyPrice: 149},
+  // Rate limit tiers (matching pricing page)
+  rateLimitTiers = signal<RateLimitTier[]>([
+    {id: 'free', name: 'Free', price: '$0', requestsPerMonth: '500k/month', rateLimit: 5, description: 'Dev/Test'},
+    {id: 'basic', name: 'Basic', price: '$10', requestsPerMonth: '2M/month', rateLimit: 20, description: 'Small apps'},
+    {
+      id: 'standard',
+      name: 'Standard',
+      price: '$40',
+      requestsPerMonth: '10M/month',
+      rateLimit: 100,
+      description: 'Growing startups'
+    },
+    {id: 'pro', name: 'Pro', price: '$100', requestsPerMonth: '25M/month', rateLimit: 500, description: 'Scale-ups'},
+    {
+      id: 'business',
+      name: 'Business',
+      price: '$400',
+      requestsPerMonth: '100M/month',
+      rateLimit: 2000,
+      description: 'Enterprise'
+    },
     ]);
-    selectedRequestTierIndex = signal(2); // Default to 50k (index 2)
-    currentRequestTier = computed(() => this.requestTiers()[this.selectedRequestTierIndex()]);
+  selectedRateLimitTierIndex = signal(0); // Default to Free
+  currentRateLimitTier = computed(() => this.rateLimitTiers()[this.selectedRateLimitTierIndex()]);
 
-    // Mock user tiers - Replace with: this.api.invoke(getUserTiers)
-    userTiers = signal<UserTier[]>([
-        {id: 'tier1', name: '100', maxUsers: 100, monthlyPrice: 0},
-        {id: 'tier2', name: '1k', maxUsers: 1000, monthlyPrice: 29},
-        {id: 'tier3', name: '10k', maxUsers: 10000, monthlyPrice: 79},
-        {id: 'tier4', name: '100k', maxUsers: 100000, monthlyPrice: 199},
-    ]);
-    selectedUserTierIndex = signal(2); // Default to 10k (index 2)
-    currentUserTier = computed(() => this.userTiers()[this.selectedUserTierIndex()]);
-
-    // Combined monthly price for selected environment
-    totalMonthlyPrice = computed(() =>
-        this.currentRequestTier().monthlyPrice + this.currentUserTier().monthlyPrice
-    );
+  // Expose CustomerRole for template
+  readonly CustomerRole = CustomerRole;
     // Pricing breakdown per environment (simplified since we don't have stats from API yet)
     pricingBreakdown = computed(() => {
         const envs = this.environments();
@@ -264,25 +264,17 @@ export class ApplicationOverview implements OnInit {
     });
     }
 
-    // Request Tier methods
-    onRequestTierSliderChange(event: Event): void {
+  // Rate Limit Tier methods
+  onRateLimitTierSliderChange(event: Event): void {
         const input = event.target as HTMLInputElement;
-        this.selectedRequestTierIndex.set(parseInt(input.value, 10));
+    this.selectedRateLimitTierIndex.set(parseInt(input.value, 10));
     }
 
-    // User Tier methods
-    onUserTierSliderChange(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        this.selectedUserTierIndex.set(parseInt(input.value, 10));
-    }
-
-    formatLimit(limit: number): string {
-        if (limit >= 1000000) {
-            return (limit / 1000000) + 'M';
-        } else if (limit >= 1000) {
-            return (limit / 1000) + 'k';
+  formatRateLimit(rateLimit: number): string {
+    if (rateLimit >= 1000) {
+      return (rateLimit / 1000) + 'k';
         }
-        return limit.toString();
+    return rateLimit.toLocaleString();
     }
 
   // ============================================================================
