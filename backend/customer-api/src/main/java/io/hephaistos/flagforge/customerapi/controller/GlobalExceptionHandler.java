@@ -2,6 +2,7 @@ package io.hephaistos.flagforge.customerapi.controller;
 
 import io.hephaistos.flagforge.customerapi.exception.ApiKeyExpiredException;
 import io.hephaistos.flagforge.customerapi.exception.InvalidApiKeyException;
+import io.hephaistos.flagforge.customerapi.exception.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Invalid API key: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse("INVALID_API_KEY", "Invalid or missing API key"));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException ex) {
+        LOGGER.info("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse("NOT_FOUND", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
