@@ -3,13 +3,16 @@
 
 export type {AllTemplateOverridesResponse} from './models/all-template-overrides-response';
 export type {ApiKeyResponse} from './models/api-key-response';
+export type {ApplicationAccessResponse} from './models/application-access-response';
 export type {ApplicationCreationRequest} from './models/application-creation-request';
 export type {ApplicationListResponse} from './models/application-list-response';
 export type {ApplicationResponse} from './models/application-response';
+export type {ApplicationStatistics} from './models/application-statistics';
 export type {AuthenticationResponse} from './models/authentication-response';
 export type {BooleanTemplateField} from './models/boolean-template-field';
 export type {CompanyCreationRequest} from './models/company-creation-request';
 export type {CompanyResponse} from './models/company-response';
+export type {CompanyStatisticsResponse} from './models/company-statistics-response';
 export type {CopyOverridesRequest} from './models/copy-overrides-request';
 export type {CopyOverridesResponse} from './models/copy-overrides-response';
 export type {CustomerAuthenticationRequest} from './models/customer-authentication-request';
@@ -19,6 +22,7 @@ export {CustomerRole} from './models/customer-role';
 export type {EnumTemplateField} from './models/enum-template-field';
 export type {EnvironmentCreationRequest} from './models/environment-creation-request';
 export type {EnvironmentResponse} from './models/environment-response';
+export type {EnvironmentStatistics} from './models/environment-statistics';
 export {FieldType} from './models/field-type';
 export type {InviteCreationRequest} from './models/invite-creation-request';
 export type {InviteCreationResponse} from './models/invite-creation-response';

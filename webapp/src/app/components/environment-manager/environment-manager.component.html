@@ -64,21 +64,19 @@
                 </div>
               }
             </div>
-
-            <!-- Create Environment -->
-            <div class="dropdown-footer">
-              <button (click)="onAddEnvironmentClick()" class="dropdown-create">
-                <svg fill="none" height="18" viewBox="0 0 18 18" width="18"
-                     xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 3.75V14.25M3.75 9H14.25" stroke="currentColor" stroke-linecap="round"
-                        stroke-width="2"/>
-                </svg>
-                <span>Create Environment</span>
-              </button>
-            </div>
           </div>
         }
       </div>
+
+      <!-- Add Environment Button -->
+      <button (click)="onAddEnvironmentClick()" aria-label="Create environment"
+              class="add-env-btn">
+        <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 4V16M4 10H16" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
+        </svg>
+      </button>
+
+      <!-- Delete Environment Button -->
       @if (selectedEnvironment() && canDeleteEnvironment()) {
         <button (click)="requestEnvironmentDeletion()" aria-label="Delete environment"
                 class="delete-env-btn">
@@ -97,38 +95,3 @@
     }
   </div>
 </div>
-
-<!-- Environment Deletion Confirmation Modal -->
-@if (showEnvironmentDeletion()) {
-  <div (click)="isDeletingEnvironment() ? null : cancelEnvironmentDeletion()" class="modal-overlay">
-    <div (click)="$event.stopPropagation()" class="modal-content modal-content--warning">
-      <button (click)="cancelEnvironmentDeletion()" [disabled]="isDeletingEnvironment()" class="modal-close">
-        <svg fill="none" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-linecap="round" stroke-width="2"/>
-        </svg>
-      </button>
-      <div class="warning-icon">
-        <svg fill="none" height="32" viewBox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
-                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-        </svg>
-      </div>
-      <h2 class="modal-title modal-title--warning">Delete "{{ selectedEnvironment()?.name }}"?</h2>
-      <p class="warning-text">This action will permanently delete this environment and all associated data. This
-        cannot be undone.</p>
-      <div class="modal-actions">
-        <button (click)="cancelEnvironmentDeletion()" [disabled]="isDeletingEnvironment()"
-                class="modal-btn modal-btn--cancel">Cancel
-        </button>
-        <button (click)="confirmEnvironmentDeletion()" [disabled]="isDeletingEnvironment()"
-                class="modal-btn modal-btn--danger">
-          @if (isDeletingEnvironment()) {
-            Deleting...
-          } @else {
-            Delete Environment
-          }
-        </button>
-      </div>
-    </div>
-  </div>
-}

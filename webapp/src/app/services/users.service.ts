@@ -3,9 +3,11 @@ import {Api} from '../api/generated/api';
 import {getTeam} from '../api/generated/fn/customer/get-team';
 import {regenerateInvite} from '../api/generated/fn/invite/regenerate-invite';
 import {deleteInvite} from '../api/generated/fn/invite/delete-invite';
+import {getApplications} from '../api/generated/fn/application/get-applications';
 import {CustomerResponse} from '../api/generated/models/customer-response';
 import {PendingInviteResponse} from '../api/generated/models/pending-invite-response';
 import {InviteCreationResponse} from '../api/generated/models/invite-creation-response';
+import {ApplicationListResponse} from '../api/generated/models/application-list-response';
 
 export interface User {
   id: string;
@@ -29,13 +31,6 @@ export interface Role {
   type: 'admin' | 'developer' | 'viewer';
 }
 
-const AVAILABLE_APPLICATIONS: Application[] = [
-  {id: 'app1', name: 'Mobile App'},
-  {id: 'app2', name: 'Web Portal'},
-  {id: 'app3', name: 'Admin Dashboard'},
-  {id: 'app4', name: 'API Gateway'}
-];
-
 const AVAILABLE_ROLES: Role[] = [
   {id: 'role1', name: 'Admin', type: 'admin'},
   {id: 'role2', name: 'Developer', type: 'developer'},
@@ -51,7 +46,7 @@ export class UsersService {
   isLoading = signal(false);
   private usersData = signal<User[]>([]);
   users = this.usersData.asReadonly();
-  private availableApps = signal<Application[]>(AVAILABLE_APPLICATIONS);
+  private availableApps = signal<Application[]>([]);
   applications = this.availableApps.asReadonly();
   private availableRolesData = signal<Role[]>(AVAILABLE_ROLES);
   availableRoles = this.availableRolesData.asReadonly();
@@ -59,6 +54,11 @@ export class UsersService {
   async fetchUsers(): Promise<void> {
     this.isLoading.set(true);
     try {
+      // Ensure applications are loaded first so we can map invite applicationIds to names
+      if (this.availableApps().length === 0) {
+        await this.fetchApplications();
+      }
+
       const team = await this.api.invoke(getTeam);
       const members = (team.members ?? []).map(customer => this.mapCustomerToUser(customer));
       const invites = (team.pendingInvites ?? []).map(invite => this.mapInviteToUser(invite));
@@ -68,13 +68,34 @@ export class UsersService {
     }
   }
 
+  async fetchApplications(): Promise<void> {
+    try {
+      const apps = await this.api.invoke(getApplications, {});
+      this.availableApps.set(apps.map(app => this.mapApplicationListResponseToApplication(app)));
+    } catch {
+      this.availableApps.set([]);
+    }
+  }
+
+  private mapApplicationListResponseToApplication(app: ApplicationListResponse): Application {
+    return {
+      id: app.id ?? '',
+      name: app.name ?? ''
+    };
+  }
+
   private mapCustomerToUser(customer: CustomerResponse): User {
+    const applications = (customer.applications ?? []).map(app => ({
+      id: app.id ?? '',
+      name: app.name ?? ''
+    }));
+
     return {
       id: customer.email ?? crypto.randomUUID(),
       firstName: customer.firstName ?? 'Unknown',
       lastName: customer.lastName ?? 'User',
       email: customer.email ?? '',
-      applications: [],
+      applications,
       roles: this.mapRole(customer.role),
       lastActive: null,
       status: 'active'
@@ -145,12 +166,17 @@ export class UsersService {
     const firstName = emailParts[0] ? emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1) : 'Invited';
     const lastName = emailParts[1] ? emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1) : 'User';
 
+    // Map applicationIds to Application objects using the availableApps list
+    const applications = (invite.applicationIds ?? [])
+      .map(appId => this.availableApps().find(app => app.id === appId))
+      .filter((app): app is Application => app !== undefined);
+
     return {
       id: invite.id ?? crypto.randomUUID(),
       firstName,
       lastName,
       email: invite.email ?? '',
-      applications: [],
+      applications,
       roles: this.mapRole(invite.role),
       lastActive: null,
       status: isExpired ? 'expired' : 'invited'

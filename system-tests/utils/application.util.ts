@@ -18,7 +18,7 @@ export async function createApplication(page: Page, appName: string): Promise<vo
 
     // Wait for the overlay to close and app to appear
     await expect(page.getByLabel('Application Name')).not.toBeVisible();
-    await expect(page.locator('.app-card').filter({hasText: appName})).toBeVisible();
+    await expect(page.locator('.app-card:not(.app-card--add)').filter({hasText: appName})).toBeVisible();
 }
 
 /**

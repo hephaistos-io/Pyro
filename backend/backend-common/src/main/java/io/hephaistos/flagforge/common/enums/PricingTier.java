@@ -1,15 +1,15 @@
 package io.hephaistos.flagforge.common.enums;
 
 /**
- * Represents the pricing tier with associated rate limits.
+ * Represents the pricing tier with associated rate limits and pricing.
  *
  * <p>Tier Structure:
  * <ul>
- *   <li>FREE: 500k req/month, 5 req/sec - First application and default environments</li>
- *   <li>BASIC: 2M req/month, 20 req/sec - Additional applications and environments</li>
- *   <li>STANDARD: 10M req/month, 100 req/sec</li>
- *   <li>PRO: 25M req/month, 500 req/sec</li>
- *   <li>BUSINESS: 100M req/month, 2000 req/sec</li>
+ *   <li>FREE: 500k req/month, 5 req/sec, $0/month - First application and default environments</li>
+ *   <li>BASIC: 2M req/month, 20 req/sec, $10/month - Additional applications and environments</li>
+ *   <li>STANDARD: 10M req/month, 100 req/sec, $40/month</li>
+ *   <li>PRO: 25M req/month, 500 req/sec, $100/month</li>
+ *   <li>BUSINESS: 100M req/month, 2000 req/sec, $400/month</li>
  * </ul>
  *
  * <p>Tier Assignment:
@@ -29,18 +29,20 @@ package io.hephaistos.flagforge.common.enums;
  * </ul>
  */
 public enum PricingTier {
-    FREE(500_000L, 5),
-    BASIC(2_000_000L, 20),
-    STANDARD(10_000_000L, 100),
-    PRO(25_000_000L, 500),
-    BUSINESS(100_000_000L, 2000);
+    FREE(500_000L, 5, 0),
+    BASIC(2_000_000L, 20, 10),
+    STANDARD(10_000_000L, 100, 40),
+    PRO(25_000_000L, 500, 100),
+    BUSINESS(100_000_000L, 2000, 400);
 
     private final Long requestsPerMonth;
     private final Integer requestsPerSecond;
+    private final Integer monthlyPriceUsd;
 
-    PricingTier(Long requestsPerMonth, Integer requestsPerSecond) {
+    PricingTier(Long requestsPerMonth, Integer requestsPerSecond, Integer monthlyPriceUsd) {
         this.requestsPerMonth = requestsPerMonth;
         this.requestsPerSecond = requestsPerSecond;
+        this.monthlyPriceUsd = monthlyPriceUsd;
     }
 
     /**
@@ -77,5 +79,14 @@ public enum PricingTier {
      */
     public boolean isPaid() {
         return this != FREE;
+    }
+
+    /**
+     * Gets the monthly price in USD for this tier.
+     *
+     * @return the monthly price in USD
+     */
+    public Integer getMonthlyPriceUsd() {
+        return monthlyPriceUsd;
     }
 }

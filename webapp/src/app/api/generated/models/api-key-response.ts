@@ -6,6 +6,5 @@ export interface ApiKeyResponse {
   expirationDate?: string;
   id?: string;
   keyType?: 'READ' | 'WRITE';
-  rateLimitRequestsPerMinute?: number;
   secretKey?: string;
 }

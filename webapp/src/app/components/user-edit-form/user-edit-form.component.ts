@@ -20,7 +20,12 @@ export class UserEditFormComponent implements OnInit {
   availableApplications = this.usersService.applications;
   availableRoles = this.usersService.availableRoles;
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    // Load applications if not already loaded
+    if (this.availableApplications().length === 0) {
+      await this.usersService.fetchApplications();
+    }
+
     // Initialize selections from user's current applications and roles
     this.selectedApplicationIds.set(new Set(this.user().applications.map(a => a.id)));
     this.selectedRoleIds.set(new Set(this.user().roles.map(r => r.id)));

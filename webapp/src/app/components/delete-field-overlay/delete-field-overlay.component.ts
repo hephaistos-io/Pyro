@@ -4,9 +4,9 @@ import {FormsModule} from '@angular/forms';
 export interface DeleteFieldOverlayData {
   applicationName: string;
   fieldKey: string;
-  templateType: 'system' | 'user';
+  templateType?: 'system' | 'user'; // Optional for environment deletion
   onConfirm: () => void;
-  type?: 'field' | 'identifier'; // Optional: defaults to 'field'
+  type?: 'field' | 'identifier' | 'environment'; // Optional: defaults to 'field'
 }
 
 @Component({

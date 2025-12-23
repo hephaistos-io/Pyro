@@ -2,7 +2,6 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
-import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.common.enums.TemplateType;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
@@ -43,7 +42,7 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void createFirstApplicationReturns201WithFreePricingTier() {
+    void createApplicationReturns201() {
         String token = registerAndAuthenticateWithCompany();
 
         var createAppResponse =
@@ -54,49 +53,6 @@ class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(createAppResponse.getBody()).isNotNull();
         assertThat(createAppResponse.getBody().name()).isEqualTo("My Application");
         assertThat(createAppResponse.getBody().id()).isNotNull();
-        assertThat(createAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
-    }
-
-    @Test
-    void createSecondApplicationReturns201WithPaidPricingTier() {
-        String token = registerAndAuthenticateWithCompany();
-
-        // Create first application (should be FREE)
-        var firstAppResponse =
-                post("/v1/applications", new ApplicationCreationRequest("First App"), token,
-                        ApplicationResponse.class);
-        assertThat(firstAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.FREE);
-
-        // Create second application (should be BASIC)
-        var secondAppResponse =
-                post("/v1/applications", new ApplicationCreationRequest("Second App"), token,
-                        ApplicationResponse.class);
-
-        assertThat(secondAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(secondAppResponse.getBody()).isNotNull();
-        assertThat(secondAppResponse.getBody().name()).isEqualTo("Second App");
-        assertThat(secondAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.BASIC);
-    }
-
-    @Test
-    void createThirdApplicationReturns201WithBasicPricingTier() {
-        String token = registerAndAuthenticateWithCompany();
-
-        // Create first application (should be FREE)
-        post("/v1/applications", new ApplicationCreationRequest("First App"), token,
-                ApplicationResponse.class);
-
-        // Create second application (should be BASIC)
-        post("/v1/applications", new ApplicationCreationRequest("Second App"), token,
-                ApplicationResponse.class);
-
-        // Create third application (should also be BASIC)
-        var thirdAppResponse =
-                post("/v1/applications", new ApplicationCreationRequest("Third App"), token,
-                        ApplicationResponse.class);
-
-        assertThat(thirdAppResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(thirdAppResponse.getBody().pricingTier()).isEqualTo(PricingTier.BASIC);
     }
 
     @Test

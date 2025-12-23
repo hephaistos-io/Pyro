@@ -1,0 +1,57 @@
+@if (!isLoading() && statistics().length > 0) {
+  <div class="costs-overview">
+    <div class="costs-overview__header">
+      <h3 class="costs-overview__title">Monthly Cost Breakdown</h3>
+      <span class="costs-overview__total">
+        @if (totalMonthlyPrice() === 0) {
+          Free
+        } @else {
+          ${{ totalMonthlyPrice() }}<span class="costs-overview__period">/mo</span>
+        }
+      </span>
+    </div>
+
+    <div class="costs-chart">
+      @for (appStats of statistics(); track appStats.id) {
+        <div class="costs-chart__row">
+          <div class="costs-chart__label">
+            <span class="costs-chart__name">{{ appStats.name }}</span>
+            @if (appStats.totalMonthlyPriceUsd === 0) {
+              <span class="costs-chart__detail costs-chart__detail--free">Free tier included</span>
+            } @else {
+              <span class="costs-chart__detail">
+                {{ appStats.environments?.length || 0 }} {{ appStats.environments?.length === 1 ? 'environment' : 'environments' }}
+              </span>
+            }
+          </div>
+          <div class="costs-chart__bar-wrapper">
+            @if (appStats.totalMonthlyPriceUsd && appStats.totalMonthlyPriceUsd > 0) {
+              <div
+                [style.width.%]="(appStats.totalMonthlyPriceUsd / maxAppCost()) * 100"
+                class="costs-chart__bar">
+              </div>
+            }
+          </div>
+          <span class="costs-chart__amount">
+            @if (appStats.totalMonthlyPriceUsd === 0) {
+              Free
+            } @else {
+              ${{ appStats.totalMonthlyPriceUsd }}
+            }
+          </span>
+        </div>
+      }
+    </div>
+
+    <div class="costs-legend">
+      <div class="costs-legend__item">
+        <span class="costs-legend__dot costs-legend__dot--free"></span>
+        <span class="costs-legend__text">Free tier environments</span>
+      </div>
+      <div class="costs-legend__item">
+        <span class="costs-legend__dot costs-legend__dot--paid"></span>
+        <span class="costs-legend__text">Paid tier environments</span>
+      </div>
+    </div>
+  </div>
+}

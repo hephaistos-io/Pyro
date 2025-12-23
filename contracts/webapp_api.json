@@ -672,6 +672,27 @@
         }
       }
     },
+    "/v1/company/statistics": {
+      "get": {
+        "tags": [
+          "company"
+        ],
+        "summary": "Retrieve pricing statistics for all applications and environments in the company",
+        "operationId": "getCompanyStatistics",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyStatisticsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/templates": {
       "get": {
         "tags": [
@@ -1449,16 +1470,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "pricingTier": {
-            "type": "string",
-            "enum": [
-              "FREE",
-              "BASIC",
-              "STANDARD",
-              "PRO",
-              "BUSINESS"
-            ]
-          },
           "environments": {
             "type": "array",
             "items": {
@@ -1584,10 +1595,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "rateLimitRequestsPerMinute": {
-            "type": "integer",
-            "format": "int32"
-          },
           "keyType": {
             "type": "string",
             "enum": [
@@ -1635,6 +1642,18 @@
           }
         }
       },
+      "ApplicationAccessResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "CustomerResponse": {
         "type": "object",
         "properties": {
@@ -1653,6 +1672,12 @@
           },
           "role": {
             "$ref": "#/components/schemas/CustomerRole"
+          },
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationAccessResponse"
+            }
           }
         }
       },
@@ -1704,6 +1729,65 @@
           }
         }
       },
+      "ApplicationStatistics": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "environments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnvironmentStatistics"
+            }
+          },
+          "totalMonthlyPriceUsd": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "CompanyStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationStatistics"
+            }
+          },
+          "totalMonthlyPriceUsd": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "EnvironmentStatistics": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "monthlyPriceUsd": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "ApplicationListResponse": {
         "type": "object",
         "properties": {
@@ -1717,16 +1801,6 @@
           "companyId": {
             "type": "string",
             "format": "uuid"
-          },
-          "pricingTier": {
-            "type": "string",
-            "enum": [
-              "FREE",
-              "BASIC",
-              "STANDARD",
-              "PRO",
-              "BUSINESS"
-            ]
           },
           "environments": {
             "type": "array",
