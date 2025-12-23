@@ -13,16 +13,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,6 +68,11 @@ class ApplicationFilterAspectTest {
 
         FlagForgeSecurityContext securityContext = new FlagForgeSecurityContext();
         securityContext.setAccessibleApplicationIds(accessibleAppIds);
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getAuthorities()).thenAnswer(
+                invocation -> List.of(new SimpleGrantedAuthority("ROLE_DEV")));
+        securityContext.setAuthentication(auth);
         SecurityContextHolder.setContext(securityContext);
 
         when(entityManager.unwrap(Session.class)).thenReturn(session);
@@ -90,6 +99,11 @@ class ApplicationFilterAspectTest {
         // Given
         FlagForgeSecurityContext securityContext = new FlagForgeSecurityContext();
         securityContext.setAccessibleApplicationIds(Set.of());
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getAuthorities()).thenAnswer(
+                invocation -> List.of(new SimpleGrantedAuthority("ROLE_DEV")));
+        securityContext.setAuthentication(auth);
         SecurityContextHolder.setContext(securityContext);
 
         when(entityManager.unwrap(Session.class)).thenReturn(session);
@@ -121,5 +135,88 @@ class ApplicationFilterAspectTest {
 
         // Then - filter should not be enabled
         verify(entityManager, never()).unwrap(Session.class);
+    }
+
+    @Test
+    void doesNotEnableFilterWhenUserIsAdmin() {
+        // Given
+        FlagForgeSecurityContext securityContext = new FlagForgeSecurityContext();
+        securityContext.setAccessibleApplicationIds(Set.of(UUID.randomUUID()));
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getAuthorities()).thenAnswer(
+                invocation -> List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        securityContext.setAuthentication(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        // When
+        aspect.enableApplicationAccessFilter();
+
+        // Then - filter should NOT be enabled
+        verify(entityManager, never()).unwrap(Session.class);
+    }
+
+    @Test
+    void enablesFilterForDevUser() {
+        // Given
+        UUID appId = UUID.randomUUID();
+        FlagForgeSecurityContext securityContext = new FlagForgeSecurityContext();
+        securityContext.setAccessibleApplicationIds(Set.of(appId));
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getAuthorities()).thenAnswer(
+                invocation -> List.of(new SimpleGrantedAuthority("ROLE_DEV")));
+        securityContext.setAuthentication(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(entityManager.unwrap(Session.class)).thenReturn(session);
+        when(session.enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER)).thenReturn(
+                filter);
+        when(filter.setParameterList(eq("accessibleAppIds"), any(Collection.class))).thenReturn(
+                filter);
+
+        // When
+        aspect.enableApplicationAccessFilter();
+
+        // Then - filter SHOULD be enabled
+        verify(session).enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<UUID>> captor = ArgumentCaptor.forClass(Collection.class);
+        verify(filter).setParameterList(eq("accessibleAppIds"), captor.capture());
+
+        assertThat(captor.getValue()).containsExactly(appId);
+    }
+
+    @Test
+    void enablesFilterForReadOnlyUser() {
+        // Given
+        UUID appId = UUID.randomUUID();
+        FlagForgeSecurityContext securityContext = new FlagForgeSecurityContext();
+        securityContext.setAccessibleApplicationIds(Set.of(appId));
+
+        Authentication auth = mock(Authentication.class);
+        when(auth.getAuthorities()).thenAnswer(
+                invocation -> List.of(new SimpleGrantedAuthority("ROLE_READ_ONLY")));
+        securityContext.setAuthentication(auth);
+        SecurityContextHolder.setContext(securityContext);
+
+        when(entityManager.unwrap(Session.class)).thenReturn(session);
+        when(session.enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER)).thenReturn(
+                filter);
+        when(filter.setParameterList(eq("accessibleAppIds"), any(Collection.class))).thenReturn(
+                filter);
+
+        // When
+        aspect.enableApplicationAccessFilter();
+
+        // Then - filter SHOULD be enabled
+        verify(session).enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Collection<UUID>> captor = ArgumentCaptor.forClass(Collection.class);
+        verify(filter).setParameterList(eq("accessibleAppIds"), captor.capture());
+
+        assertThat(captor.getValue()).containsExactly(appId);
     }
 }

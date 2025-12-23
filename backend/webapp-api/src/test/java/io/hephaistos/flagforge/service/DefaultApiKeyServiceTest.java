@@ -132,7 +132,7 @@ class DefaultApiKeyServiceTest {
 
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository).save(captor.capture());
-        assertThat(captor.getValue().getRateLimitRequestsPerMinute()).isEqualTo(1000);
+        // Rate limiting is now stored in the environment, not in the API key
     }
 
     @Test
@@ -327,7 +327,6 @@ class DefaultApiKeyServiceTest {
 
         var oldApiKeyEntity =
                 createApiKeyEntity(oldKeyId, applicationId, environmentId, KeyType.WRITE);
-        oldApiKeyEntity.setRateLimitRequestsPerMinute(customRateLimit);
 
         when(applicationRepository.existsById(applicationId)).thenReturn(true);
         when(apiKeyRepository.findActiveByApplicationIdAndEnvironmentIdAndKeyType(any(UUID.class),
@@ -341,7 +340,7 @@ class DefaultApiKeyServiceTest {
         ArgumentCaptor<ApiKeyEntity> captor = ArgumentCaptor.forClass(ApiKeyEntity.class);
         verify(apiKeyRepository, org.mockito.Mockito.times(2)).save(captor.capture());
         var newKey = captor.getAllValues().get(1);
-        assertThat(newKey.getRateLimitRequestsPerMinute()).isEqualTo(customRateLimit);
+        // Rate limiting is now stored in the environment, not in the API key
     }
 
     // ========== Helper Methods ==========
@@ -354,7 +353,6 @@ class DefaultApiKeyServiceTest {
         entity.setEnvironmentId(environmentId);
         entity.setKeyType(keyType);
         entity.setKey("testkey123456789012345678901234567890123456789012345678901234");
-        entity.setRateLimitRequestsPerMinute(1000);
         entity.setExpirationDate(OffsetDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
         return entity;
     }

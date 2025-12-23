@@ -97,6 +97,24 @@ tasks.register<Exec>("systemTests") {
     finalizedBy("dockerDown")
 }
 
+tasks.register<Exec>("systemTestsChromium") {
+    description = "Run Playwright E2E tests on Chromium only (starts Docker before, stops after)"
+    group = "verification"
+    workingDir = file("system-tests")
+    commandLine("sh", "-c", "sleep 5 && npm test -- --project=chromium")
+    dependsOn("dockerUp")
+    finalizedBy("dockerDown")
+}
+
+tasks.register<Exec>("systemTestsCrossBrowser") {
+    description = "Run Playwright E2E tests on Firefox and WebKit (starts Docker before, stops after)"
+    group = "verification"
+    workingDir = file("system-tests")
+    commandLine("sh", "-c", "sleep 5 && npm test -- --project=firefox --project=webkit")
+    dependsOn("dockerUp")
+    finalizedBy("dockerDown")
+}
+
 // Run all tests in order: architecture -> JUnit -> Playwright
 tasks.register("allTests") {
     description = "Run all tests: architecture, backend (JUnit), and system (Playwright)"

@@ -1,6 +1,7 @@
 package io.hephaistos.flagforge.configuration;
 
 import io.hephaistos.flagforge.common.data.ApplicationOwnedEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import jakarta.persistence.EntityManager;
 import org.aspectj.lang.annotation.Aspect;
@@ -13,11 +14,11 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Aspect that enables the application access filter for all service layer operations. Uses cached
- * accessible application IDs from the security context.
+ * Aspect that enables the application access filter for DEV and READ_ONLY users.
+ * ADMIN users bypass this filter and can access all applications in their company.
  * <p>
  * This ensures that queries on entities with the applicationAccessFilter are automatically filtered
- * to only return data for applications the current customer has access to.
+ * based on the user's role: non-ADMIN users only see data for their assigned applications.
  */
 @Aspect
 @Component
@@ -34,6 +35,13 @@ public class ApplicationFilterAspect {
         var context = SecurityContextHolder.getContext();
 
         if (context instanceof FlagForgeSecurityContext flagForgeContext) {
+            // ADMIN users bypass application filtering - they see all apps in their company
+            // (company filter is still active via CompanyFilterAspect)
+            if (flagForgeContext.getRole() == CustomerRole.ADMIN) {
+                return; // Skip enabling the application filter
+            }
+
+            // Non-ADMIN users (DEV, READ_ONLY) use M2M application access
             enableFilter(flagForgeContext.getAccessibleApplicationIds());
         }
     }
