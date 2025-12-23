@@ -31,7 +31,7 @@ export class UserEditFormComponent implements OnInit {
     this.selectedRoleIds.set(new Set(this.user().roles.map(r => r.id)));
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     const validationError = this.validateForm();
     if (validationError) {
       this.error.set(validationError);
@@ -42,7 +42,7 @@ export class UserEditFormComponent implements OnInit {
     this.error.set('');
 
     try {
-      const updatedUser = this.usersService.updateUser(
+      const updatedUser = await this.usersService.updateUser(
         this.user().id,
         Array.from(this.selectedApplicationIds()),
         Array.from(this.selectedRoleIds())

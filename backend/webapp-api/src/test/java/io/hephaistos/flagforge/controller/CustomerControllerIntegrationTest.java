@@ -2,9 +2,14 @@ package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.CustomerEntity;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
+import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
+import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
 import io.hephaistos.flagforge.controller.dto.TeamResponse;
+import io.hephaistos.flagforge.controller.dto.UpdateCustomerRequest;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
@@ -16,6 +21,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -118,6 +125,64 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
         for (CustomerResponse customer : responseB.getBody().members()) {
             assertThat(customer.companyId()).hasValue(companyB.id());
         }
+    }
+
+    @Test
+    void updateCustomerApplicationAccessPersistsChanges() {
+        // Setup: Create user with company and applications
+        String token = registerAndAuthenticateWithCompany();
+        var profile = get("/v1/customer/profile", token, CustomerResponse.class);
+        UUID companyId = profile.getBody().companyId().orElseThrow();
+
+        // Create applications
+        var app1 = createApplication(token, "App1");
+        var app2 = createApplication(token, "App2");
+        var app3 = createApplication(token, "App3");
+
+        // Create a developer user with access to app1
+        CustomerEntity devUser = new CustomerEntity();
+        devUser.setFirstName("Dev");
+        devUser.setLastName("User");
+        devUser.setEmail(randomEmail());
+        devUser.setPassword(UUID.randomUUID().toString());
+        devUser.setCompanyId(companyId);
+        devUser.setRole(CustomerRole.DEV);
+
+        ApplicationEntity app1Entity = applicationRepository.findById(app1.id()).orElseThrow();
+        devUser.setAccessibleApplications(new HashSet<>(List.of(app1Entity)));
+        devUser = customerRepository.save(devUser);
+
+        // Verify initial state
+        var initialUser = customerRepository.findByIdFiltered(devUser.getId()).orElseThrow();
+        assertThat(initialUser.getAccessibleApplications()).hasSize(1);
+        assertThat(initialUser.getAccessibleApplications()).extracting(ApplicationEntity::getId)
+                .containsExactly(app1.id());
+
+        // Update: Change access from app1 to app2 and app3
+        var updateRequest =
+                new UpdateCustomerRequest(List.of(app2.id(), app3.id()), CustomerRole.DEV);
+        var updateResponse = put("/v1/customer/" + devUser.getId(), updateRequest, token,
+                CustomerResponse.class);
+
+        // Assert: Response is successful
+        assertThat(updateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(updateResponse.getBody().id()).isEqualTo(devUser.getId());
+        assertThat(updateResponse.getBody().applications()).hasSize(2);
+        assertThat(updateResponse.getBody().applications()).extracting(app -> app.id())
+                .containsExactlyInAnyOrder(app2.id(), app3.id());
+
+        // Assert: Changes are persisted in database
+        var updatedUser = customerRepository.findByIdFiltered(devUser.getId()).orElseThrow();
+        assertThat(updatedUser.getAccessibleApplications()).hasSize(2);
+        assertThat(updatedUser.getAccessibleApplications()).extracting(ApplicationEntity::getId)
+                .containsExactlyInAnyOrder(app2.id(), app3.id());
+    }
+
+    private ApplicationResponse createApplication(String token, String name) {
+        var request = new ApplicationCreationRequest(name);
+        var response = post("/v1/applications", request, token, ApplicationResponse.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        return response.getBody();
     }
 
     private void createUserForCompany(UUID id) {

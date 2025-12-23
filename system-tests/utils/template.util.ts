@@ -194,6 +194,9 @@ export async function addIdentifier(page: Page, identifier: string): Promise<voi
 
     // Wait for form to close
     await expect(page.locator('.overrides-add-form')).not.toBeVisible();
+
+    // Wait for identifier to appear in table headers
+    await expect(page.locator('.matrix-table__identifier-header', {hasText: identifier})).toBeVisible();
 }
 
 /**
@@ -254,6 +257,22 @@ export async function editOverrideValue(page: Page, fieldKey: string, identifier
 
     // Wait for edit mode to close
     await expect(input).not.toBeVisible();
+}
+
+/**
+ * Gets the column index for a specific identifier in the overrides matrix table.
+ * Returns the column index (1-based, accounting for the field name column) or -1 if not found.
+ */
+export async function getIdentifierColumnIndex(page: Page, identifier: string): Promise<number> {
+    const headers = page.locator('.matrix-table__identifier-header');
+    const headerCount = await headers.count();
+    for (let i = 0; i < headerCount; i++) {
+        const text = await headers.nth(i).textContent();
+        if (text?.trim() === identifier) {
+            return i + 1; // +1 because first column is the field name
+        }
+    }
+    return -1;
 }
 
 /**

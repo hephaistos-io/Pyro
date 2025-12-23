@@ -16,7 +16,7 @@ tasks.register<Exec>("dockerUp") {
     description = "Start all containers with Docker Compose"
     group = "docker"
     workingDir = projectDir
-    commandLine("sh", "-c", "docker compose up -d")
+    commandLine("sh", "-c", "docker compose up -d --wait")
     dependsOn("dockerBuildBackend")
 }
 
@@ -91,8 +91,7 @@ tasks.register<Exec>("systemTests") {
     description = "Run Playwright E2E tests (starts Docker before, stops after)"
     group = "verification"
     workingDir = file("system-tests")
-    // Wait for services to be fully ready after dockerUp, then run tests
-    commandLine("sh", "-c", "sleep 5 && npm test")
+    commandLine("sh", "-c", "npm test")
     dependsOn("dockerUp")
     finalizedBy("dockerDown")
 }
@@ -101,7 +100,7 @@ tasks.register<Exec>("systemTestsChromium") {
     description = "Run Playwright E2E tests on Chromium only (starts Docker before, stops after)"
     group = "verification"
     workingDir = file("system-tests")
-    commandLine("sh", "-c", "sleep 5 && npm test -- --project=chromium")
+    commandLine("sh", "-c", "npm test -- --project=chromium")
     dependsOn("dockerUp")
     finalizedBy("dockerDown")
 }
@@ -110,7 +109,7 @@ tasks.register<Exec>("systemTestsCrossBrowser") {
     description = "Run Playwright E2E tests on Firefox and WebKit (starts Docker before, stops after)"
     group = "verification"
     workingDir = file("system-tests")
-    commandLine("sh", "-c", "sleep 5 && npm test -- --project=firefox --project=webkit")
+    commandLine("sh", "-c", "npm test -- --project=firefox --project=webkit")
     dependsOn("dockerUp")
     finalizedBy("dockerDown")
 }

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public record CustomerResponse(String firstName, String lastName, String email,
+public record CustomerResponse(UUID id, String firstName, String lastName, String email,
                                Optional<UUID> companyId, CustomerRole role,
                                List<ApplicationAccessResponse> applications) {
 
@@ -17,7 +17,8 @@ public record CustomerResponse(String firstName, String lastName, String email,
                 .map(ApplicationAccessResponse::fromEntity)
                 .toList();
 
-        return new CustomerResponse(customerEntity.getFirstName(), customerEntity.getLastName(),
+        return new CustomerResponse(customerEntity.getId(), customerEntity.getFirstName(),
+                customerEntity.getLastName(),
                 customerEntity.getEmail(), customerEntity.getCompanyId(), customerEntity.getRole(),
                 applications);
     }

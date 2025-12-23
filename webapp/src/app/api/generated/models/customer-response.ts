@@ -9,6 +9,7 @@ export interface CustomerResponse {
   companyId?: string;
   email?: string;
   firstName?: string;
+  id?: string;
   lastName?: string;
   role?: CustomerRole;
 }
