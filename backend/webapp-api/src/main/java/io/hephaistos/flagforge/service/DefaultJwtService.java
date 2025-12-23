@@ -55,12 +55,14 @@ public class DefaultJwtService implements JwtService {
     @Override
     public boolean validateToken(String token) {
         try {
-            LOGGER.debug("Validating token: {}", token);
+            // Don't log the full token - it's sensitive data
+            LOGGER.debug("Validating JWT token");
             Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token);
+            LOGGER.debug("Token validation successful");
             return true;
         }
         catch (JwtException e) {
-            LOGGER.debug("Invalid token!: {}", e.getMessage());
+            LOGGER.debug("Token validation failed: {}", e.getMessage());
             return false;
         }
     }

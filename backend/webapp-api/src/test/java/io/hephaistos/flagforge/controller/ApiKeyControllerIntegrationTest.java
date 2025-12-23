@@ -58,7 +58,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
     // ========== Get API Key by Type ==========
 
     @Test
-    void getApiKeyByTypeReturnsReadKey() {
+    void getApiKeyByTypeReturnsReadKeyMetadataWithoutSecret() {
         String token = registerAndAuthenticateWithCompany();
         UUID applicationId = createApplication(token, "Test App");
         UUID environmentId = getDefaultEnvironmentId(token, applicationId);
@@ -70,8 +70,9 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().keyType()).isEqualTo(KeyType.READ);
         assertThat(response.getBody().environmentId()).isEqualTo(environmentId);
-        assertThat(response.getBody().secretKey()).isNotNull();
-        assertThat(response.getBody().secretKey()).hasSize(64);
+        // Secret key is null because keys are stored as hashes and cannot be retrieved
+        // Users must use regenerate to get a new key if they need it
+        assertThat(response.getBody().secretKey()).isNull();
     }
 
     @Test
@@ -185,11 +186,11 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         UUID applicationId = createApplication(token, "Test App");
         UUID environmentId = getDefaultEnvironmentId(token, applicationId);
 
-        // Get the original key
+        // Get the original key metadata (secretKey will be null)
         var originalKey = get(apiKeyPath(applicationId, environmentId, KeyType.READ), token,
                 ApiKeyResponse.class).getBody();
 
-        // Regenerate by key type
+        // Regenerate by key type - this returns the new plaintext key
         var regenerateResponse =
                 post(apiKeyPath(applicationId, environmentId, KeyType.READ) + "/regenerate", null,
                         token, ApiKeyResponse.class);
@@ -197,9 +198,10 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(regenerateResponse.getBody()).isNotNull();
         assertThat(regenerateResponse.getBody().id()).isNotEqualTo(originalKey.id());
+        // Regenerate returns the plaintext key (only time it's visible)
         assertThat(regenerateResponse.getBody().secretKey()).isNotNull();
         assertThat(regenerateResponse.getBody().secretKey()).hasSize(64);
-        assertThat(regenerateResponse.getBody().secretKey()).isNotEqualTo(originalKey.secretKey());
+        // Expiration date is the old key's new expiration (about 1 week from now)
         assertThat(regenerateResponse.getBody().expirationDate()).isAfter(
                 java.time.OffsetDateTime.now());
         assertThat(regenerateResponse.getBody().expirationDate()).isBefore(
@@ -215,15 +217,21 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
         var originalKey = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
                 ApiKeyResponse.class).getBody();
 
-        post(apiKeyPath(applicationId, environmentId, KeyType.WRITE) + "/regenerate", null, token,
-                ApiKeyResponse.class);
+        // Regenerate returns the new key with plaintext secret
+        var regeneratedKey =
+                post(apiKeyPath(applicationId, environmentId, KeyType.WRITE) + "/regenerate", null,
+                        token, ApiKeyResponse.class).getBody();
 
         // Verify a new key was created with a different ID
-        var newKey = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
+        var newKeyMetadata = get(apiKeyPath(applicationId, environmentId, KeyType.WRITE), token,
                 ApiKeyResponse.class).getBody();
 
-        assertThat(newKey.id()).isNotEqualTo(originalKey.id());
-        assertThat(newKey.secretKey()).isNotEqualTo(originalKey.secretKey());
+        assertThat(newKeyMetadata.id()).isNotEqualTo(originalKey.id());
+        // The GET endpoint returns null for secretKey (hashed in DB)
+        assertThat(newKeyMetadata.secretKey()).isNull();
+        // But the regenerate response contains the plaintext key
+        assertThat(regeneratedKey.secretKey()).isNotNull();
+        assertThat(regeneratedKey.secretKey()).hasSize(64);
     }
 
     @Test

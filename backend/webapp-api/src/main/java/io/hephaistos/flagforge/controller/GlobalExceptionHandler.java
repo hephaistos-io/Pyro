@@ -102,9 +102,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCompanyAlreadyAssigned(
             CompanyAlreadyAssignedException ex) {
         LOGGER.info("Customer has a company already assigned! {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("EXISTING_COMPANY_ASSIGNMENT",
-                        "The customer has a company assigned."));
+                        "The customer already has a company assigned."));
     }
 
     @ExceptionHandler(NotFoundException.class)

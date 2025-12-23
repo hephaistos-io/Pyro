@@ -13,10 +13,12 @@ import java.util.UUID;
 public interface ApiKeyRepository extends JpaRepository<ApiKeyEntity, UUID> {
 
     /**
-     * Finds an API key by its key value.
+     * Finds an API key by its hashed key value.
+     * The caller must hash the plaintext key using {@link io.hephaistos.flagforge.common.util.ApiKeyHasher}
+     * before calling this method.
      *
-     * @param key the API key value (stored as plain text)
+     * @param keyHash the SHA-256 hash of the API key
      * @return the API key entity if found
      */
-    Optional<ApiKeyEntity> findByKey(String key);
+    Optional<ApiKeyEntity> findByKey(String keyHash);
 }
