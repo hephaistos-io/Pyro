@@ -3,6 +3,7 @@ import {
     addIdentifier,
     addSystemField,
     editOverrideValue,
+    getIdentifierColumnIndex,
     getIdentifiers,
     navigateToOverridesTab,
     navigateToTemplateTab,
@@ -94,8 +95,9 @@ test.describe('Overrides - Identifier Persistence Regression Tests', () => {
         expect(identifiers).toContain('user-001');
 
         // Verify the value was updated
+        const columnIndex = await getIdentifierColumnIndex(sharedPage, 'user-001');
         const row = sharedPage.locator('.matrix-table__row').filter({hasText: 'feature_flag'});
-        const cell = row.locator('.matrix-table__cell').nth(1); // First identifier column
+        const cell = row.locator('.matrix-table__cell').nth(columnIndex);
         await expect(cell.locator('.matrix-table__value')).toContainText('true');
     });
 
@@ -114,8 +116,9 @@ test.describe('Overrides - Identifier Persistence Regression Tests', () => {
         expect(identifiers).toContain('user-002');
 
         // Verify the edited value persisted
+        const columnIndex = await getIdentifierColumnIndex(sharedPage, 'user-001');
         const row = sharedPage.locator('.matrix-table__row').filter({hasText: 'feature_flag'});
-        const cell = row.locator('.matrix-table__cell').nth(1);
+        const cell = row.locator('.matrix-table__cell').nth(columnIndex);
         await expect(cell.locator('.matrix-table__value')).toContainText('true');
     });
 
@@ -131,9 +134,10 @@ test.describe('Overrides - Identifier Persistence Regression Tests', () => {
         expect(identifiers).toContain('user-001');
 
         // The cell should show the default dash indicator
+        const columnIndex = await getIdentifierColumnIndex(sharedPage, 'user-001');
         const row = sharedPage.locator('.matrix-table__row').filter({hasText: 'feature_flag'});
-        const cell = row.locator('.matrix-table__cell').nth(1);
-        await expect(cell.locator('.matrix-table__dash')).toBeVisible();
+        const cell = row.locator('.matrix-table__cell').nth(columnIndex);
+        await expect(cell.locator('.matrix-table__value')).toContainText('—');
     });
 
     test('identifier persists after setting value to default and refreshing', async () => {
@@ -191,12 +195,13 @@ test.describe('Overrides - Identifier Persistence Regression Tests', () => {
         expect(identifiers).toContain('user-003');
 
         // Verify user-002's values persisted
+        const columnIndex = await getIdentifierColumnIndex(sharedPage, 'user-002');
         const maxItemsRow = sharedPage.locator('.matrix-table__row').filter({hasText: 'max_items'});
-        const maxItemsCell = maxItemsRow.locator('.matrix-table__cell').nth(2); // Second identifier column
+        const maxItemsCell = maxItemsRow.locator('.matrix-table__cell').nth(columnIndex);
         await expect(maxItemsCell.locator('.matrix-table__value')).toContainText('25');
 
         const featureFlagRow = sharedPage.locator('.matrix-table__row').filter({hasText: 'feature_flag'});
-        const featureFlagCell = featureFlagRow.locator('.matrix-table__cell').nth(2); // Second identifier column
+        const featureFlagCell = featureFlagRow.locator('.matrix-table__cell').nth(columnIndex);
         await expect(featureFlagCell.locator('.matrix-table__value')).toContainText('true');
     });
 });

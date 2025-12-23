@@ -5,9 +5,12 @@ import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
 import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.UpdateCustomerRequest;
+import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
+import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.security.FlagForgeUserDetails;
 import io.hephaistos.flagforge.security.RequireAdmin;
 import org.jspecify.annotations.NullMarked;
@@ -23,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -34,14 +38,16 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
 
     private final PasswordEncoder passwordEncoder;
     private final CustomerRepository customerRepository;
+    private final ApplicationRepository applicationRepository;
     private final BreachedPasswordService breachedPasswordService;
     private final InviteService inviteService;
 
     public DefaultCustomerService(PasswordEncoder passwordEncoder,
-            CustomerRepository customerRepository, BreachedPasswordService breachedPasswordService,
-            InviteService inviteService) {
+            CustomerRepository customerRepository, ApplicationRepository applicationRepository,
+            BreachedPasswordService breachedPasswordService, InviteService inviteService) {
         this.passwordEncoder = passwordEncoder;
         this.customerRepository = customerRepository;
+        this.applicationRepository = applicationRepository;
         this.breachedPasswordService = breachedPasswordService;
         this.inviteService = inviteService;
     }
@@ -141,6 +147,34 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
                 .map(this::toUserDetails)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Customer not found with email: " + username));
+    }
+
+    @Override
+    @RequireAdmin
+    public CustomerEntity updateCustomer(UUID customerId, UpdateCustomerRequest request) {
+        // Find customer by ID (with company filter applied)
+        CustomerEntity customer = customerRepository.findByIdFiltered(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer not found"));
+
+        // Update role if provided
+        if (request.role() != null) {
+            customer.setRole(request.role());
+        }
+
+        // Update application access if provided
+        if (request.applicationIds() != null) {
+            // Fetch all applications and add to customer's accessible applications
+            customer.getAccessibleApplications().clear();
+            for (UUID appId : request.applicationIds()) {
+                ApplicationEntity app = applicationRepository.findByIdFiltered(appId)
+                        .orElseThrow(
+                                () -> new NotFoundException("Application not found: " + appId));
+                customer.getAccessibleApplications().add(app);
+            }
+        }
+
+        // Hibernate will automatically persist the changes in the transaction
+        return customer;
     }
 
     private FlagForgeUserDetails toUserDetails(CustomerEntity customer) {

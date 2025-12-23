@@ -9,6 +9,13 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Repository for CustomerEntity. Note: Queries are filtered by company via Hibernate @Filter when
+ * the CompanyFilterAspect enables the filter in the service layer.
+ *
+ * IMPORTANT: Use findByIdFiltered() instead of findById() when you need Hibernate filters to apply.
+ * The built-in findById() uses EntityManager.find() which bypasses Hibernate filters.
+ */
 @Repository
 public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> {
 
@@ -16,5 +23,12 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> 
 
     @Query("SELECT DISTINCT c FROM CustomerEntity c LEFT JOIN FETCH c.accessibleApplications WHERE c.email = :email")
     Optional<CustomerEntity> findByEmailWithAccessibleApplications(@Param("email") String email);
+
+    /**
+     * Find a customer by ID with Hibernate filters applied. Use this instead of findById() when
+     * filter enforcement is required.
+     */
+    @Query("SELECT DISTINCT c FROM CustomerEntity c LEFT JOIN FETCH c.accessibleApplications WHERE c.id = :id")
+    Optional<CustomerEntity> findByIdFiltered(@Param("id") UUID id);
 
 }

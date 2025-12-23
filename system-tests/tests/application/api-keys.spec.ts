@@ -315,16 +315,15 @@ test.describe('API Key State Isolation', () => {
         // Verify key is shown
         await expect(readKeySection.getByRole('button', {name: 'Hide key'})).toBeVisible();
 
-        // Create a new environment
-        await page.locator('.selector-button').click();
-        await expect(page.getByText('Create Environment')).toBeVisible();
-        await page.getByRole('button', {name: 'Create Environment'}).click();
+        // Create a new environment (button is now standalone, not in dropdown)
+        await page.getByRole('button', {name: 'Create environment'}).click();
 
         // Fill in environment form
         await expect(page.getByText('Add New Environment')).toBeVisible();
         await page.getByLabel('Environment Name').fill(uniqueName('Staging'));
         await page.getByLabel('Description').fill('Test environment');
-        await page.getByRole('button', {name: 'Create Environment'}).click();
+        // Use exact match for the submit button inside the form
+        await page.getByRole('button', {name: 'Create Environment', exact: true}).click();
 
         // Wait for environment to be created
         await expect(page.getByText('Add New Environment')).not.toBeVisible();

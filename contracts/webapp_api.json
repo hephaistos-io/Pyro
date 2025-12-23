@@ -11,6 +11,48 @@
     }
   ],
   "paths": {
+    "/v1/customer/{customerId}": {
+      "put": {
+        "tags": [
+          "customer"
+        ],
+        "summary": "Update customer application access and role",
+        "operationId": "updateCustomer",
+        "parameters": [
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/templates/{type}": {
       "put": {
         "tags": [
@@ -1006,6 +1048,72 @@
   },
   "components": {
     "schemas": {
+      "CustomerRole": {
+        "type": "string",
+        "enum": [
+          "READ_ONLY",
+          "DEV",
+          "ADMIN"
+        ]
+      },
+      "UpdateCustomerRequest": {
+        "type": "object",
+        "properties": {
+          "applicationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "role": {
+            "$ref": "#/components/schemas/CustomerRole"
+          }
+        }
+      },
+      "ApplicationAccessResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/CustomerRole"
+          },
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationAccessResponse"
+            }
+          }
+        }
+      },
       "TemplateType": {
         "type": "string",
         "enum": [
@@ -1305,14 +1413,6 @@
             "type": "string"
           }
         }
-      },
-      "CustomerRole": {
-        "type": "string",
-        "enum": [
-          "READ_ONLY",
-          "DEV",
-          "ADMIN"
-        ]
       },
       "InviteCreationRequest": {
         "required": [
@@ -1639,45 +1739,6 @@
               "EXPIRED",
               "ALREADY_USED"
             ]
-          }
-        }
-      },
-      "ApplicationAccessResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          }
-        }
-      },
-      "CustomerResponse": {
-        "type": "object",
-        "properties": {
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "companyId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "role": {
-            "$ref": "#/components/schemas/CustomerRole"
-          },
-          "applications": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ApplicationAccessResponse"
-            }
           }
         }
       },

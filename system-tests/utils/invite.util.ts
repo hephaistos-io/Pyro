@@ -74,9 +74,14 @@ export async function completeInviteRegistration(
     lastName: string,
     password: string = DEFAULT_PASSWORD
 ): Promise<void> {
+    // Navigate to a safe page first to clear auth state (register page redirects if logged in)
+    await page.goto('/login');
+    await page.context().clearCookies();
+    await page.evaluate(() => localStorage.clear());
+
     await page.goto(inviteUrl);
 
-    // Wait for the invite banner
+    // Wait for the invite banner (validation happens async)
     await expect(page.locator('.invite-banner')).toBeVisible();
 
     // Fill registration form

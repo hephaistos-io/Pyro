@@ -39,3 +39,4 @@ export {TemplateType} from './models/template-type';
 export type {TemplateUpdateRequest} from './models/template-update-request';
 export type {TemplateValuesRequest} from './models/template-values-request';
 export type {TemplateValuesResponse} from './models/template-values-response';
+export type {UpdateCustomerRequest} from './models/update-customer-request';

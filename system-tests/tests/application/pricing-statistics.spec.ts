@@ -20,14 +20,14 @@ test.describe('Pricing Statistics', () => {
 
     test('displays pricing statistics on dashboard for admin users', async () => {
         // Navigate back to dashboard
-        await sharedPage.goto('http://localhost:8081/dashboard');
+        await sharedPage.goto('/dashboard');
 
         // Verify pricing statistics section is visible
         await expect(sharedPage.getByRole('heading', {name: 'Monthly Cost Breakdown'})).toBeVisible();
     });
 
     test('shows Free tier for first application', async () => {
-        await sharedPage.goto('http://localhost:8081/dashboard');
+        await sharedPage.goto('/dashboard');
 
         // Find the costs chart row for the application
         const appRow = sharedPage.locator('.costs-chart__row').first();
@@ -43,7 +43,7 @@ test.describe('Pricing Statistics', () => {
     });
 
     test('shows total monthly price as Free for single free tier application', async () => {
-        await sharedPage.goto('http://localhost:8081/dashboard');
+        await sharedPage.goto('/dashboard');
 
         // Verify the total is displayed as "Free"
         const totalElement = sharedPage.locator('.costs-overview__total');
@@ -51,7 +51,7 @@ test.describe('Pricing Statistics', () => {
     });
 
     test('displays pricing legend with free and paid tier indicators', async () => {
-        await sharedPage.goto('http://localhost:8081/dashboard');
+        await sharedPage.goto('/dashboard');
 
         // Verify legend items exist
         await expect(sharedPage.locator('.costs-legend__text').filter({hasText: 'Free tier environments'})).toBeVisible();
@@ -63,7 +63,7 @@ test.describe('Pricing Statistics', () => {
     });
 
     test('pricing statistics shows environment count in detail', async () => {
-        await sharedPage.goto('http://localhost:8081/dashboard');
+        await sharedPage.goto('/dashboard');
 
         const appRow = sharedPage.locator('.costs-chart__row').first();
         const detail = appRow.locator('.costs-chart__detail');

@@ -148,7 +148,7 @@ test.describe('Environment Management', () => {
 
         // Should have at least one check mark (visual feedback working)
         const checkMarks = sharedPage.locator('.confirm-check');
-        expect(await checkMarks.count()).toBeGreaterThanOrEqual(1);
+        await expect(checkMarks.first()).toBeVisible();
     });
 
     test('delete button is enabled when both fields match', async () => {

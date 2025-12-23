@@ -4,10 +4,12 @@ import {getTeam} from '../api/generated/fn/customer/get-team';
 import {regenerateInvite} from '../api/generated/fn/invite/regenerate-invite';
 import {deleteInvite} from '../api/generated/fn/invite/delete-invite';
 import {getApplications} from '../api/generated/fn/application/get-applications';
+import {updateCustomer} from '../api/generated/fn/customer/update-customer';
 import {CustomerResponse} from '../api/generated/models/customer-response';
 import {PendingInviteResponse} from '../api/generated/models/pending-invite-response';
 import {InviteCreationResponse} from '../api/generated/models/invite-creation-response';
 import {ApplicationListResponse} from '../api/generated/models/application-list-response';
+import {CustomerRole} from '../api/generated/models/customer-role';
 
 export interface User {
   id: string;
@@ -84,22 +86,36 @@ export class UsersService {
     };
   }
 
-  private mapCustomerToUser(customer: CustomerResponse): User {
-    const applications = (customer.applications ?? []).map(app => ({
-      id: app.id ?? '',
-      name: app.name ?? ''
-    }));
-
-    return {
-      id: customer.email ?? crypto.randomUUID(),
-      firstName: customer.firstName ?? 'Unknown',
-      lastName: customer.lastName ?? 'User',
-      email: customer.email ?? '',
-      applications,
-      roles: this.mapRole(customer.role),
-      lastActive: null,
-      status: 'active'
+  async updateUser(userId: string, applicationIds: string[], roleIds: string[]): Promise<User | null> {
+    // Map frontend role IDs to backend role enum
+    const roleTypeMap: Record<string, CustomerRole> = {
+      'role1': CustomerRole.Admin,
+      'role2': CustomerRole.Dev,
+      'role3': CustomerRole.ReadOnly
     };
+
+    // Get the role (assuming single role)
+    const role = roleIds.length > 0 ? roleTypeMap[roleIds[0]] : undefined;
+
+    try {
+      // Call backend API to update user
+      await this.api.invoke(updateCustomer, {
+        customerId: userId,
+        body: {
+          applicationIds,
+          role
+        }
+      });
+
+      // Refresh users list from backend
+      await this.fetchUsers();
+
+      // Find and return the updated user
+      return this.users().find(u => u.id === userId) ?? null;
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      throw error;
+    }
   }
 
   private mapRole(role?: 'READ_ONLY' | 'DEV' | 'ADMIN'): Role[] {
@@ -183,24 +199,21 @@ export class UsersService {
     };
   }
 
-  updateUser(userId: string, applicationIds: string[], roleIds: string[]): User | null {
-    const selectedApps = this.availableApps().filter(app => applicationIds.includes(app.id));
-    const selectedRoles = this.availableRolesData().filter(role => roleIds.includes(role.id));
+  private mapCustomerToUser(customer: CustomerResponse): User {
+    const applications = (customer.applications ?? []).map(app => ({
+      id: app.id ?? '',
+      name: app.name ?? ''
+    }));
 
-    let updatedUser: User | null = null;
-
-    this.usersData.update(users =>
-      users.map(u => {
-        if (u.id !== userId) return u;
-        updatedUser = {
-          ...u,
-          applications: selectedApps,
-          roles: selectedRoles
-        };
-        return updatedUser;
-      })
-    );
-
-    return updatedUser;
+    return {
+      id: customer.id ?? crypto.randomUUID(),
+      firstName: customer.firstName ?? 'Unknown',
+      lastName: customer.lastName ?? 'User',
+      email: customer.email ?? '',
+      applications,
+      roles: this.mapRole(customer.role),
+      lastActive: null,
+      status: 'active'
+    };
   }
 }
