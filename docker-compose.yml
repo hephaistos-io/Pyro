@@ -2,6 +2,23 @@
 # Usage: docker compose up -d (or ./gradlew dockerUp)
 
 services:
+  # Redis for Rate Limiting
+  redis:
+    image: redis:7-alpine
+    container_name: flagforge-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - ff-redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flagforge-network
+
   # PostgreSQL Database
   postgres:
     image: postgres:18.1-alpine
@@ -60,8 +77,11 @@ services:
       SPRING_DATASOURCE_USERNAME: customer-flagforge
       SPRING_DATASOURCE_PASSWORD: customer-flagforge
       SPRING_PROFILES_ACTIVE: docker
+      FLAGFORGE_RATE_LIMIT_REDIS_URI: redis://redis:6379
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/v3/api-docs" ]
@@ -118,3 +138,5 @@ networks:
 volumes:
   ff-pgdata:
     name: flagforge-pgdata
+  ff-redis-data:
+    name: flagforge-redis-data

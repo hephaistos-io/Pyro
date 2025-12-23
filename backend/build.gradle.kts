@@ -33,6 +33,8 @@ subprojects {
 
             // Rate limiting for customer-api
             implementation("com.bucket4j:bucket4j-core:8.10.1")
+            implementation("com.bucket4j:bucket4j-redis:8.10.1")
+            implementation("io.lettuce:lettuce-core:6.5.2.RELEASE")
 
             implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.0")
             implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
@@ -43,6 +45,7 @@ subprojects {
             testImplementation("org.testcontainers:testcontainers:2.0.2")
             testImplementation("org.testcontainers:testcontainers-postgresql:2.0.2")
             testImplementation("org.testcontainers:testcontainers-junit-jupiter:2.0.2")
+            testImplementation("com.redis:testcontainers-redis:2.2.2")
             testImplementation("org.springframework.boot:spring-boot-resttestclient:4.0.0")
             testImplementation("org.springframework.security:spring-security-test:7.0.0")
             testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
