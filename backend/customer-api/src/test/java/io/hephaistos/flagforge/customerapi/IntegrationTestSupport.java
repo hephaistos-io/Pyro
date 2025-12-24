@@ -69,6 +69,17 @@ public abstract class IntegrationTestSupport {
     }
 
     /**
+     * Perform a POST request with API key authentication.
+     */
+    protected <T> ResponseEntity<T> postWithApiKey(String path, String apiKey, Object body,
+            Class<T> responseType) {
+        var headers = apiKeyHeaders(apiKey);
+        headers.set("Content-Type", "application/json");
+        return restTemplate.exchange(getBaseUrl() + path, HttpMethod.POST,
+                new HttpEntity<>(body, headers), responseType);
+    }
+
+    /**
      * Create HTTP headers with API key authentication.
      */
     protected HttpHeaders apiKeyHeaders(String apiKey) {

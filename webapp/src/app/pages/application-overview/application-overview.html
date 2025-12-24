@@ -139,6 +139,7 @@
     @if (application()?.id) {
         <app-environment-manager
                 (environmentCreated)="onEnvironmentCreated($event)"
+                (environmentUpdated)="onEnvironmentUpdated($event)"
                 (environmentDeleted)="onEnvironmentDeleted($event)"
                 [(selectedEnvironment)]="selectedEnvironment"
                 [applicationId]="application()!.id!"
@@ -147,7 +148,23 @@
         </app-environment-manager>
     }
 
-    <!-- Environment Details -->
+  <!-- Empty State when no environments -->
+  @if (environments().length === 0 && application()?.id) {
+    <div class="empty-state">
+      <div class="empty-state__icon">
+        <svg fill="none" height="48" viewBox="0 0 24 24" width="48" xmlns="http://www.w3.org/2000/svg">
+          <rect height="14" rx="2" ry="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2" width="20" x="2" y="3"/>
+          <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="2"/>
+        </svg>
+      </div>
+      <h3 class="empty-state__title">No Environments</h3>
+      <p class="empty-state__text">Get started by creating your first environment.</p>
+    </div>
+  }
+
+  <!-- Environment Details -->
     @if (selectedEnvironment()) {
       <!-- Tab Navigation -->
       <div class="tab-bar">
@@ -174,7 +191,9 @@
       <!-- Overview Tab Content -->
       @if (activeTab() === 'overview') {
         <div class="content">
-            <div class="overview-cards">
+          <div class="overview-layout">
+            <!-- Left Column: API Attributes + Rate Limit -->
+            <div class="overview-layout__left">
               <div class="overview-card template-card" [class.template-card--collapsed]="!apiAttributesExpanded()">
                 <button class="overview-card__header template-card__header" (click)="toggleApiAttributesCard()">
                   <div class="template-card__header-left">
@@ -187,70 +206,78 @@
                   </div>
                 </button>
                 @if (apiAttributesExpanded()) {
-                    <div class="overview-card__content">
-                        <div class="stat">
-                            <span class="stat__label">Identifier</span>
-                            <code class="stat__code">{{ environmentIdentifier() }}</code>
-                        </div>
-
-                        <!-- API Keys Component -->
-                        @if (application()?.id && selectedEnvironment()?.id) {
-                            <app-api-keys-card
-                                    [applicationId]="application()!.id!"
-                                    [environmentId]="selectedEnvironment()!.id!">
-                            </app-api-keys-card>
-                        }
-
-                      <!-- Rate Limit Tier (Admin only) -->
-                      <div *hasRole="CustomerRole.Admin" class="tier-section">
-                        <span class="tier-section__label">Rate Limit</span>
-                        <div class="tier-slider-wrapper">
-                          <div class="tier-slider">
-                            <div class="tier-slider__track tier-slider__track--five">
-                              <input
-                                (input)="onRateLimitTierSliderChange($event)"
-                                [max]="rateLimitTiers().length - 1"
-                                [value]="selectedRateLimitTierIndex()"
-                                aria-label="Select rate limit tier"
-                                class="tier-slider__input"
-                                min="0"
-                                type="range">
-                              <div class="tier-slider__labels tier-slider__labels--five">
-                                @for (tier of rateLimitTiers(); track tier.id; let i = $index) {
-                                  <button
-                                    (click)="selectedRateLimitTierIndex.set(i)"
-                                    [class.tier-slider__tick--active]="i === selectedRateLimitTierIndex()"
-                                    class="tier-slider__tick">
-                                    {{ tier.name }}
-                                  </button>
-                                }
-                              </div>
-                            </div>
-                            <div class="tier-display">
-                              <div class="tier-display__main">
-                                <span
-                                  class="tier-display__limit-value">{{ formatRateLimit(currentRateLimitTier().rateLimit) }}</span>
-                                <span class="tier-display__limit-label">req/sec</span>
-                                        </div>
-                              <div class="tier-display__details">
-                                <span class="tier-display__price">{{ currentRateLimitTier().price }}<span
-                                  class="tier-display__period">/env/mo</span></span>
-                                <span
-                                  class="tier-display__requests">{{ currentRateLimitTier().requestsPerMonth }}</span>
-                              </div>
-                            </div>
-                          </div>
-                            </div>
-                        </div>
+                  <div class="overview-card__content">
+                    <div class="stat">
+                      <span class="stat__label">Identifier</span>
+                      <code class="stat__code">{{ environmentIdentifier() }}</code>
                     </div>
-                }
-                </div>
 
-                @if (selectedEnvironment()?.id) {
+                    <!-- API Keys Component -->
+                    @if (application()?.id && selectedEnvironment()?.id) {
+                      <app-api-keys-card
+                        [applicationId]="application()!.id!"
+                        [environmentId]="selectedEnvironment()!.id!">
+                      </app-api-keys-card>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Rate Limit Card (Admin only) -->
+              <div *hasRole="CustomerRole.Admin" class="overview-card rate-limit-card">
+                <div class="overview-card__header">
+                  <h3 class="overview-card__title">Rate Limit</h3>
+                </div>
+                <div class="overview-card__content">
+                  <div class="tier-slider-wrapper">
+                    <div class="tier-slider">
+                      <div class="tier-slider__track tier-slider__track--five">
+                        <input
+                          (input)="onRateLimitTierSliderChange($event)"
+                          [max]="rateLimitTiers().length - 1"
+                          [value]="selectedRateLimitTierIndex()"
+                          aria-label="Select rate limit tier"
+                          class="tier-slider__input"
+                          min="0"
+                          type="range">
+                        <div class="tier-slider__labels tier-slider__labels--five">
+                          @for (tier of rateLimitTiers(); track tier.id; let i = $index) {
+                            <button
+                              (click)="selectedRateLimitTierIndex.set(i)"
+                              [class.tier-slider__tick--active]="i === selectedRateLimitTierIndex()"
+                              class="tier-slider__tick">
+                              {{ tier.name }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="tier-display">
+                        <div class="tier-display__main">
+                          <span
+                            class="tier-display__limit-value">{{ formatRateLimit(currentRateLimitTier().rateLimit) }}</span>
+                          <span class="tier-display__limit-label">req/sec</span>
+                        </div>
+                        <div class="tier-display__details">
+                          <span class="tier-display__price">{{ currentRateLimitTier().price }}<span
+                            class="tier-display__period">/env/mo</span></span>
+                          <span class="tier-display__requests">{{ currentRateLimitTier().requestsPerMonth }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Usage Overview -->
+            <div class="overview-layout__right">
+              @if (selectedEnvironment()?.id && application()?.id) {
                     <app-usage-stats-card
+                      [applicationId]="application()!.id!"
                             [environmentId]="selectedEnvironment()!.id!">
                     </app-usage-stats-card>
                 }
+            </div>
             </div>
         </div>
       }

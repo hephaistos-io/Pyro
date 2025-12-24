@@ -1,4 +1,6 @@
 flagforge:
+  redis:
+    uri: ${REDIS_URI:redis://localhost:6379}
   security:
     jwt:
       secret: ${FLAGFORGE_JWT_SECRET:4407a837731d92425e627e49632afbabd538a25e080fafed65a9ff7e71a9f5d1}

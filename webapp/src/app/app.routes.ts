@@ -8,6 +8,7 @@ import {DashboardComponent} from './pages/dashboard/dashboard.component';
 import {DashboardLayoutComponent} from './layouts/dashboard-layout/dashboard-layout.component';
 import {ApplicationOverview} from './pages/application-overview/application-overview';
 import {authGuard} from './guards/auth.guard';
+import {profileResolver} from './guards/profile.resolver';
 
 export const routes: Routes = [
   {path: '', component: HomeComponent},
@@ -19,6 +20,7 @@ export const routes: Routes = [
     path: 'dashboard',
     component: DashboardLayoutComponent,
     canActivate: [authGuard],
+    resolve: {profile: profileResolver},
     data: {isDashboard: true},
     children: [
       {path: '', component: DashboardComponent},

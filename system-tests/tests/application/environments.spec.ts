@@ -71,37 +71,43 @@ test.describe('Environment Management', () => {
         await expect(sharedPage.locator('.selector-button')).toContainText('Staging');
     });
 
-    test('cannot delete FREE tier environment (Production)', async () => {
-        // Check current environment
-        const currentEnv = await sharedPage.locator('.selector-button').textContent();
+    test('can edit environment name', async () => {
+        // Click edit button
+        const editBtn = sharedPage.locator('.edit-env-btn');
+        await expect(editBtn).toBeVisible();
+        await expect(editBtn).toBeEnabled();
+        await editBtn.click();
 
-        // If not on Production, switch to it
-        if (!currentEnv?.includes('Production')) {
-            await sharedPage.locator('.selector-button').click();
-            const productionOption = sharedPage.locator('.dropdown-item').filter({hasText: 'Production'});
-            await expect(productionOption).toBeVisible();
-            await productionOption.click();
+        // Wait for overlay to appear
+        await expect(sharedPage.locator('.environment-creation-overlay')).toBeVisible();
+        await expect(sharedPage.getByText('Edit Environment')).toBeVisible();
 
-            // Wait for environment to switch
-            await sharedPage.waitForTimeout(500);
-        }
+        // Verify inputs are pre-filled with current environment data
+        const nameInput = sharedPage.locator('#envName');
+        await expect(nameInput).toHaveValue('Staging');
 
-        // Delete button should not be visible for FREE tier
-        await expect(sharedPage.locator('.delete-env-btn')).not.toBeVisible();
+        // Update the name
+        await nameInput.clear();
+        await nameInput.fill('Staging Updated');
+
+        // Click Save Changes button
+        await sharedPage.locator('.environment-creation-overlay').getByRole('button', {name: 'Save Changes'}).click();
+
+        // Wait for overlay to close
+        await expect(sharedPage.locator('.environment-creation-overlay')).not.toBeVisible();
+
+        // Wait for environment to update
+        await sharedPage.waitForTimeout(1000);
+
+        // Verify the environment name was updated
+        await expect(sharedPage.locator('.selector-button')).toContainText('Staging Updated');
     });
 
-    test('can delete paid environment (Staging)', async () => {
-        // Switch to Staging environment
-        await sharedPage.locator('.selector-button').click();
-        const stagingOption = sharedPage.locator('.dropdown-item').filter({hasText: 'Staging'});
-        await expect(stagingOption).toBeVisible();
-        await stagingOption.click();
-
-        // Wait for environment to switch
-        await sharedPage.waitForTimeout(500);
-
-        // Delete button should be visible for paid tier
-        await expect(sharedPage.locator('.delete-env-btn')).toBeVisible();
+    test('can delete environment (Staging Updated)', async () => {
+        // Delete button should be visible and enabled
+        const deleteBtn = sharedPage.locator('.delete-env-btn');
+        await expect(deleteBtn).toBeVisible();
+        await expect(deleteBtn).toBeEnabled();
     });
 
     test('delete environment shows confirmation overlay', async () => {
@@ -110,7 +116,7 @@ test.describe('Environment Management', () => {
 
         // Verify overlay appears
         await expect(sharedPage.locator('.delete-field-overlay')).toBeVisible();
-        await expect(sharedPage.getByRole('heading', {name: 'Delete Environment "Staging"?'})).toBeVisible();
+        await expect(sharedPage.getByRole('heading', {name: 'Delete Environment "Staging Updated"?'})).toBeVisible();
     });
 
     test('delete overlay requires application name', async () => {
@@ -121,7 +127,7 @@ test.describe('Environment Management', () => {
 
         // Enter environment name but not application name
         const envNameInput = sharedPage.locator('input[placeholder="Enter environment name"]');
-        await envNameInput.fill('Staging');
+        await envNameInput.fill('Staging Updated');
 
         // Delete button should still be disabled (scope to overlay)
         const deleteButton = sharedPage.locator('.delete-field-overlay').getByRole('button', {name: 'Delete Environment'});
@@ -144,7 +150,7 @@ test.describe('Environment Management', () => {
     test('delete overlay shows visual feedback for correct inputs', async () => {
         // Enter environment name (application name should already be filled from previous test)
         const envNameInput = sharedPage.locator('input[placeholder="Enter environment name"]');
-        await envNameInput.fill('Staging');
+        await envNameInput.fill('Staging Updated');
 
         // Should have at least one check mark (visual feedback working)
         const checkMarks = sharedPage.locator('.confirm-check');
@@ -164,7 +170,7 @@ test.describe('Environment Management', () => {
         await expect(sharedPage.locator('.delete-field-overlay')).not.toBeVisible();
 
         // Environment should still exist
-        await expect(sharedPage.locator('.selector-button')).toContainText('Staging');
+        await expect(sharedPage.locator('.selector-button')).toContainText('Staging Updated');
     });
 
     test('can confirm environment deletion', async () => {
@@ -179,7 +185,7 @@ test.describe('Environment Management', () => {
         const envNameInput = sharedPage.locator('input[placeholder="Enter environment name"]');
 
         await appNameInput.fill(sharedAppName);
-        await envNameInput.fill('Staging');
+        await envNameInput.fill('Staging Updated');
 
         // Click delete (scope to overlay)
         const deleteButton = sharedPage.locator('.delete-field-overlay').getByRole('button', {name: 'Delete Environment'});

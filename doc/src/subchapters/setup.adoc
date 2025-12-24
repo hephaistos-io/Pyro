@@ -620,6 +620,122 @@ npm run generate-api                     # Regenerate API client
 ./gradlew webapp:cleanGenerated && ./gradlew webapp:generateTypeScriptClient
 ----
 
+== Load Testing
+
+The project includes a k6 load testing script to simulate traffic to the customer-api.
+This is useful for testing usage statistics tracking and rate limiting behavior.
+
+=== Prerequisites
+
+Install k6:
+
+[source,bash]
+----
+brew install k6
+----
+
+=== Running Load Tests
+
+Basic usage with an API key:
+
+[source,bash]
+----
+k6 run -e API_KEY="your-api-key" --vus 10 --duration 1m load-tests/load-test.k6.js
+----
+
+Sine wave traffic pattern (oscillates between MIN_RPS and MAX_RPS):
+
+[source,bash]
+----
+k6 run \
+  -e API_KEY="your-api-key" \
+  -e PATTERN="sine" \
+  -e PERIOD="30" \
+  -e MIN_RPS="5" \
+  -e MAX_RPS="30" \
+  --duration 2m \
+  load-tests/load-test.k6.js
+----
+
+Ramp pattern (gradually increases from MIN_RPS to MAX_RPS):
+
+[source,bash]
+----
+k6 run \
+  -e API_KEY="your-api-key" \
+  -e PATTERN="ramp" \
+  -e MIN_RPS="1" \
+  -e MAX_RPS="50" \
+  --duration 3m \
+  load-tests/load-test.k6.js
+----
+
+Test user endpoints (cycle through multiple user IDs):
+
+[source,bash]
+----
+k6 run \
+  -e API_KEY="your-api-key" \
+  -e USER_COUNT="10" \
+  --vus 15 --duration 2m \
+  load-tests/load-test.k6.js
+----
+
+=== Configuration Options
+
+[cols="1,2,1"]
+|===
+| Variable | Description | Default
+
+| `API_KEY`
+| API key (required)
+| -
+
+| `BASE_URL`
+| Base URL for customer-api
+| `http://localhost:8081`
+
+| `PATTERN`
+| Traffic pattern: `constant`, `sine`, `ramp`
+| `constant`
+
+| `PERIOD`
+| Sine wave period in seconds
+| `60`
+
+| `MIN_RPS`
+| Minimum requests per second
+| `5`
+
+| `MAX_RPS`
+| Maximum requests per second
+| `50`
+
+| `IDENTIFIER`
+| System identifier for requests
+| (none)
+
+| `USER_COUNT`
+| Number of user IDs to cycle through
+| `0`
+|===
+
+=== Output Metrics
+
+k6 displays real-time metrics including:
+
+* *http_req_duration*: Response time statistics (avg, min, max, p90, p95)
+* *http_reqs*: Total requests and requests/sec
+* *errors*: Error rate percentage
+* *iterations*: How many times the script ran
+
+To save results as JSON:
+
+[source,bash]
+----
+k6 run -e API_KEY="your-key" --out json=results.json load-tests/load-test.k6.js
+----
+
 == Troubleshooting
 
 === Port Already in Use

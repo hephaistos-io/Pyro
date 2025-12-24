@@ -1,110 +1,111 @@
-import {Component, computed, input, signal} from '@angular/core';
+import {Component, computed, effect, inject, input, signal} from '@angular/core';
+import {DatePipe, DecimalPipe} from '@angular/common';
+import {Api} from '../../api/generated/api';
+import {getDailyStatistics} from '../../api/generated/functions';
+import {DailyUsageStatisticsResponse} from '../../api/generated/models/daily-usage-statistics-response';
 
-interface UsageStats {
-  fetchesToday: number;
-  dailyLimit: number;
-  users: number;
-  totalThisMonth: number;
-  avgResponseTime: number;
-}
-
-interface LeniencyStats {
-  used: number;
-  allowed: number;
-}
-
-interface WeeklyFetch {
-  day: string;
-  fetches: number;
-  limit: number;
-}
+type DaysPeriod = 7 | 15 | 30;
 
 @Component({
   selector: 'app-usage-stats-card',
   standalone: true,
-  imports: [],
+  imports: [DatePipe, DecimalPipe],
   templateUrl: './usage-stats-card.component.html',
   styleUrl: './usage-stats-card.component.scss'
 })
 export class UsageStatsCardComponent {
   // Inputs
+  applicationId = input.required<string>();
   environmentId = input.required<string>();
+  // Period selector
+  selectedDays = signal<DaysPeriod>(7);
 
   // Card collapse state
   expanded = signal(true);
-
-  // Mock usage statistics - Replace with: this.api.invoke(getUsageStats, {envId})
-  usageStats = signal<UsageStats>({
-    fetchesToday: 12847,
-    dailyLimit: 50000,
-    users: 7954,
-    totalThisMonth: 287432,
-    avgResponseTime: 42, // ms
+  // Loading state
+  loading = signal(false);
+  // Data from API
+  dailyStats = signal<DailyUsageStatisticsResponse[]>([]);
+  // Today's stats (most recent entry)
+  todayStats = computed(() => {
+    const stats = this.dailyStats();
+    return stats.length > 0 ? stats[0] : null;
   });
-
-  // Mock leniency tracking - Replace with: this.api.invoke(getLeniencyStats, {envId})
-  leniencyStats = signal<LeniencyStats>({
-    used: 2,
-    allowed: 2,
+  // Maximum requests in the period (for bar scaling)
+  maxRequests = computed(() => {
+    const stats = this.dailyStats();
+    const max = Math.max(...stats.map(s => s.totalRequests ?? 0), 1);
+    return max;
   });
-
-  // Mock weekly fetch data - Replace with: this.api.invoke(getWeeklyFetches, {envId})
-  weeklyFetches = signal<WeeklyFetch[]>([
-    {day: 'Mon', fetches: 38420, limit: 50000},
-    {day: 'Tue', fetches: 50000, limit: 50000},  // Hit limit
-    {day: 'Wed', fetches: 35890, limit: 50000},
-    {day: 'Thu', fetches: 51200, limit: 50000},  // Exceeded limit
-    {day: 'Fri', fetches: 31560, limit: 50000},
-    {day: 'Sat', fetches: 18940, limit: 50000},
-    {day: 'Sun', fetches: 12847, limit: 50000},
-  ]);
-
-  // Computed high risk alert based on leniency usage
-  highRiskAlert = computed(() => {
-    const leniency = this.leniencyStats();
-    if (leniency.used >= leniency.allowed) {
-      return {
-        message: `We offer leniency for exceeded limits ${leniency.allowed} times per month to prevent application downtime. This allowance has been fully used. Your application is at high risk of service interruption.`
-      };
-    }
-    return null;
+  // Total requests in the selected period
+  totalRequests = computed(() => {
+    return this.dailyStats().reduce((sum, s) => sum + (s.totalRequests ?? 0), 0);
   });
-
-  // Computed usage percentage
-  usagePercentage = computed(() => {
-    const stats = this.usageStats();
-    return Math.round((stats.fetchesToday / stats.dailyLimit) * 100);
+  // Peak requests per second across the period
+  periodPeakRps = computed(() => {
+    const stats = this.dailyStats();
+    return Math.max(...stats.map(s => s.peakRequestsPerSecond ?? 0), 0);
   });
-
-  // Computed recommendation based on usage patterns
-  usageRecommendation = computed(() => {
-    const fetches = this.weeklyFetches();
-    const daysAtLimit = fetches.filter(day => day.fetches >= day.limit).length;
-
-    if (daysAtLimit >= 2) {
-      return {
-        type: 'warning' as const,
-        message: `You've hit the limit ${daysAtLimit} times this week. Consider upgrading to a higher tier.`
-      };
-    } else if (daysAtLimit === 1) {
-      return {
-        type: 'info' as const,
-        message: 'You hit your daily limit once this week. Monitor your usage to avoid interruptions.'
-      };
-    } else if (this.usagePercentage() > 80) {
-      return {
-        type: 'info' as const,
-        message: 'You\'re approaching your daily limit. Consider your usage patterns.'
-      };
-    }
-    return null;
+  // Rejection rate for today (percentage of rejected requests)
+  rejectionRate = computed(() => {
+    const stats = this.todayStats();
+    if (!stats || !stats.totalRequests) return 0;
+    const total = (stats.totalRequests ?? 0) + (stats.rejectedRequests ?? 0);
+    if (total === 0) return 0;
+    return ((stats.rejectedRequests ?? 0) / total) * 100;
   });
+  // Dependencies
+  private api = inject(Api);
+
+  constructor() {
+    // Effect to reload data when environmentId or selectedDays changes
+    effect(() => {
+      const envId = this.environmentId();
+      const appId = this.applicationId();
+      const days = this.selectedDays();
+      if (envId && appId) {
+        this.loadStatistics(appId, envId, days);
+      }
+    });
+  }
 
   toggleCard(): void {
     this.expanded.update(v => !v);
   }
 
+  setDays(days: DaysPeriod): void {
+    this.selectedDays.set(days);
+  }
+
   formatNumber(num: number): string {
     return num.toLocaleString();
+  }
+
+  formatDecimal(num: number | undefined): string {
+    if (num === undefined || num === null) return '0';
+    return num.toFixed(2);
+  }
+
+  getBarHeight(requests: number | undefined): number {
+    const value = requests ?? 0;
+    return (value / this.maxRequests()) * 100;
+  }
+
+  private async loadStatistics(applicationId: string, environmentId: string, days: number): Promise<void> {
+    this.loading.set(true);
+    try {
+      const stats = await this.api.invoke(getDailyStatistics, {
+        applicationId,
+        environmentId,
+        days
+      });
+      // Reverse to show oldest first (left to right chronologically)
+      this.dailyStats.set([...stats].reverse());
+    } catch (error) {
+      console.error('Failed to load daily statistics:', error);
+      this.dailyStats.set([]);
+    } finally {
+      this.loading.set(false);
+    }
   }
 }

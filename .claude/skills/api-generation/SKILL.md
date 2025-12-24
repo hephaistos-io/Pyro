@@ -7,6 +7,8 @@ allowed-tools: Bash
 # API Generation
 
 This Skill provides commands to generate OpenAPI specs and TypeScript client code from your backend API.
+You NEVER have to compose up/down with this, the task contains it all!
+If there is an issue with docker, it might not be building correctly!
 
 ## Instructions
 

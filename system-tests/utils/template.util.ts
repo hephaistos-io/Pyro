@@ -1,6 +1,93 @@
 import {expect, Page} from '@playwright/test';
 
 /**
+ * Get the Read-Key from the webapp UI
+ */
+export async function getReadApiKey(page: Page): Promise<string> {
+    await page.getByRole('button', {name: 'Overview', exact: true}).click();
+    await expect(page.locator('.overview-cards')).toBeVisible();
+
+    const readKeySection = page.locator('.stat').filter({hasText: 'Read-Key'});
+    await readKeySection.getByRole('button', {name: 'Show key'}).click();
+
+    const keyCode = readKeySection.locator('.stat__code--key');
+    await expect(keyCode).toContainText(/[a-f0-9]{64}/i);
+
+    const keyText = await keyCode.textContent();
+    return keyText?.trim() || '';
+}
+
+/**
+ * Get the Write-Key from the webapp UI
+ */
+export async function getWriteApiKey(page: Page): Promise<string> {
+    await page.getByRole('button', {name: 'Overview', exact: true}).click();
+    await expect(page.locator('.overview-cards')).toBeVisible();
+
+    const writeKeySection = page.locator('.stat').filter({hasText: 'Write-Key'});
+    await writeKeySection.getByRole('button', {name: 'Show key'}).click();
+
+    const keyCode = writeKeySection.locator('.stat__code--key');
+    await expect(keyCode).toContainText(/[a-f0-9]{64}/i);
+
+    const keyText = await keyCode.textContent();
+    return keyText?.trim() || '';
+}
+
+/**
+ * Make authenticated POST request to customer-api
+ */
+export async function postWithApiKey(
+    page: Page,
+    path: string,
+    apiKey: string,
+    body: object
+): Promise<{ status: number; body: unknown }> {
+    const baseUrl = process.env.BASE_URL || 'http://localhost';
+    const response = await page.request.post(`${baseUrl}${path}`, {
+        headers: {
+            'X-API-Key': apiKey,
+            'Content-Type': 'application/json'
+        },
+        data: body
+    });
+
+    let responseBody: unknown;
+    try {
+        responseBody = await response.json();
+    } catch {
+        responseBody = await response.text();
+    }
+
+    return {status: response.status(), body: responseBody};
+}
+
+/**
+ * Make authenticated GET request to customer-api
+ */
+export async function getWithApiKey(
+    page: Page,
+    path: string,
+    apiKey: string
+): Promise<{ status: number; body: unknown }> {
+    const baseUrl = process.env.BASE_URL || 'http://localhost';
+    const response = await page.request.get(`${baseUrl}${path}`, {
+        headers: {
+            'X-API-Key': apiKey
+        }
+    });
+
+    let responseBody: unknown;
+    try {
+        responseBody = await response.json();
+    } catch {
+        responseBody = await response.text();
+    }
+
+    return {status: response.status(), body: responseBody};
+}
+
+/**
  * Navigates to the Template tab in the application overview
  */
 export async function navigateToTemplateTab(page: Page): Promise<void> {

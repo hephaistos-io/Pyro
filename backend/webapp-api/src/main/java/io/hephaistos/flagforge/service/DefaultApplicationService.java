@@ -5,10 +5,13 @@ import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationListResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
+import io.hephaistos.flagforge.controller.dto.ApplicationStatisticsResponse;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
+import io.hephaistos.flagforge.data.repository.UserTemplateValuesRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
+import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import io.hephaistos.flagforge.security.RequireAdmin;
 import io.hephaistos.flagforge.security.RequireReadOnly;
@@ -28,14 +31,20 @@ public class DefaultApplicationService implements ApplicationService {
     private final EnvironmentService environmentService;
     private final TemplateService templateService;
     private final CustomerRepository customerRepository;
+    private final UserTemplateValuesRepository userTemplateValuesRepository;
+    private final UsageTrackingService usageTrackingService;
 
     public DefaultApplicationService(ApplicationRepository applicationRepository,
             EnvironmentService environmentService, TemplateService templateService,
-            CustomerRepository customerRepository) {
+            CustomerRepository customerRepository,
+            UserTemplateValuesRepository userTemplateValuesRepository,
+            UsageTrackingService usageTrackingService) {
         this.applicationRepository = applicationRepository;
         this.environmentService = environmentService;
         this.templateService = templateService;
         this.customerRepository = customerRepository;
+        this.userTemplateValuesRepository = userTemplateValuesRepository;
+        this.usageTrackingService = usageTrackingService;
     }
 
     @Override
@@ -80,5 +89,25 @@ public class DefaultApplicationService implements ApplicationService {
         return applicationRepository.findAll()
                 .stream().map(ApplicationListResponse::fromEntity)
                 .toList();
+    }
+
+    @Override
+    @RequireReadOnly
+    @Transactional(readOnly = true)
+    public ApplicationStatisticsResponse getApplicationStatistics(UUID applicationId) {
+        // Verify application exists and user has access
+        var application = applicationRepository.findByIdFiltered(applicationId)
+                .orElseThrow(
+                        () -> new NotFoundException("Application not found: " + applicationId));
+
+        long userCount = userTemplateValuesRepository.countByApplicationId(applicationId);
+
+        // Sum hits across all environments
+        long totalHits = application.getEnvironments()
+                .stream()
+                .mapToLong(env -> usageTrackingService.getMonthlyUsage(env.getId()))
+                .sum();
+
+        return new ApplicationStatisticsResponse(userCount, totalHits);
     }
 }

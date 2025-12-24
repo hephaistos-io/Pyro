@@ -40,4 +40,19 @@ public class NoOpRateLimitService implements RateLimitService {
     public long getRemainingMonthlyQuota(UUID environmentId, long monthlyLimit) {
         return monthlyLimit;
     }
+
+    @Override
+    public void incrementDailyUsage(UUID environmentId) {
+        // No-op
+    }
+
+    @Override
+    public void trackPeakBurst(UUID environmentId) {
+        // No-op
+    }
+
+    @Override
+    public void incrementRejectedRequests(UUID environmentId) {
+        // No-op
+    }
 }

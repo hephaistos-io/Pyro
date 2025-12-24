@@ -59,15 +59,52 @@
     }
   }
 
-  &__period {
-    font-family: $font-sans;
-    font-size: 0.75rem;
-    color: $charcoal-light;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  &__period-selector {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba($charcoal, 0.05);
+    border-radius: 6px;
+    padding: 0.25rem;
+
+    button {
+      padding: 0.25rem 0.75rem;
+      border: none;
+      background: transparent;
+      font-family: $font-sans;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: $charcoal-light;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba($charcoal, 0.08);
+      }
+
+      &.active {
+        background: $white;
+        color: $charcoal;
+        box-shadow: 0 1px 3px rgba($charcoal, 0.1);
+      }
+    }
 
     @include dark-mode {
-      color: $dark-text-muted;
+      background: rgba($white, 0.05);
+
+      button {
+        color: $dark-text-muted;
+
+        &:hover {
+          background: rgba($white, 0.08);
+        }
+
+        &.active {
+          background: $dark-card;
+          color: $dark-text;
+          box-shadow: 0 1px 3px rgba($black, 0.2);
+        }
+      }
     }
   }
 
@@ -113,6 +150,21 @@
 
   @include dark-mode {
     border-bottom-color: rgba($white, 0.08);
+  }
+
+  &__loading,
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    font-family: $font-sans;
+    font-size: 0.875rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
   }
 
   &__bars {
@@ -226,6 +278,24 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+
+  &--warning {
+    .usage-stat__value {
+      color: $pyro-red-deep;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+
+    .usage-stat__label {
+      color: $pyro-red;
+
+      @include dark-mode {
+        color: $pyro-red-light;
+      }
+    }
+  }
 
   &__value {
     font-family: $font-sans;

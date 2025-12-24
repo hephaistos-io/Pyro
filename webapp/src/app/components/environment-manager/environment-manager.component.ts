@@ -1,9 +1,10 @@
 import {Component, computed, effect, inject, input, model, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {EnvironmentResponse} from '../../api/generated/models';
+import {CustomerRole, EnvironmentResponse} from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
 import {createEnvironment} from '../../api/generated/fn/environments/create-environment';
 import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
+import {updateEnvironment} from '../../api/generated/fn/environments/update-environment';
 import {OverlayService} from '../../services/overlay.service';
 import {
   EnvironmentCreationOverlayComponent,
@@ -13,24 +14,18 @@ import {
   DeleteFieldOverlayComponent,
   DeleteFieldOverlayData
 } from '../delete-field-overlay/delete-field-overlay.component';
-
-// Type-safe PricingTier constants extracted from API models
-const PricingTier = {
-  FREE: 'FREE',
-  BASIC: 'BASIC',
-  STANDARD: 'STANDARD',
-  PRO: 'PRO',
-  BUSINESS: 'BUSINESS'
-} as const;
+import {HasRoleDirective} from '../../directives/has-role.directive';
 
 @Component({
   selector: 'app-environment-manager',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, HasRoleDirective],
   templateUrl: './environment-manager.component.html',
   styleUrl: './environment-manager.component.scss'
 })
 export class EnvironmentManagerComponent {
+  environmentUpdated = output<EnvironmentResponse>();
+
   // Inputs
   applicationId = input.required<string>();
   applicationName = input.required<string>();
@@ -38,15 +33,11 @@ export class EnvironmentManagerComponent {
   selectedEnvironment = model.required<EnvironmentResponse | null>();
   // Outputs
   environmentCreated = output<EnvironmentResponse>();
+  protected readonly CustomerRole = CustomerRole;
   environmentDeleted = output<string>(); // environmentId
   // Environment dropdown state
   showEnvironmentDropdown = signal(false);
   environmentSearchQuery = signal('');
-  // Computed: Check if selected environment can be deleted (only paid tiers, not FREE)
-  canDeleteEnvironment = computed(() => {
-    const env = this.selectedEnvironment();
-    return env?.tier !== PricingTier.FREE;
-  });
   // Computed: Filtered environments for dropdown
   filteredEnvironments = computed(() => {
     const query = this.environmentSearchQuery().toLowerCase();
@@ -101,6 +92,7 @@ export class EnvironmentManagerComponent {
     this.overlayService.open<EnvironmentCreationOverlayData>({
       component: EnvironmentCreationOverlayComponent,
       data: {
+        mode: 'create',
         onConfirm: async (name: string, description?: string) => {
           const appId = this.applicationId();
           if (!appId) {
@@ -123,22 +115,44 @@ export class EnvironmentManagerComponent {
     });
   }
 
-  requestEnvironmentDeletion(): void {
-    if (!this.canDeleteEnvironment()) {
+  onEditEnvironmentClick(): void {
+    const appId = this.applicationId();
+    const currentEnv = this.selectedEnvironment();
+
+    if (!appId || !currentEnv?.id) {
       return;
     }
 
+    this.overlayService.open<EnvironmentCreationOverlayData>({
+      component: EnvironmentCreationOverlayComponent,
+      data: {
+        mode: 'edit',
+        initialName: currentEnv.name ?? '',
+        initialDescription: currentEnv.description ?? '',
+        onConfirm: async (name: string, description?: string) => {
+          const updatedEnv = await this.api.invoke(updateEnvironment, {
+            applicationId: appId,
+            environmentId: currentEnv.id!,
+            body: {
+              name: name,
+              description: description ?? ''
+            }
+          });
+
+          this.selectedEnvironment.set(updatedEnv);
+          this.environmentUpdated.emit(updatedEnv);
+        }
+      },
+      maxWidth: '500px'
+    });
+  }
+
+  requestEnvironmentDeletion(): void {
     const appId = this.applicationId();
     const appName = this.applicationName();
     const currentEnv = this.selectedEnvironment();
 
     if (!appId || !currentEnv?.id || !currentEnv.name) {
-      return;
-    }
-
-    // Double-check tier before showing overlay
-    if (currentEnv.tier === PricingTier.FREE) {
-      console.error('Cannot delete FREE tier environment');
       return;
     }
 

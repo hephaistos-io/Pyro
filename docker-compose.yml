@@ -53,8 +53,11 @@ services:
       SPRING_DATASOURCE_USERNAME: webapp-flagforge
       SPRING_DATASOURCE_PASSWORD: webapp-flagforge
       SPRING_PROFILES_ACTIVE: docker
+      REDIS_URI: redis://redis:6379
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v3/api-docs" ]

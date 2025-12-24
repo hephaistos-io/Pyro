@@ -14,6 +14,7 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("io.lettuce:lettuce-core")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

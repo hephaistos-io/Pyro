@@ -43,6 +43,29 @@ public interface RateLimitService {
     long getRemainingMonthlyQuota(UUID environmentId, long monthlyLimit);
 
     /**
+     * Increment the daily usage counter for the environment.
+     *
+     * @param environmentId The environment UUID
+     */
+    void incrementDailyUsage(UUID environmentId);
+
+    /**
+     * Track peak requests per second for the environment. Updates the daily peak if the current
+     * second's request count exceeds the stored peak.
+     *
+     * @param environmentId The environment UUID
+     */
+    void trackPeakBurst(UUID environmentId);
+
+    /**
+     * Increment the daily rejected requests counter for the environment. Called when a request is
+     * denied due to rate limiting.
+     *
+     * @param environmentId The environment UUID
+     */
+    void incrementRejectedRequests(UUID environmentId);
+
+    /**
      * Result of a rate limit check.
      *
      * @param allowed          Whether the request is allowed

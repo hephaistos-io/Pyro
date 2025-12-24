@@ -3,15 +3,290 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-concepts]]
 == Cross-cutting Concepts
 
-=== _<Concept 1>_
+=== Redis Usage Tracking & Rate Limiting
 
-_<explanation>_
+FlagForge uses Redis as a high-performance data store for real-time rate limiting and usage tracking.
+This system enables per-second rate limiting while collecting statistics for billing, analytics, and customer-facing dashboards.
 
-=== _<Concept 2>_
+==== Architecture Overview
 
-_<explanation>_
+[plantuml,redis-architecture,svg]
+----
+@startuml
+!theme plain
 
-...
-=== _<Concept n>_
+skinparam component {
+    BackgroundColor<<Redis>> #DC382D
+    FontColor<<Redis>> White
+}
 
-_<explanation>_
+package "customer-api" {
+    [RateLimitFilter] --> [RateLimitService]
+}
+
+package "webapp-api" {
+    [UsageAggregationService] --> [PostgreSQL]
+}
+
+cloud "Redis" <<Redis>> {
+    database "Rate Limit Buckets\n(bucket4j)" as buckets
+    database "Usage Counters\n(INCR)" as counters
+}
+
+[RateLimitService] --> buckets : "Token bucket\nper environment"
+[RateLimitService] --> counters : "Atomic counters"
+[UsageAggregationService] --> counters : "Hourly reads"
+
+@enduml
+----
+
+The system consists of two parts:
+
+1. **customer-api** - Handles real-time rate limiting and counter increments on every API request
+2. **webapp-api** - Runs hourly aggregation to persist Redis counters to PostgreSQL for historical queries
+
+==== Redis Key Patterns
+
+All keys use a consistent naming convention with TTLs to enable automatic cleanup:
+
+[cols="1,2,1,2"]
+|===
+|Key Pattern |Purpose |TTL |Example
+
+|`rate-limit:env:{environmentId}`
+|bucket4j token bucket for per-second rate limiting
+|Managed by bucket4j
+|`rate-limit:env:550e8400-e29b-41d4-a716-446655440000`
+
+|`usage:monthly:{environmentId}:{YYYY-MM}`
+|Total requests per calendar month
+|45 days
+|`usage:monthly:550e8400-...:2024-12`
+
+|`usage:daily:{environmentId}:{YYYY-MM-DD}`
+|Total requests per day
+|45 days
+|`usage:daily:550e8400-...:2024-12-24`
+
+|`usage:peak:{environmentId}:{YYYY-MM-DD}`
+|Peak requests per second observed today
+|45 days
+|`usage:peak:550e8400-...:2024-12-24`
+
+|`usage:second:{environmentId}:{epochSecond}`
+|Requests in a specific second (for peak calculation)
+|5 seconds
+|`usage:second:550e8400-...:1703424000`
+
+|`usage:rejected:{environmentId}:{YYYY-MM-DD}`
+|Rejected requests (429s) per day
+|45 days
+|`usage:rejected:550e8400-...:2024-12-24`
+|===
+
+==== Rate Limiting Mechanism
+
+Rate limiting uses https://bucket4j.com/[bucket4j] with Redis backend via Lettuce.
+Each environment gets a token bucket that refills at the configured rate.
+
+[source,java]
+----
+// Token bucket configuration
+BucketConfiguration.builder()
+    .addLimit(Bandwidth.builder()
+        .capacity(requestsPerSecond)           // Bucket size
+        .refillGreedy(requestsPerSecond, 1s)   // Refill rate
+        .initialTokens(requestsPerSecond)      // Start full
+        .build())
+    .build();
+----
+
+**How it works:**
+
+1. Each API request calls `tryConsume(environmentId, requestsPerSecond)`
+2. bucket4j atomically attempts to consume one token from the environment's bucket
+3. If successful: request proceeds, remaining tokens returned in `X-RateLimit-Remaining` header
+4. If denied: 429 response with `Retry-After` header indicating wait time
+
+**Fail-open behavior:** If Redis is unavailable and `flagforge.rate-limit.fail-open=true`, requests are allowed through to prevent total service outage.
+
+==== Usage Tracking Counters
+
+Every allowed request increments multiple counters atomically using Redis `INCR`:
+
+[plantuml,request-flow,svg]
+----
+@startuml
+!theme plain
+
+participant "Client" as C
+participant "RateLimitFilter" as F
+participant "RateLimitService" as R
+database "Redis" as Redis
+
+C -> F: API Request
+F -> R: tryConsume(envId, rps)
+R -> Redis: bucket4j token check
+Redis --> R: allowed/denied
+
+alt Request Allowed
+    R --> F: RateLimitResult.allowed()
+    F -> R: incrementMonthlyUsage(envId)
+    R -> Redis: INCR usage:monthly:{envId}:{month}
+    F -> R: incrementDailyUsage(envId)
+    R -> Redis: INCR usage:daily:{envId}:{date}
+    F -> R: trackPeakBurst(envId)
+    R -> Redis: INCR usage:second:{envId}:{epochSec}
+    R -> Redis: GET/SET usage:peak:{envId}:{date}
+    F -> C: 200 OK + headers
+else Request Denied (Rate Limited)
+    R --> F: RateLimitResult.denied()
+    F -> R: incrementRejectedRequests(envId)
+    R -> Redis: INCR usage:rejected:{envId}:{date}
+    F -> C: 429 Too Many Requests
+end
+
+@enduml
+----
+
+**Counter operations:**
+
+* **Monthly usage** - Simple `INCR` for billing purposes
+* **Daily usage** - Simple `INCR` for daily statistics
+* **Peak RPS** - Uses a sliding window approach:
+1. Increment per-second counter (`usage:second:{envId}:{epochSecond}`)
+2. Compare with current daily peak (`usage:peak:{envId}:{date}`)
+3. Update peak if current second exceeds it
+* **Rejected requests** - `INCR` on 429 responses for rate limit violation tracking
+
+==== Average Requests Per Second Calculation
+
+Average RPS is calculated during aggregation, not in real-time:
+
+[source]
+----
+avgRps = totalDailyRequests / secondsElapsedToday
+----
+
+For completed days, `secondsElapsedToday = 86400` (24 hours).
+For the current day, it's calculated from midnight UTC.
+
+==== Hourly Aggregation Process
+
+The `UsageAggregationService` runs every hour (`@Scheduled(cron = "0 0 * * * *")`) to persist Redis counters to PostgreSQL:
+
+[source,java]
+----
+@Scheduled(cron = "0 0 * * * *") // Every hour at :00
+@Transactional
+public void aggregateDailyStatistics() {
+    // For each environment:
+    // 1. Read usage:daily:{envId}:{today} → totalRequests
+    // 2. Read usage:peak:{envId}:{today} → peakRps
+    // 3. Read usage:rejected:{envId}:{today} → rejectedRequests
+    // 4. Calculate avgRps = totalRequests / secondsElapsed
+    // 5. Upsert to usage_daily_statistics table
+}
+----
+
+**Why hourly?**
+
+* More granular than daily for better dashboard updates
+* Idempotent - same data is overwritten each hour
+* Low overhead - simple Redis GETs, not full scans
+
+==== Database Schema
+
+Aggregated data is stored in PostgreSQL for historical queries:
+
+[source,sql]
+----
+CREATE TABLE usage_daily_statistics (
+    id                      UUID PRIMARY KEY,
+    environment_id          UUID NOT NULL REFERENCES environment(id),
+    date                    DATE NOT NULL,
+    total_requests          BIGINT NOT NULL DEFAULT 0,
+    peak_requests_per_second INT NOT NULL DEFAULT 0,
+    avg_requests_per_second  DECIMAL(10,2) NOT NULL DEFAULT 0,
+    rejected_requests       BIGINT NOT NULL DEFAULT 0,
+    UNIQUE(environment_id, date)
+);
+----
+
+==== Frontend Display
+
+The webapp displays usage statistics through the `UsageStatsCardComponent`:
+
+* **Requests today** - Total requests from today's aggregated data
+* **Peak req/sec today** - Maximum burst observed today
+* **Avg req/sec today** - Average throughput
+* **Rejected today** - Rate-limited requests (shown with warning styling if > 0)
+* **Total (N days)** - Sum of requests over selected period (7/15/30 days)
+
+==== Configuration
+
+Redis connections are configured in `application.yml`:
+
+[source,yaml]
+----
+flagforge:
+  redis:
+    enabled: true
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+  rate-limit:
+    enabled: true
+    fail-open: true  # Allow requests if Redis is down
+----
+
+Two separate Redis connections are used:
+
+1. **rateLimitRedisConnection** - Binary connection for bucket4j
+2. **usageRedisConnection** - String connection for counters
+
+==== Monitoring & Debugging
+
+To inspect Redis keys during development:
+
+[source,bash]
+----
+# Connect to Redis CLI
+docker exec -it flagforge-redis redis-cli
+
+# List all usage keys
+KEYS usage:*
+
+# Check daily usage for an environment
+GET usage:daily:550e8400-e29b-41d4-a716-446655440000:2024-12-24
+
+# Check peak RPS
+GET usage:peak:550e8400-e29b-41d4-a716-446655440000:2024-12-24
+
+# Check rejected requests
+GET usage:rejected:550e8400-e29b-41d4-a716-446655440000:2024-12-24
+----
+
+==== Trade-offs & Design Decisions
+
+[cols="1,2"]
+|===
+|Decision |Rationale
+
+|**Redis for rate limiting**
+|Sub-millisecond latency critical for per-request enforcement. bucket4j provides battle-tested distributed token buckets.
+
+|**Atomic INCR for counters**
+|O(1) operation, no read-modify-write race conditions, no locking needed.
+
+|**45-day TTL on usage keys**
+|Balance between data retention and memory usage. Aggregated data persists in PostgreSQL indefinitely.
+
+|**5-second TTL on per-second counters**
+|Just long enough for peak detection, minimizes memory footprint.
+
+|**Hourly aggregation**
+|More responsive than daily, idempotent, low overhead. Missing an hour is recoverable since Redis retains raw data.
+
+|**Fail-open rate limiting**
+|Availability over correctness - if Redis is down, allow requests rather than reject all traffic.
+|===
