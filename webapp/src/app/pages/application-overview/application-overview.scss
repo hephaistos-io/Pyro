@@ -493,6 +493,34 @@
   margin-bottom: 2rem;
 }
 
+.overview-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__left {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 320px;
+    max-width: 400px;
+
+    @media (max-width: 900px) {
+      max-width: none;
+    }
+  }
+
+  &__right {
+    min-width: 0;
+  }
+}
+
 .overview-card {
   background: $white;
   border: 1px solid rgba($charcoal, 0.1);
@@ -678,29 +706,10 @@
   }
 }
 
-// API Tier Section
-.tier-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba($charcoal, 0.08);
-
-  @include dark-mode {
-    border-top-color: rgba($white, 0.08);
-  }
-
-  &__label {
-    display: block;
-    font-family: $font-sans;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: $charcoal-light;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 1rem;
-
-    @include dark-mode {
-      color: $dark-text-muted;
-    }
+// Rate Limit Card
+.rate-limit-card {
+  .overview-card__content {
+    padding-top: 1rem;
   }
 }
 
@@ -1100,5 +1109,65 @@
   &__content {
     max-height: 400px;
     overflow-y: auto;
+  }
+}
+
+// Empty state for no environments
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  margin: 2rem 0;
+  background: $white;
+  border: 2px dashed rgba($charcoal, 0.15);
+  border-radius: 16px;
+  text-align: center;
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+    background: rgba($pyro-red, 0.1);
+    border-radius: 50%;
+    color: $pyro-red;
+
+    @include dark-mode {
+      background: rgba($pyro-red, 0.15);
+      color: $pyro-red-light;
+    }
+  }
+
+  &__title {
+    font-family: $font-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: $charcoal;
+    margin: 0 0 0.5rem 0;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__text {
+    font-family: $font-sans;
+    font-size: 1rem;
+    color: $charcoal-light;
+    margin: 0;
+    max-width: 300px;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
   }
 }

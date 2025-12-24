@@ -23,6 +23,16 @@ export type {ListOverrides$Params as ListOverrides$Params} from './fn/templates/
 export {listOverrides as listOverrides} from './fn/templates/list-overrides';
 export type {ListAllOverrides$Params as ListAllOverrides$Params} from './fn/templates/list-all-overrides';
 export {listAllOverrides as listAllOverrides} from './fn/templates/list-all-overrides';
+export type {UpdateEnvironment$Params as UpdateEnvironment$Params} from './fn/environments/update-environment';
+export {updateEnvironment as updateEnvironment} from './fn/environments/update-environment';
+export type {DeleteEnvironment$Params as DeleteEnvironment$Params} from './fn/environments/delete-environment';
+export {deleteEnvironment as deleteEnvironment} from './fn/environments/delete-environment';
+export type {GetEnvironments$Params as GetEnvironments$Params} from './fn/environments/get-environments';
+export {getEnvironments as getEnvironments} from './fn/environments/get-environments';
+export type {CreateEnvironment$Params as CreateEnvironment$Params} from './fn/environments/create-environment';
+export {createEnvironment as createEnvironment} from './fn/environments/create-environment';
+export type {GetDailyStatistics$Params as GetDailyStatistics$Params} from './fn/environments/get-daily-statistics';
+export {getDailyStatistics as getDailyStatistics} from './fn/environments/get-daily-statistics';
 export type {
   GetCompanyForCurrentCustomer$Params as GetCompanyForCurrentCustomer$Params
 } from './fn/company/get-company-for-current-customer';
@@ -55,12 +65,10 @@ export type {GetApplications$Params as GetApplications$Params} from './fn/applic
 export {getApplications as getApplications} from './fn/application/get-applications';
 export type {CreateApplication$Params as CreateApplication$Params} from './fn/application/create-application';
 export {createApplication as createApplication} from './fn/application/create-application';
-export type {GetEnvironments$Params as GetEnvironments$Params} from './fn/environments/get-environments';
-export {getEnvironments as getEnvironments} from './fn/environments/get-environments';
-export type {CreateEnvironment$Params as CreateEnvironment$Params} from './fn/environments/create-environment';
-export {createEnvironment as createEnvironment} from './fn/environments/create-environment';
-export type {DeleteEnvironment$Params as DeleteEnvironment$Params} from './fn/environments/delete-environment';
-export {deleteEnvironment as deleteEnvironment} from './fn/environments/delete-environment';
+export type {
+  GetApplicationStatistics$Params as GetApplicationStatistics$Params
+} from './fn/application/get-application-statistics';
+export {getApplicationStatistics as getApplicationStatistics} from './fn/application/get-application-statistics';
 export type {RegenerateApiKey$Params as RegenerateApiKey$Params} from './fn/api-keys/regenerate-api-key';
 export {regenerateApiKey as regenerateApiKey} from './fn/api-keys/regenerate-api-key';
 export type {GetApiKeyByType$Params as GetApiKeyByType$Params} from './fn/api-keys/get-api-key-by-type';

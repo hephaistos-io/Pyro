@@ -7,9 +7,30 @@ ifndef::imagesdir[:imagesdir: ../images]
 |===
 |Term |Definition
 
-|<Term-1>
-|<definition-1>
+|bucket4j
+|Java rate limiting library that implements the token bucket algorithm. Used with Redis backend for distributed rate limiting.
 
-|<Term-2>
-|<definition-2>
+|Environment
+|A deployment context for an application (e.g., production, staging, development). Each environment has its own rate limits and usage tracking.
+
+|Fail-open
+|A resilience pattern where the system allows requests through when a dependency (like Redis) is unavailable, prioritizing availability over strict enforcement.
+
+|Peak RPS
+|Peak Requests Per Second - the highest number of requests observed in any single second during a time period.
+
+|Rate Limiting
+|Controlling the rate of incoming requests to prevent abuse and ensure fair resource allocation. FlagForge uses per-second token bucket rate limiting.
+
+|Redis
+|In-memory data store used for rate limiting (via bucket4j) and real-time usage counter storage. Provides sub-millisecond latency for per-request operations.
+
+|Token Bucket
+|Rate limiting algorithm where tokens are added to a bucket at a fixed rate, and each request consumes one token. Requests are denied when the bucket is empty.
+
+|TTL
+|Time To Live - the duration after which a Redis key automatically expires and is deleted. Used to manage memory and ensure stale data cleanup.
+
+|Usage Aggregation
+|The process of reading real-time counters from Redis and persisting them to PostgreSQL for historical queries and dashboards.
 |===

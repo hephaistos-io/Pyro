@@ -8,6 +8,7 @@ export type {ApplicationCreationRequest} from './models/application-creation-req
 export type {ApplicationListResponse} from './models/application-list-response';
 export type {ApplicationResponse} from './models/application-response';
 export type {ApplicationStatistics} from './models/application-statistics';
+export type {ApplicationStatisticsResponse} from './models/application-statistics-response';
 export type {AuthenticationResponse} from './models/authentication-response';
 export type {BooleanTemplateField} from './models/boolean-template-field';
 export type {CompanyCreationRequest} from './models/company-creation-request';
@@ -19,10 +20,12 @@ export type {CustomerAuthenticationRequest} from './models/customer-authenticati
 export type {CustomerRegistrationRequest} from './models/customer-registration-request';
 export type {CustomerResponse} from './models/customer-response';
 export {CustomerRole} from './models/customer-role';
+export type {DailyUsageStatisticsResponse} from './models/daily-usage-statistics-response';
 export type {EnumTemplateField} from './models/enum-template-field';
 export type {EnvironmentCreationRequest} from './models/environment-creation-request';
 export type {EnvironmentResponse} from './models/environment-response';
 export type {EnvironmentStatistics} from './models/environment-statistics';
+export type {EnvironmentUpdateRequest} from './models/environment-update-request';
 export {FieldType} from './models/field-type';
 export type {InviteCreationRequest} from './models/invite-creation-request';
 export type {InviteCreationResponse} from './models/invite-creation-response';

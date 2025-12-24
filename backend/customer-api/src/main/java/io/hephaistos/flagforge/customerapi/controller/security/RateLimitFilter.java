@@ -58,6 +58,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         response.setHeader("X-RateLimit-Remaining", String.valueOf(result.remainingTokens()));
 
         if (!result.allowed()) {
+            // Track rejected request
+            rateLimitService.incrementRejectedRequests(environmentId);
+
             long retryAfterSeconds = (result.retryAfterMillis() + 999) / 1000;
             response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
@@ -70,8 +73,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Increment monthly usage (always succeeds due to fail-open)
+        // Increment usage counters (all fail gracefully due to fail-open)
         long monthlyUsage = rateLimitService.incrementMonthlyUsage(environmentId);
+        rateLimitService.incrementDailyUsage(environmentId);
+        rateLimitService.trackPeakBurst(environmentId);
+
         response.setHeader("X-Monthly-Usage", String.valueOf(monthlyUsage));
         response.setHeader("X-Monthly-Limit", String.valueOf(requestsPerMonth));
 

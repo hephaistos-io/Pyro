@@ -218,6 +218,89 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/environments/{environmentId}": {
+      "put": {
+        "tags": [
+          "environments"
+        ],
+        "summary": "Update an environment",
+        "operationId": "updateEnvironment",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnvironmentUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvironmentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "environments"
+        ],
+        "summary": "Delete an environment",
+        "operationId": "deleteEnvironment",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/v1/company": {
       "get": {
         "tags": [
@@ -735,6 +818,38 @@
         }
       }
     },
+    "/v1/applications/{id}/statistics": {
+      "get": {
+        "tags": [
+          "application"
+        ],
+        "summary": "Get statistics for an application",
+        "operationId": "getApplicationStatistics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationStatisticsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/templates": {
       "get": {
         "tags": [
@@ -933,6 +1048,60 @@
         }
       }
     },
+    "/v1/applications/{applicationId}/environments/{environmentId}/statistics/daily": {
+      "get": {
+        "tags": [
+          "environments"
+        ],
+        "summary": "Get daily usage statistics for an environment",
+        "operationId": "getDailyStatistics",
+        "parameters": [
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 7
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DailyUsageStatisticsResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/applications/{applicationId}/environments/{environmentId}/api-keys/{keyType}": {
       "get": {
         "tags": [
@@ -996,40 +1165,6 @@
         "parameters": [
           {
             "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/v1/applications/{applicationId}/environments/{environmentId}": {
-      "delete": {
-        "tags": [
-          "environments"
-        ],
-        "summary": "Delete an environment. FREE tier environments cannot be deleted.",
-        "operationId": "deleteEnvironment",
-        "parameters": [
-          {
-            "name": "applicationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "environmentId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1390,6 +1525,53 @@
           }
         }
       },
+      "EnvironmentUpdateRequest": {
+        "required": [
+          "description",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 2147483647,
+            "minLength": 2,
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      },
+      "EnvironmentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "applicationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
+            ]
+          }
+        }
+      },
       "CompanyCreationRequest": {
         "required": [
           "companyName"
@@ -1581,35 +1763,6 @@
             "items": {
               "$ref": "#/components/schemas/TemplateResponse"
             }
-          }
-        }
-      },
-      "EnvironmentResponse": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "applicationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "tier": {
-            "type": "string",
-            "enum": [
-              "FREE",
-              "BASIC",
-              "STANDARD",
-              "PRO",
-              "BUSINESS"
-            ]
           }
         }
       },
@@ -1871,6 +2024,19 @@
           }
         }
       },
+      "ApplicationStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "totalUsers": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "hitsThisMonth": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
       "MergedTemplateValuesResponse": {
         "type": "object",
         "properties": {
@@ -1918,6 +2084,41 @@
             }
           }
         }
+      },
+      "DailyUsageStatisticsResponse": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The date of the statistics",
+            "format": "date",
+            "example": "2025-12-24"
+          },
+          "totalRequests": {
+            "type": "integer",
+            "description": "Total number of requests for this day",
+            "format": "int64",
+            "example": 15432
+          },
+          "peakRequestsPerSecond": {
+            "type": "integer",
+            "description": "Peak requests per second reached during this day",
+            "format": "int32",
+            "example": 45
+          },
+          "avgRequestsPerSecond": {
+            "type": "number",
+            "description": "Average requests per second for this day",
+            "example": 0.18
+          },
+          "rejectedRequests": {
+            "type": "integer",
+            "description": "Number of requests rejected due to rate limiting",
+            "format": "int64",
+            "example": 42
+          }
+        },
+        "description": "Daily usage statistics for an environment"
       }
     }
   }

@@ -13,6 +13,8 @@ import {
   TemplateType,
   TemplateValuesResponse
 } from '../../api/generated/models';
+import {Api} from '../../api/generated/api';
+import {getApplicationStatistics} from '../../api/generated/fn/application/get-application-statistics';
 import {FormsModule} from '@angular/forms';
 import {TemplateService} from '../../services/template.service';
 import {ApiKeysCardComponent} from '../../components/api-keys-card/api-keys-card.component';
@@ -124,6 +126,7 @@ export class ApplicationOverview implements OnInit {
         return Math.max(...breakdown.map(env => env.total), 1);
     });
     private router = inject(Router);
+  private api = inject(Api);
 
   // ============================================================================
   // TEMPLATE STATE - API-backed
@@ -205,6 +208,14 @@ export class ApplicationOverview implements OnInit {
         }
       }, {allowSignalWrites: true});
 
+      // Load statistics when application changes
+      effect(() => {
+        const app = this.application();
+        if (app?.id) {
+          this.loadStatistics(app.id);
+        }
+      }, {allowSignalWrites: true});
+
       // Load overrides when environment changes
       effect(() => {
         const app = this.application();
@@ -251,7 +262,20 @@ export class ApplicationOverview implements OnInit {
         environments: [...(current.environments ?? []), newEnvironment]
       };
     });
-    }
+  }
+
+  onEnvironmentUpdated(updatedEnvironment: EnvironmentResponse): void {
+    // Update environment in application
+    this.application.update(current => {
+      if (!current) return current;
+      return {
+        ...current,
+        environments: (current.environments ?? []).map(env =>
+          env.id === updatedEnvironment.id ? updatedEnvironment : env
+        )
+      };
+    });
+  }
 
   onEnvironmentDeleted(environmentId: string): void {
     // Remove environment from application
@@ -686,6 +710,17 @@ export class ApplicationOverview implements OnInit {
       console.error('Failed to load templates:', error);
     } finally {
       this.isLoadingTemplates.set(false);
+    }
+  }
+
+  // Load statistics from API
+  private async loadStatistics(applicationId: string): Promise<void> {
+    try {
+      const stats = await this.api.invoke(getApplicationStatistics, {id: applicationId});
+      this.totalUsers.set(stats.totalUsers ?? 0);
+      this.totalHitsThisMonth.set(stats.hitsThisMonth ?? 0);
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
     }
   }
 

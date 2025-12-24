@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -31,8 +32,13 @@ public class DefaultRateLimitService implements RateLimitService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRateLimitService.class);
     private static final String RATE_LIMIT_KEY_PREFIX = "rate-limit:env:";
-    private static final String USAGE_KEY_PREFIX = "usage:monthly:";
+    private static final String USAGE_MONTHLY_KEY_PREFIX = "usage:monthly:";
+    private static final String USAGE_DAILY_KEY_PREFIX = "usage:daily:";
+    private static final String USAGE_PEAK_KEY_PREFIX = "usage:peak:";
+    private static final String USAGE_SECOND_KEY_PREFIX = "usage:second:";
+    private static final String USAGE_REJECTED_KEY_PREFIX = "usage:rejected:";
     private static final long USAGE_KEY_TTL_SECONDS = Duration.ofDays(45).toSeconds();
+    private static final long SECOND_KEY_TTL_SECONDS = 5;
 
     private final ProxyManager<String> proxyManager;
     private final StatefulRedisConnection<String, String> usageRedisConnection;
@@ -118,9 +124,91 @@ public class DefaultRateLimitService implements RateLimitService {
         return Math.max(0, monthlyLimit - usage);
     }
 
+    @Override
+    public void incrementDailyUsage(UUID environmentId) {
+        String key = getDailyUsageKey(environmentId);
+        try {
+            var commands = usageRedisConnection.sync();
+            long newValue = commands.incr(key);
+            // Set TTL only on first increment (when value is 1)
+            if (newValue == 1) {
+                commands.expire(key, USAGE_KEY_TTL_SECONDS);
+            }
+        }
+        catch (Exception e) {
+            LOGGER.warn("Failed to increment daily usage for environment {}", environmentId, e);
+            // Don't throw - daily tracking is non-critical
+        }
+    }
+
+    @Override
+    public void trackPeakBurst(UUID environmentId) {
+        long currentEpochSecond = System.currentTimeMillis() / 1000;
+        String secondKey = getSecondKey(environmentId, currentEpochSecond);
+        String peakKey = getPeakKey(environmentId);
+
+        try {
+            var commands = usageRedisConnection.sync();
+
+            // Increment per-second counter
+            long currentRps = commands.incr(secondKey);
+            commands.expire(secondKey, SECOND_KEY_TTL_SECONDS);
+
+            // Get current peak and update if higher
+            String currentPeakStr = commands.get(peakKey);
+            long currentPeak = currentPeakStr != null ? Long.parseLong(currentPeakStr) : 0;
+
+            if (currentRps > currentPeak) {
+                commands.set(peakKey, String.valueOf(currentRps));
+                commands.expire(peakKey, USAGE_KEY_TTL_SECONDS);
+            }
+        }
+        catch (Exception e) {
+            LOGGER.warn("Failed to track peak burst for environment {}", environmentId, e);
+            // Don't throw - peak tracking is non-critical
+        }
+    }
+
+    @Override
+    public void incrementRejectedRequests(UUID environmentId) {
+        String key = getRejectedKey(environmentId);
+        try {
+            var commands = usageRedisConnection.sync();
+            long newValue = commands.incr(key);
+            // Set TTL only on first increment (when value is 1)
+            if (newValue == 1) {
+                commands.expire(key, USAGE_KEY_TTL_SECONDS);
+            }
+        }
+        catch (Exception e) {
+            LOGGER.warn("Failed to increment rejected requests for environment {}", environmentId,
+                    e);
+            // Don't throw - rejection tracking is non-critical
+        }
+    }
+
     private String getMonthlyUsageKey(UUID environmentId) {
         YearMonth currentMonth = YearMonth.now(ZoneOffset.UTC);
-        return USAGE_KEY_PREFIX + environmentId + ":" + currentMonth;
+        return USAGE_MONTHLY_KEY_PREFIX + environmentId + ":" + currentMonth;
+    }
+
+    private String getDailyUsageKey(UUID environmentId) {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        return USAGE_DAILY_KEY_PREFIX + environmentId + ":" + today;
+    }
+
+    private String getPeakKey(UUID environmentId) {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        return USAGE_PEAK_KEY_PREFIX + environmentId + ":" + today;
+    }
+
+    private String getSecondKey(UUID environmentId, long epochSecond) {
+        return USAGE_SECOND_KEY_PREFIX + environmentId + ":" + epochSecond;
+    }
+
+    private String getRejectedKey(UUID environmentId) {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        return USAGE_REJECTED_KEY_PREFIX + environmentId + ":" + today;
     }
 
     private Supplier<BucketConfiguration> configSupplier(int requestsPerSecond) {

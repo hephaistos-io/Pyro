@@ -1,7 +1,10 @@
-import {Component, input, signal} from '@angular/core';
+import {Component, computed, input, signal} from '@angular/core';
 
 export interface EnvironmentCreationOverlayData {
   onConfirm: (name: string, description?: string) => Promise<void>;
+  mode?: 'create' | 'edit';
+  initialName?: string;
+  initialDescription?: string;
 }
 
 @Component({
@@ -14,16 +17,21 @@ export interface EnvironmentCreationOverlayData {
 export class EnvironmentCreationOverlayComponent {
   data = input.required<EnvironmentCreationOverlayData>();
   close = input.required<() => void>();
-  isCreating = signal(false);
+  isSubmitting = signal(false);
+
+  mode = computed(() => this.data().mode ?? 'create');
+  title = computed(() => this.mode() === 'edit' ? 'Edit Environment' : 'Add New Environment');
+  submitButtonText = computed(() => this.mode() === 'edit' ? 'Save Changes' : 'Create Environment');
+  submittingText = computed(() => this.mode() === 'edit' ? 'Saving...' : 'Creating...');
 
   async onConfirm(name: string, description?: string): Promise<void> {
-    this.isCreating.set(true);
+    this.isSubmitting.set(true);
     try {
       await this.data().onConfirm(name, description);
       this.close()();
     } catch (error) {
-      console.error('Error creating environment:', error);
-      this.isCreating.set(false);
+      console.error('Error saving environment:', error);
+      this.isSubmitting.set(false);
     }
   }
 

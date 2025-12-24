@@ -6,11 +6,11 @@ import io.hephaistos.flagforge.common.enums.KeyType;
 import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
+import io.hephaistos.flagforge.controller.dto.EnvironmentUpdateRequest;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NotFoundException;
-import io.hephaistos.flagforge.exception.OperationNotAllowedException;
 import io.hephaistos.flagforge.security.RequireAdmin;
 import io.hephaistos.flagforge.security.RequireReadOnly;
 import org.springframework.stereotype.Service;
@@ -108,7 +108,8 @@ public class DefaultEnvironmentService implements EnvironmentService {
 
     @Override
     @RequireAdmin
-    public void deleteEnvironment(UUID applicationId, UUID environmentId) {
+    public EnvironmentResponse updateEnvironment(UUID applicationId, UUID environmentId,
+            EnvironmentUpdateRequest request) {
         // Verify application exists (with filter applied)
         if (!applicationRepository.existsByIdFiltered(applicationId)) {
             throw new NotFoundException("Application not found");
@@ -122,10 +123,36 @@ public class DefaultEnvironmentService implements EnvironmentService {
             throw new NotFoundException("Environment not found");
         }
 
-        // Prevent deletion of FREE tier environments
-        if (environment.getTier() == PricingTier.FREE) {
-            throw new OperationNotAllowedException(
-                    "Cannot delete the default environment. FREE tier environments cannot be deleted.");
+        // Check for duplicate name (only if name is changing)
+        if (!environment.getName()
+                .equals(request.name()) && environmentRepository.existsByNameAndApplication_Id(
+                request.name(), applicationId)) {
+            throw new DuplicateResourceException(
+                    "Environment with name '%s' already exists for this application".formatted(
+                            request.name()));
+        }
+
+        environment.setName(request.name());
+        environment.setDescription(request.description());
+
+        EnvironmentEntity saved = environmentRepository.save(environment);
+        return EnvironmentResponse.fromEntity(saved);
+    }
+
+    @Override
+    @RequireAdmin
+    public void deleteEnvironment(UUID applicationId, UUID environmentId) {
+        // Verify application exists (with filter applied)
+        if (!applicationRepository.existsByIdFiltered(applicationId)) {
+            throw new NotFoundException("Application not found");
+        }
+
+        var environment = environmentRepository.findById(environmentId)
+                .orElseThrow(() -> new NotFoundException("Environment not found"));
+
+        // Verify environment belongs to the application
+        if (!environment.getApplicationId().equals(applicationId)) {
+            throw new NotFoundException("Environment not found");
         }
 
         environmentRepository.deleteById(environmentId);

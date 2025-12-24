@@ -5,11 +5,11 @@ import io.hephaistos.flagforge.common.data.EnvironmentEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
 import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
+import io.hephaistos.flagforge.controller.dto.EnvironmentUpdateRequest;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NotFoundException;
-import io.hephaistos.flagforge.exception.OperationNotAllowedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -277,7 +277,7 @@ class DefaultEnvironmentServiceTest {
     }
 
     @Test
-    void deleteEnvironmentThrowsOperationNotAllowedForFreeTier() {
+    void deleteEnvironmentSucceedsForFreeTier() {
         UUID environmentId = UUID.randomUUID();
         var environment =
                 createEnvironmentEntity(environmentId, testApplicationId, PricingTier.FREE);
@@ -285,11 +285,9 @@ class DefaultEnvironmentServiceTest {
         when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
 
-        assertThatThrownBy(() -> environmentService.deleteEnvironment(testApplicationId,
-                environmentId)).isInstanceOf(OperationNotAllowedException.class)
-                .hasMessageContaining("Cannot delete the default environment");
+        environmentService.deleteEnvironment(testApplicationId, environmentId);
 
-        verify(environmentRepository, never()).deleteById(any());
+        verify(environmentRepository).deleteById(environmentId);
     }
 
     @Test
@@ -319,6 +317,116 @@ class DefaultEnvironmentServiceTest {
                 .hasMessageContaining("Environment not found");
 
         verify(environmentRepository, never()).deleteById(any());
+    }
+
+    // ========== Update Environment Tests ==========
+
+    @Test
+    void updateEnvironmentSuccessfullyUpdatesNameAndDescription() {
+        UUID environmentId = UUID.randomUUID();
+        var request = new EnvironmentUpdateRequest("Updated Name", "Updated description");
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+        when(environmentRepository.existsByNameAndApplication_Id("Updated Name",
+                testApplicationId)).thenReturn(false);
+        when(environmentRepository.save(any(EnvironmentEntity.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
+
+        var response =
+                environmentService.updateEnvironment(testApplicationId, environmentId, request);
+
+        assertThat(response.name()).isEqualTo("Updated Name");
+        assertThat(response.description()).isEqualTo("Updated description");
+        verify(environmentRepository).save(any(EnvironmentEntity.class));
+    }
+
+    @Test
+    void updateEnvironmentAllowsSameNameWhenNotChanging() {
+        UUID environmentId = UUID.randomUUID();
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
+        environment.setName("Original Name");
+        var request = new EnvironmentUpdateRequest("Original Name", "New description");
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+        when(environmentRepository.save(any(EnvironmentEntity.class))).thenAnswer(
+                invocation -> invocation.getArgument(0));
+
+        var response =
+                environmentService.updateEnvironment(testApplicationId, environmentId, request);
+
+        assertThat(response.description()).isEqualTo("New description");
+        verify(environmentRepository, never()).existsByNameAndApplication_Id(any(), any());
+    }
+
+    @Test
+    void updateEnvironmentThrowsDuplicateResourceExceptionForDuplicateName() {
+        UUID environmentId = UUID.randomUUID();
+        var request = new EnvironmentUpdateRequest("Duplicate Name", "Description");
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+        when(environmentRepository.existsByNameAndApplication_Id("Duplicate Name",
+                testApplicationId)).thenReturn(true);
+
+        assertThatThrownBy(
+                () -> environmentService.updateEnvironment(testApplicationId, environmentId,
+                        request)).isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("Duplicate Name");
+
+        verify(environmentRepository, never()).save(any());
+    }
+
+    @Test
+    void updateEnvironmentThrowsNotFoundExceptionForNonExistentApplication() {
+        UUID environmentId = UUID.randomUUID();
+        var request = new EnvironmentUpdateRequest("Name", "Description");
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(false);
+
+        assertThatThrownBy(
+                () -> environmentService.updateEnvironment(testApplicationId, environmentId,
+                        request)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Application not found");
+    }
+
+    @Test
+    void updateEnvironmentThrowsNotFoundExceptionForNonExistentEnvironment() {
+        UUID environmentId = UUID.randomUUID();
+        var request = new EnvironmentUpdateRequest("Name", "Description");
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(
+                () -> environmentService.updateEnvironment(testApplicationId, environmentId,
+                        request)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Environment not found");
+    }
+
+    @Test
+    void updateEnvironmentThrowsNotFoundExceptionForEnvironmentInDifferentApplication() {
+        UUID environmentId = UUID.randomUUID();
+        UUID differentApplicationId = UUID.randomUUID();
+        var request = new EnvironmentUpdateRequest("Name", "Description");
+        var environment =
+                createEnvironmentEntity(environmentId, differentApplicationId, PricingTier.BASIC);
+
+        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+
+        assertThatThrownBy(
+                () -> environmentService.updateEnvironment(testApplicationId, environmentId,
+                        request)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Environment not found");
+
+        verify(environmentRepository, never()).save(any());
     }
 
     // ========== Helper Methods ==========

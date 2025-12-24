@@ -7,6 +7,7 @@ import io.hephaistos.flagforge.common.types.StringTemplateField;
 import io.hephaistos.flagforge.common.types.TemplateSchema;
 import io.hephaistos.flagforge.customerapi.data.repository.TemplateRepository;
 import io.hephaistos.flagforge.customerapi.data.repository.TemplateValuesRepository;
+import io.hephaistos.flagforge.customerapi.data.repository.UserTemplateValuesRepository;
 import io.hephaistos.flagforge.customerapi.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -34,13 +35,17 @@ class DefaultTemplateServiceTest {
     @Mock
     private TemplateValuesRepository templateValuesRepository;
 
+    @Mock
+    private UserTemplateValuesRepository userTemplateValuesRepository;
+
     private DefaultTemplateService templateService;
     private UUID applicationId;
     private UUID environmentId;
 
     @BeforeEach
     void setUp() {
-        templateService = new DefaultTemplateService(templateRepository, templateValuesRepository);
+        templateService = new DefaultTemplateService(templateRepository, templateValuesRepository,
+                userTemplateValuesRepository);
         applicationId = UUID.randomUUID();
         environmentId = UUID.randomUUID();
     }

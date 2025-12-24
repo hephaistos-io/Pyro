@@ -6,10 +6,393 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8081/customer-api",
+      "url": "http://localhost:8081",
       "description": "Generated server url"
     }
   ],
-  "paths": {},
-  "components": {}
+  "tags": [
+    {
+      "name": "templates",
+      "description": "Template values API for SDK clients"
+    }
+  ],
+  "paths": {
+    "/v1/api/templates/user/{userId}": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get merged USER template values for a specific user",
+        "description": "Returns merged template values applying 3-layer merge: schema defaults → environment defaults → user-specific overrides. Application and environment are determined from the API key.",
+        "operationId": "getUserTemplateValues",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "User identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MergedTemplateValuesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Set USER template overrides for a specific user",
+        "description": "Creates or updates user-specific override values. Requires a WRITE API key. Application and environment are determined from the API key.",
+        "operationId": "setUserTemplateValues",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "User identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ]
+      }
+    },
+    "/v1/api/templates/system": {
+      "get": {
+        "tags": [
+          "templates"
+        ],
+        "summary": "Get merged SYSTEM template values",
+        "description": "Returns merged template values starting with schema defaults, then applying the identifier override if provided. Application and environment are determined from the API key.",
+        "operationId": "getSystemTemplateValues",
+        "parameters": [
+          {
+            "name": "identifier",
+            "in": "query",
+            "description": "Identifier to apply override for",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MergedTemplateValuesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "apiKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BooleanTemplateField": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "description": "A boolean field with no additional constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "EnumTemplateField": {
+        "required": [
+          "key",
+          "options"
+        ],
+        "type": "object",
+        "description": "An enum field with a list of allowed options",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "string"
+              },
+              "options": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "FieldType": {
+        "type": "string",
+        "description": "Field type, always ENUM for this schema",
+        "enum": [
+          "STRING",
+          "NUMBER",
+          "BOOLEAN",
+          "ENUM"
+        ]
+      },
+      "MergedTemplateValuesResponse": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/TemplateType"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/TemplateSchema"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "appliedIdentifier": {
+            "type": "string"
+          }
+        }
+      },
+      "NumberTemplateField": {
+        "required": [
+          "incrementAmount",
+          "key",
+          "maxValue",
+          "minValue"
+        ],
+        "type": "object",
+        "description": "A numeric field with range and increment constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "number"
+              },
+              "minValue": {
+                "type": "number",
+                "format": "double"
+              },
+              "maxValue": {
+                "type": "number",
+                "format": "double"
+              },
+              "incrementAmount": {
+                "type": "number",
+                "format": "double"
+              }
+            }
+          }
+        ]
+      },
+      "StringTemplateField": {
+        "required": [
+          "key",
+          "maxLength",
+          "minLength"
+        ],
+        "type": "object",
+        "description": "A string field with length constraints",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TemplateField"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "$ref": "#/components/schemas/FieldType"
+              },
+              "description": {
+                "type": "string"
+              },
+              "editable": {
+                "type": "boolean"
+              },
+              "defaultValue": {
+                "type": "string"
+              },
+              "minLength": {
+                "minimum": 0,
+                "type": "integer",
+                "format": "int32"
+              },
+              "maxLength": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      },
+      "TemplateField": {
+        "required": [
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          }
+        },
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "STRING": "#/components/schemas/StringTemplateField",
+            "NUMBER": "#/components/schemas/NumberTemplateField",
+            "BOOLEAN": "#/components/schemas/BooleanTemplateField",
+            "ENUM": "#/components/schemas/EnumTemplateField"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StringTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/NumberTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/BooleanTemplateField"
+          },
+          {
+            "$ref": "#/components/schemas/EnumTemplateField"
+          }
+        ]
+      },
+      "TemplateSchema": {
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TemplateField"
+            }
+          },
+          "defaultValues": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "TemplateType": {
+        "type": "string",
+        "enum": [
+          "USER",
+          "SYSTEM"
+        ]
+      }
+    }
+  }
 }

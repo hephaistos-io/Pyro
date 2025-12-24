@@ -1,5 +1,5 @@
 <div class="environment-creation-overlay">
-  <h3 class="environment-creation-overlay__title">Add New Environment</h3>
+  <h3 class="environment-creation-overlay__title">{{ title() }}</h3>
 
   <form (submit)="$event.preventDefault(); envNameInput.value && onConfirm(envNameInput.value, envDescInput.value)"
         class="environment-creation-overlay__form">
@@ -7,7 +7,8 @@
       <label class="form-label" for="envName">Environment Name</label>
       <input
         #envNameInput
-        [disabled]="isCreating()"
+        [disabled]="isSubmitting()"
+        [value]="data().initialName ?? ''"
         autocomplete="off"
         class="form-input"
         id="envName"
@@ -19,7 +20,8 @@
       <label class="form-label" for="envDesc">Description</label>
       <input
         #envDescInput
-        [disabled]="isCreating()"
+        [disabled]="isSubmitting()"
+        [value]="data().initialDescription ?? ''"
         autocomplete="off"
         class="form-input"
         id="envDesc"
@@ -30,20 +32,20 @@
     <div class="environment-creation-overlay__actions">
       <button
         (click)="onCancel()"
-        [disabled]="isCreating()"
+        [disabled]="isSubmitting()"
         class="btn btn--secondary"
         type="button">
         Cancel
       </button>
       <button
-        [disabled]="isCreating()"
+        [disabled]="isSubmitting()"
         class="btn btn--primary"
         type="submit">
-        @if (isCreating()) {
+        @if (isSubmitting()) {
           <span class="btn__spinner"></span>
-          Creating...
+          {{ submittingText() }}
         } @else {
-          Create Environment
+          {{ submitButtonText() }}
         }
       </button>
     </div>

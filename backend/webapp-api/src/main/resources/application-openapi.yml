@@ -5,3 +5,7 @@ spring:
     url: jdbc:postgresql://localhost:5432/flagforge
     username: webapp-flagforge
     password: webapp-flagforge
+
+flagforge:
+  redis:
+    enabled: false
