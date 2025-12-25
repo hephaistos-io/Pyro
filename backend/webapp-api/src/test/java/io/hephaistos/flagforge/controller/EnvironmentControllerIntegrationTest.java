@@ -129,7 +129,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    void deleteEnvironmentReturns403ForFreeTier() {
+    void deleteEnvironmentReturns204ForFreeTier() {
         String token = registerAndAuthenticateWithCompany();
         UUID applicationId = createApplication(token, "Test App");
 
@@ -138,13 +138,12 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
                 EnvironmentResponse[].class);
         UUID freeEnvironmentId = listResponse.getBody()[0].id();
 
-        // Try to delete it
+        // Delete it - FREE tier environments CAN be deleted
         var deleteResponse =
                 delete("/v1/applications/" + applicationId + "/environments/" + freeEnvironmentId,
-                        token, String.class);
+                        token, Void.class);
 
-        assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(deleteResponse.getBody()).contains("OPERATION_NOT_ALLOWED");
+        assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
     }
 
     @Test

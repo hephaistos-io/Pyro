@@ -3,7 +3,79 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-design-decisions]]
 == Architecture Decisions
 
+=== ADR-001: Redis Caching for Template API
 
+==== Status
 
+Accepted
+
+==== Context
+
+The customer-api serves template configuration to SDKs.
+Each request requires 2-3 database queries.
+With high request volume, the database becomes a bottleneck.
+
+==== Decision
+
+Implement Redis caching with pub/sub invalidation:
+
+* Cache template responses in Redis with 5-minute TTL
+* Use Redis pub/sub for instant cache invalidation on changes
+* webapp-api publishes invalidation events when templates change
+* customer-api subscribes and invalidates matching cache entries
+
+==== Cache Key Structure
+
+----
+template:cache:{appId}:{envId}:{type}:{identifier}
+----
+
+* `appId` - Application UUID
+* `envId` - Environment UUID
+* `type` - SYSTEM or USER
+* `identifier` - Template identifier or userId
+
+==== Invalidation Flow
+
+----
+webapp-api                    Redis                     customer-api
+    |                          |                             |
+    | Update template/override |                             |
+    |------------------------->|                             |
+    |                          |                             |
+    | PUBLISH template:invalidate                            |
+    |------------------------->| Message received            |
+    |                          |----------------------------->|
+    |                          | Delete matching cache keys  |
+    |                          |                             |
+    | Next request fetches fresh data from DB               |
+    |                          |                             |
+----
+
+==== Memory Management
+
+Redis is configured with `volatile-lru` eviction policy:
+
+* Rate limit buckets (no TTL) - Never evicted
+* Usage counters (45-day TTL) - Evicted under extreme pressure
+* Template cache (5-min TTL) - Evicted first when memory is low
+
+==== Fail-Open Strategy
+
+All cache operations fail-open: if Redis is unavailable or returns an error, requests are served directly from the database.
+
+==== Consequences
+
+*Positive:*
+
+* Reduced database load (cache hits skip DB entirely)
+* Near-instant propagation of changes via pub/sub
+* Graceful degradation (fail-open to database)
+
+*Negative:*
+
+* Added complexity (pub/sub infrastructure)
+* Requires Redis availability for optimal performance
+* Potential brief inconsistency window during invalidation
 
 

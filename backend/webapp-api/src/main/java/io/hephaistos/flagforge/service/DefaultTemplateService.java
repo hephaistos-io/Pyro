@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.cache.CacheInvalidationPublisher;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.TemplateEntity;
 import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
@@ -45,15 +46,18 @@ public class DefaultTemplateService implements TemplateService {
     private final TemplateValuesRepository templateValuesRepository;
     private final ApplicationRepository applicationRepository;
     private final EnvironmentRepository environmentRepository;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     public DefaultTemplateService(TemplateRepository templateRepository,
             TemplateValuesRepository templateValuesRepository,
             ApplicationRepository applicationRepository,
-            EnvironmentRepository environmentRepository) {
+            EnvironmentRepository environmentRepository,
+            CacheInvalidationPublisher cacheInvalidationPublisher) {
         this.templateRepository = templateRepository;
         this.templateValuesRepository = templateValuesRepository;
         this.applicationRepository = applicationRepository;
         this.environmentRepository = environmentRepository;
+        this.cacheInvalidationPublisher = cacheInvalidationPublisher;
     }
 
     @Override
@@ -109,6 +113,10 @@ public class DefaultTemplateService implements TemplateService {
 
         template.setSchema(request.schema());
         templateRepository.save(template);
+
+        // Invalidate cache for all environments of this template type
+        cacheInvalidationPublisher.publishSchemaChange(applicationId, type);
+
         return TemplateResponse.fromEntity(template);
     }
 
@@ -236,6 +244,11 @@ public class DefaultTemplateService implements TemplateService {
         }
 
         templateValuesRepository.save(override);
+
+        // Invalidate cache for this override
+        cacheInvalidationPublisher.publishOverrideChange(applicationId, environmentId, type,
+                identifier);
+
         return TemplateValuesResponse.fromEntity(override);
     }
 
@@ -255,6 +268,10 @@ public class DefaultTemplateService implements TemplateService {
                                 "Override not found for identifier: " + identifier));
 
         templateValuesRepository.delete(override);
+
+        // Invalidate cache for this override
+        cacheInvalidationPublisher.publishOverrideChange(applicationId, environmentId, type,
+                identifier);
     }
 
     @Override
@@ -324,6 +341,11 @@ public class DefaultTemplateService implements TemplateService {
                 }
 
                 templateValuesRepository.save(targetOverride);
+
+                // Invalidate cache for copied override
+                cacheInvalidationPublisher.publishOverrideChange(applicationId,
+                        request.targetEnvironmentId(), type, identifier);
+
                 copiedCount++;
             }
         }
@@ -365,7 +387,7 @@ public class DefaultTemplateService implements TemplateService {
                         validateStringValue(key, value, stringField);
                 case NumberTemplateField numberField ->
                         validateNumberValue(key, value, numberField);
-                case BooleanTemplateField booleanField -> validateBooleanValue(key, value);
+                case BooleanTemplateField ignored -> validateBooleanValue(key, value);
                 case EnumTemplateField enumField -> validateEnumValue(key, value, enumField);
             }
         }

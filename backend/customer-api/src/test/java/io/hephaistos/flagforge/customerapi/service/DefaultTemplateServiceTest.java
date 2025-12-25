@@ -38,6 +38,9 @@ class DefaultTemplateServiceTest {
     @Mock
     private UserTemplateValuesRepository userTemplateValuesRepository;
 
+    @Mock
+    private TemplateCacheService templateCacheService;
+
     private DefaultTemplateService templateService;
     private UUID applicationId;
     private UUID environmentId;
@@ -45,7 +48,7 @@ class DefaultTemplateServiceTest {
     @BeforeEach
     void setUp() {
         templateService = new DefaultTemplateService(templateRepository, templateValuesRepository,
-                userTemplateValuesRepository);
+                userTemplateValuesRepository, templateCacheService);
         applicationId = UUID.randomUUID();
         environmentId = UUID.randomUUID();
     }

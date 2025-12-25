@@ -49,4 +49,13 @@ public class RedisConfiguration {
         LOGGER.info("Establishing Redis connection for usage tracking (String codec)");
         return redisClient.connect();
     }
+
+    /**
+     * Connection for template caching (uses String values for JSON).
+     */
+    @Bean(name = "cacheRedisConnection", destroyMethod = "close")
+    public StatefulRedisConnection<String, String> cacheRedisConnection(RedisClient redisClient) {
+        LOGGER.info("Establishing Redis connection for template caching (String codec)");
+        return redisClient.connect();
+    }
 }

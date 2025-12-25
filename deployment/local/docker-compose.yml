@@ -2,13 +2,19 @@
 # Usage: docker compose up -d (or ./gradlew dockerUp)
 
 services:
-  # Redis for Rate Limiting
+  # Redis for Rate Limiting and Template Caching
   redis:
     image: redis:7-alpine
     container_name: flagforge-redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
-    command: redis-server --appendonly yes
+    # Memory management: volatile-lru evicts only keys with TTL (cache entries)
+    # Rate limit buckets (no TTL) are never evicted, protecting critical functionality
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy volatile-lru
     volumes:
       - ff-redis-data:/data
     healthcheck:
