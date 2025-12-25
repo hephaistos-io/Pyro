@@ -17,10 +17,10 @@ spring:
   application:
     name: flagforge
   datasource:
-    url: jdbc:postgresql://localhost:5432/flagforge
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flagforge}
     driver-class-name: org.postgresql.Driver
-    username: webapp-flagforge
-    password: webapp-flagforge
+    username: ${SPRING_DATASOURCE_USERNAME:webapp-flagforge}
+    password: ${SPRING_DATASOURCE_PASSWORD:webapp-flagforge}
 
   jpa:
     hibernate:
@@ -41,7 +41,9 @@ springdoc:
     version: openapi_3_0  # Use OpenAPI 3.0.3 for ng-openapi-gen compatibility
 
 logging:
-  file:
-    name: build/logs/flagforge.log
+  structured:
+    format:
+      console: logstash
   level:
-    root: DEBUG
+    root: INFO
+    io.hephaistos.flagforge: INFO

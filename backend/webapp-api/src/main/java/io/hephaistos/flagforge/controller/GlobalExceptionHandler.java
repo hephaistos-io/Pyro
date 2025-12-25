@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 import java.util.stream.Collectors;
 
@@ -127,6 +128,14 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Invalid invite: {} (reason: {})", ex.getMessage(), ex.getReason());
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("INVALID_INVITE", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientDisconnect(AsyncRequestNotUsableException ex) {
+        // Client disconnected before response was sent - this is expected during health checks
+        // or when clients cancel requests. Log at debug level only.
+        LOGGER.debug("Client disconnected: {}", ex.getMessage());
+        // Return nothing - the client is gone anyway
     }
 
     @ExceptionHandler(Exception.class)

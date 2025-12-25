@@ -5,10 +5,10 @@ spring:
   application:
     name: flagforge-customer-api
   datasource:
-    url: jdbc:postgresql://localhost:5432/flagforge
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flagforge}
     driver-class-name: org.postgresql.Driver
-    username: customer-flagforge
-    password: customer-flagforge
+    username: ${SPRING_DATASOURCE_USERNAME:customer-flagforge}
+    password: ${SPRING_DATASOURCE_PASSWORD:customer-flagforge}
 
   jpa:
     hibernate:
@@ -26,14 +26,15 @@ springdoc:
     version: openapi_3_0
 
 logging:
-  file:
-    name: build/logs/flagforge-customer-api.log
+  structured:
+    format:
+      console: logstash
   level:
     root: INFO
-    io.hephaistos.flagforge: DEBUG
+    io.hephaistos.flagforge: INFO
 
 flagforge:
   rate-limit:
     enabled: true
-    redis-uri: redis://localhost:6379
+    redis-uri: ${REDIS_URI:redis://localhost:6379}
     fail-open: true

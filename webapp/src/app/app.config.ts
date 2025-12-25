@@ -5,13 +5,14 @@ import {routes} from './app.routes';
 import {ApiConfiguration} from './api/generated/api-configuration';
 import {environment} from '../environments/environment';
 import {authInterceptor} from './interceptors/auth.interceptor';
+import {traceInterceptor} from './interceptors/trace.interceptor';
 import {ThemeService} from './services/theme.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withInMemoryScrolling({anchorScrolling: 'enabled', scrollPositionRestoration: 'enabled'})),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([traceInterceptor, authInterceptor])),
     provideAppInitializer(() => {
       const config = inject(ApiConfiguration);
       config.rootUrl = environment.apiUrl;

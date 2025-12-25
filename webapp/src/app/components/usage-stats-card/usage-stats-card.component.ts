@@ -24,18 +24,39 @@ export class UsageStatsCardComponent {
   expanded = signal(true);
   // Loading state
   loading = signal(false);
+  // Hovered bar index for tooltip
+  hoveredBarIndex = signal<number | null>(null);
   // Data from API
   dailyStats = signal<DailyUsageStatisticsResponse[]>([]);
-  // Today's stats (most recent entry)
+  // Today's stats (most recent entry - last in the reversed array)
   todayStats = computed(() => {
     const stats = this.dailyStats();
-    return stats.length > 0 ? stats[0] : null;
+    return stats.length > 0 ? stats[stats.length - 1] : null;
   });
   // Maximum requests in the period (for bar scaling)
   maxRequests = computed(() => {
     const stats = this.dailyStats();
-    const max = Math.max(...stats.map(s => s.totalRequests ?? 0), 1);
-    return max;
+    return Math.max(...stats.map(s => s.totalRequests ?? 0), 1);
+  });
+  // Y-axis ticks for the chart
+  yAxisTicks = computed(() => {
+    const max = this.maxRequests();
+    if (max <= 10) return [0, Math.ceil(max / 2), max];
+    // Round to nice numbers
+    const magnitude = Math.pow(10, Math.floor(Math.log10(max)));
+    const normalized = max / magnitude;
+    let step: number;
+    if (normalized <= 2) step = 0.5 * magnitude;
+    else if (normalized <= 5) step = magnitude;
+    else step = 2 * magnitude;
+    const ticks: number[] = [];
+    for (let i = 0; i <= max; i += step) {
+      ticks.push(Math.round(i));
+    }
+    if (ticks[ticks.length - 1] < max) {
+      ticks.push(Math.ceil(max / step) * step);
+    }
+    return ticks.slice(0, 4); // Max 4 ticks
   });
   // Total requests in the selected period
   totalRequests = computed(() => {
@@ -86,9 +107,23 @@ export class UsageStatsCardComponent {
     return num.toFixed(2);
   }
 
+  formatCompact(num: number): string {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(num >= 10000 ? 0 : 1) + 'K';
+    return num.toString();
+  }
+
   getBarHeight(requests: number | undefined): number {
     const value = requests ?? 0;
     return (value / this.maxRequests()) * 100;
+  }
+
+  onBarHover(index: number): void {
+    this.hoveredBarIndex.set(index);
+  }
+
+  onBarLeave(): void {
+    this.hoveredBarIndex.set(null);
   }
 
   private async loadStatistics(applicationId: string, environmentId: string, days: number): Promise<void> {
