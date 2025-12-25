@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.cache.CacheInvalidationPublisher;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.TemplateEntity;
 import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
@@ -58,6 +59,9 @@ class DefaultTemplateServiceTest {
     @Mock
     private EnvironmentRepository environmentRepository;
 
+    @Mock
+    private CacheInvalidationPublisher cacheInvalidationPublisher;
+
     private DefaultTemplateService templateService;
     private UUID testCompanyId;
     private UUID testApplicationId;
@@ -66,7 +70,7 @@ class DefaultTemplateServiceTest {
     @BeforeEach
     void setUp() {
         templateService = new DefaultTemplateService(templateRepository, templateValuesRepository,
-                applicationRepository, environmentRepository);
+                applicationRepository, environmentRepository, cacheInvalidationPublisher);
         testCompanyId = UUID.randomUUID();
         UUID testCustomerId = UUID.randomUUID();
         testApplicationId = UUID.randomUUID();

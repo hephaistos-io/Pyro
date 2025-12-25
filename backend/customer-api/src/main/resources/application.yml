@@ -38,3 +38,6 @@ flagforge:
     enabled: true
     redis-uri: ${REDIS_URI:redis://localhost:6379}
     fail-open: true
+  cache:
+    enabled: true
+    ttl-seconds: 300  # 5 minute TTL as safety net

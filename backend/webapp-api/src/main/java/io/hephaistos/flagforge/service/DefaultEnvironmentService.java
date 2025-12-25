@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.cache.CacheInvalidationPublisher;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.EnvironmentEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
@@ -32,12 +33,18 @@ public class DefaultEnvironmentService implements EnvironmentService {
     private final EnvironmentRepository environmentRepository;
     private final ApplicationRepository applicationRepository;
     private final ApiKeyService apiKeyService;
+    private final RedisCleanupService redisCleanupService;
+    private final CacheInvalidationPublisher cacheInvalidationPublisher;
 
     public DefaultEnvironmentService(EnvironmentRepository environmentRepository,
-            ApplicationRepository applicationRepository, ApiKeyService apiKeyService) {
+            ApplicationRepository applicationRepository, ApiKeyService apiKeyService,
+            RedisCleanupService redisCleanupService,
+            CacheInvalidationPublisher cacheInvalidationPublisher) {
         this.environmentRepository = environmentRepository;
         this.applicationRepository = applicationRepository;
         this.apiKeyService = apiKeyService;
+        this.redisCleanupService = redisCleanupService;
+        this.cacheInvalidationPublisher = cacheInvalidationPublisher;
     }
 
     @Override
@@ -155,7 +162,14 @@ public class DefaultEnvironmentService implements EnvironmentService {
             throw new NotFoundException("Environment not found");
         }
 
+        // Delete from database first
         environmentRepository.deleteById(environmentId);
+
+        // Cleanup Redis keys (fail-open, non-blocking)
+        redisCleanupService.cleanupEnvironmentKeys(environmentId);
+
+        // Invalidate any cached templates for this environment
+        cacheInvalidationPublisher.publishEnvironmentDeleted(applicationId, environmentId);
     }
 
     private ApplicationEntity getApplicationOrThrow(UUID applicationId) {

@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.cache.CacheInvalidationPublisher;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.EnvironmentEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
@@ -41,6 +42,12 @@ class DefaultEnvironmentServiceTest {
     @Mock
     private ApiKeyService apiKeyService;
 
+    @Mock
+    private RedisCleanupService redisCleanupService;
+
+    @Mock
+    private CacheInvalidationPublisher cacheInvalidationPublisher;
+
     private DefaultEnvironmentService environmentService;
 
     private UUID testApplicationId;
@@ -49,7 +56,7 @@ class DefaultEnvironmentServiceTest {
     void setUp() {
         environmentService =
                 new DefaultEnvironmentService(environmentRepository, applicationRepository,
-                        apiKeyService);
+                        apiKeyService, redisCleanupService, cacheInvalidationPublisher);
         testApplicationId = UUID.randomUUID();
     }
 
@@ -274,6 +281,9 @@ class DefaultEnvironmentServiceTest {
         environmentService.deleteEnvironment(testApplicationId, environmentId);
 
         verify(environmentRepository).deleteById(environmentId);
+        verify(redisCleanupService).cleanupEnvironmentKeys(environmentId);
+        verify(cacheInvalidationPublisher).publishEnvironmentDeleted(testApplicationId,
+                environmentId);
     }
 
     @Test
@@ -288,6 +298,9 @@ class DefaultEnvironmentServiceTest {
         environmentService.deleteEnvironment(testApplicationId, environmentId);
 
         verify(environmentRepository).deleteById(environmentId);
+        verify(redisCleanupService).cleanupEnvironmentKeys(environmentId);
+        verify(cacheInvalidationPublisher).publishEnvironmentDeleted(testApplicationId,
+                environmentId);
     }
 
     @Test
@@ -317,6 +330,8 @@ class DefaultEnvironmentServiceTest {
                 .hasMessageContaining("Environment not found");
 
         verify(environmentRepository, never()).deleteById(any());
+        verify(redisCleanupService, never()).cleanupEnvironmentKeys(any());
+        verify(cacheInvalidationPublisher, never()).publishEnvironmentDeleted(any(), any());
     }
 
     // ========== Update Environment Tests ==========

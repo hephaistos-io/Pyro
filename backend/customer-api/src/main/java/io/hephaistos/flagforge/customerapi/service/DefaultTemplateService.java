@@ -1,5 +1,7 @@
 package io.hephaistos.flagforge.customerapi.service;
 
+import io.hephaistos.flagforge.common.cache.CacheInvalidationEvent;
+import io.hephaistos.flagforge.common.cache.CacheInvalidationType;
 import io.hephaistos.flagforge.common.data.TemplateValuesEntity;
 import io.hephaistos.flagforge.common.data.UserTemplateValuesEntity;
 import io.hephaistos.flagforge.common.enums.TemplateType;
@@ -24,20 +26,31 @@ public class DefaultTemplateService implements TemplateService {
     private final TemplateRepository templateRepository;
     private final TemplateValuesRepository templateValuesRepository;
     private final UserTemplateValuesRepository userTemplateValuesRepository;
+    private final TemplateCacheService cacheService;
 
     public DefaultTemplateService(TemplateRepository templateRepository,
             TemplateValuesRepository templateValuesRepository,
-            UserTemplateValuesRepository userTemplateValuesRepository) {
+            UserTemplateValuesRepository userTemplateValuesRepository,
+            TemplateCacheService cacheService) {
         this.templateRepository = templateRepository;
         this.templateValuesRepository = templateValuesRepository;
         this.userTemplateValuesRepository = userTemplateValuesRepository;
+        this.cacheService = cacheService;
     }
 
     @Override
     public MergedTemplateValuesResponse getMergedSystemValues(UUID applicationId,
             UUID environmentId, @Nullable String identifier) {
 
-        // Get template schema for default values
+        String cacheId = identifier != null ? identifier : "";
+
+        // Check cache first
+        var cached = cacheService.get(applicationId, environmentId, TemplateType.SYSTEM, cacheId);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        // Cache miss - fetch from database
         var template =
                 templateRepository.findByApplicationIdAndType(applicationId, TemplateType.SYSTEM)
                         .orElseThrow(() -> new NotFoundException(
@@ -60,13 +73,26 @@ public class DefaultTemplateService implements TemplateService {
         // Merge defaults with override using shared utility
         var mergedValues = TemplateMerger.merge(template.getSchema(), overrideValues);
 
-        return new MergedTemplateValuesResponse(TemplateType.SYSTEM, template.getSchema(),
+        var response = new MergedTemplateValuesResponse(TemplateType.SYSTEM, template.getSchema(),
                 mergedValues, appliedIdentifier);
+
+        // Cache the response
+        cacheService.put(applicationId, environmentId, TemplateType.SYSTEM, cacheId, response);
+
+        return response;
     }
 
     @Override
     public MergedTemplateValuesResponse getMergedUserValues(UUID applicationId, UUID environmentId,
             String userId) {
+
+        // Check cache first
+        var cached = cacheService.get(applicationId, environmentId, TemplateType.USER, userId);
+        if (cached.isPresent()) {
+            return cached.get();
+        }
+
+        // Cache miss - fetch from database
 
         // 1. Get USER template schema (defaults)
         var template =
@@ -95,8 +121,14 @@ public class DefaultTemplateService implements TemplateService {
             merged.putAll(userOverrides);
         }
 
-        return new MergedTemplateValuesResponse(TemplateType.USER, template.getSchema(), merged,
-                userId);
+        var response =
+                new MergedTemplateValuesResponse(TemplateType.USER, template.getSchema(), merged,
+                        userId);
+
+        // Cache the response
+        cacheService.put(applicationId, environmentId, TemplateType.USER, userId, response);
+
+        return response;
     }
 
     @Override
@@ -122,5 +154,10 @@ public class DefaultTemplateService implements TemplateService {
             entity.setValues(values);
             userTemplateValuesRepository.save(entity);
         }
+
+        // Invalidate cache for this user
+        cacheService.invalidate(
+                new CacheInvalidationEvent(CacheInvalidationType.USER_CHANGE, applicationId,
+                        environmentId, TemplateType.USER, userId));
     }
 }
