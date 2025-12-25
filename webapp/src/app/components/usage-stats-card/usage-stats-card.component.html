@@ -27,14 +27,45 @@
       } @else {
         <!-- Usage Chart -->
         <div class="usage-chart">
+        <!-- Y-Axis -->
+        <div class="usage-chart__y-axis">
+          @for (tick of yAxisTicks().slice().reverse(); track tick) {
+            <span class="usage-chart__y-tick">{{ formatCompact(tick) }}</span>
+          }
+        </div>
+        <!-- Bars -->
           <div class="usage-chart__bars">
-            @for (stat of dailyStats(); track stat.date) {
-              <div [title]="formatNumber(stat.totalRequests ?? 0) + ' requests'" class="usage-chart__bar-container">
+            @for (stat of dailyStats(); track stat.date; let i = $index) {
+              <div
+                (mouseenter)="onBarHover(i)"
+                (mouseleave)="onBarLeave()"
+                class="usage-chart__bar-container">
                 <div
                   [style.height.%]="getBarHeight(stat.totalRequests)"
                   class="usage-chart__bar">
                 </div>
                 <span class="usage-chart__label">{{ stat.date | date:'EEE' }}</span>
+                <!-- Tooltip -->
+                @if (hoveredBarIndex() === i) {
+                  <div class="usage-chart__tooltip">
+                    <div class="usage-chart__tooltip-date">{{ stat.date | date:'EEE, MMM d' }}</div>
+                    <div class="usage-chart__tooltip-stats">
+                      <div class="usage-chart__tooltip-row">
+                        <span class="usage-chart__tooltip-label">Requests</span>
+                        <span class="usage-chart__tooltip-value">{{ formatNumber(stat.totalRequests ?? 0) }}</span>
+                      </div>
+                      <div class="usage-chart__tooltip-row">
+                        <span class="usage-chart__tooltip-label">Avg req/s</span>
+                        <span class="usage-chart__tooltip-value">{{ formatDecimal(stat.avgRequestsPerSecond) }}</span>
+                      </div>
+                      <div [class.usage-chart__tooltip-row--warning]="(stat.rejectedRequests ?? 0) > 0"
+                           class="usage-chart__tooltip-row">
+                        <span class="usage-chart__tooltip-label">Rejected</span>
+                        <span class="usage-chart__tooltip-value">{{ formatNumber(stat.rejectedRequests ?? 0) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             }
           </div>

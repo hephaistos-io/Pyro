@@ -5,47 +5,50 @@
 // Note: Docker must be in the system PATH for these tasks to work
 // Uses shell wrapper to inherit PATH correctly at execution time
 
+val dockerComposeDir = file("deployment/local")
+val dockerCompose = "docker compose --env-file local.env"
+
 tasks.register<Exec>("dockerBuildBackend") {
     description = "Build backend Docker images (webapp-api, customer-api)"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose build webapp-api customer-api")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose build webapp-api customer-api")
 }
 
 tasks.register<Exec>("dockerUp") {
     description = "Start all containers with Docker Compose"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose up -d --wait")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose up -d --wait")
     dependsOn("dockerBuildBackend")
 }
 
 tasks.register<Exec>("dockerDown") {
     description = "Stop all containers"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose down")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose down")
 }
 
 tasks.register<Exec>("dockerBuild") {
     description = "Build all Docker images"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose build")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose build")
 }
 
 tasks.register<Exec>("dockerLogs") {
     description = "Show container logs (follow mode)"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose logs -f")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose logs -f")
 }
 
 tasks.register<Exec>("dockerClean") {
     description = "Remove containers, networks, and volumes"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose down -v --rmi local")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose down -v --rmi local")
 }
 
 tasks.register("dockerRestart") {
@@ -58,26 +61,26 @@ tasks.register("dockerRestart") {
 tasks.register<Exec>("dockerPs") {
     description = "Show running containers status"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose ps")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose ps")
 }
 
 tasks.register<Exec>("dockerResetDb") {
     description = "Reset the PostgreSQL database volume (stops containers and deletes volume)"
     group = "docker"
-    workingDir = projectDir
+    workingDir = dockerComposeDir
     commandLine(
         "sh",
         "-c",
-        "docker compose down && docker volume rm flagforge-pgdata 2>/dev/null || true"
+        "$dockerCompose down && docker volume rm flagforge-pgdata 2>/dev/null || true"
     )
 }
 
 tasks.register<Exec>("dockerStartPostgres") {
     description = "Start only the PostgreSQL container and wait for it to be healthy"
     group = "docker"
-    workingDir = projectDir
-    commandLine("sh", "-c", "docker compose up -d --wait postgres")
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$dockerCompose up -d --wait postgres")
 }
 
 // Make generateOpenApiDocs depend on PostgreSQL being available

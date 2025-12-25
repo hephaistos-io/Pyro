@@ -22,6 +22,10 @@ dependencies {
     // Swagger for enum documentation
     compileOnly("io.swagger.core.v3:swagger-annotations")
 
+    // For TraceIdFilter (optional - only used when services include this)
+    compileOnly("jakarta.servlet:jakarta.servlet-api")
+    compileOnly("org.springframework:spring-web")
+
     // Validation (version managed by Spring Boot BOM)
     implementation("jakarta.validation:jakarta.validation-api")
 

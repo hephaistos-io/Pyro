@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -52,6 +53,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse("ACCESS_DENIED",
                         "Insufficient permissions for this operation"));
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientDisconnect(AsyncRequestNotUsableException ex) {
+        // Client disconnected before response was sent - this is expected during health checks
+        // or when clients cancel requests. Log at debug level only.
+        LOGGER.debug("Client disconnected: {}", ex.getMessage());
+        // Return nothing - the client is gone anyway
     }
 
     @ExceptionHandler(Exception.class)
