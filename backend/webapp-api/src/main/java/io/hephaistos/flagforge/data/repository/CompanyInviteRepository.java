@@ -21,4 +21,6 @@ public interface CompanyInviteRepository extends JpaRepository<CompanyInviteEnti
 
     @Query("SELECT i FROM CompanyInviteEntity i WHERE i.usedAt IS NULL")
     List<CompanyInviteEntity> findPending();
+
+    Optional<CompanyInviteEntity> findByEmail(String email);
 }

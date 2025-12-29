@@ -1,6 +1,10 @@
 flagforge:
   redis:
     uri: ${REDIS_URI:redis://localhost:6379}
+  email:
+    from-address: ${EMAIL_FROM:noreply@flagforge.io}
+    from-name: ${EMAIL_FROM_NAME:FlagForge}
+    base-url: ${APP_BASE_URL:http://localhost}
   security:
     jwt:
       secret: ${FLAGFORGE_JWT_SECRET:4407a837731d92425e627e49632afbabd538a25e080fafed65a9ff7e71a9f5d1}
@@ -35,6 +39,20 @@ spring:
     baseline-version: 0
     locations: classpath:db/migration
     validate-on-migrate: true
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:false}
+          starttls:
+            enable: ${MAIL_STARTTLS:false}
+          ssl:
+            enable: ${MAIL_SSL:false}
 
 springdoc:
   api-docs:

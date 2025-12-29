@@ -1,7 +1,9 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
+import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
 import io.hephaistos.flagforge.controller.dto.TeamResponse;
@@ -26,7 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * correctly filters customers by company.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(PostgresTestContainerConfiguration.class)
+@Import({PostgresTestContainerConfiguration.class, RedisTestContainerConfiguration.class,
+        MailpitTestConfiguration.class})
 @Tag("integration")
 @Tag("system")
 class CustomerMultiTenancySystemTest extends IntegrationTestSupport {

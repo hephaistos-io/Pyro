@@ -1,0 +1,146 @@
+<section class="profile-settings">
+  <div class="profile-header">
+    <a class="back-link" routerLink="/dashboard">
+      <svg fill="none" height="20" viewBox="0 0 20 20" width="20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12.5 15l-5-5 5-5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+              stroke-width="2"/>
+      </svg>
+      Back to Dashboard
+    </a>
+    <h1>Profile Settings</h1>
+    <p class="profile-subtitle">Manage your account information and security settings</p>
+  </div>
+
+  <div class="settings-sections">
+    <!-- Profile Information -->
+    <div class="settings-card">
+      <h2>Profile Information</h2>
+      <p class="card-description">Update your personal information</p>
+
+      <form (ngSubmit)="saveProfile()" class="settings-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input
+              (ngModelChange)="firstName.set($event)"
+              [disabled]="isProfileLoading()"
+              [ngModel]="firstName()"
+              id="firstName"
+              name="firstName"
+              placeholder="John"
+              type="text"
+            />
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input
+              (ngModelChange)="lastName.set($event)"
+              [disabled]="isProfileLoading()"
+              [ngModel]="lastName()"
+              id="lastName"
+              name="lastName"
+              placeholder="Doe"
+              type="text"
+            />
+          </div>
+        </div>
+
+        @if (profileError()) {
+          <div class="error-message">{{ profileError() }}</div>
+        }
+
+        @if (profileSuccess()) {
+          <div class="success-message">Profile updated successfully</div>
+        }
+
+        <button
+          [disabled]="isProfileLoading()"
+          class="btn btn-primary"
+          type="submit"
+        >
+          @if (isProfileLoading()) {
+            <span class="spinner"></span>
+            <span>Saving...</span>
+          } @else {
+            <span>Save Changes</span>
+          }
+        </button>
+      </form>
+    </div>
+
+    <!-- Email Settings -->
+    <div class="settings-card">
+      <h2>Email Address</h2>
+      <p class="card-description">Change your email address. A verification link will be sent to the new email.</p>
+
+      <div class="current-value">
+        <span class="current-label">Current Email</span>
+        <span class="current-email">{{ currentEmail() }}</span>
+      </div>
+
+      <form (ngSubmit)="requestEmailChange()" class="settings-form">
+        <div class="form-group">
+          <label for="newEmail">New Email Address</label>
+          <input
+            (ngModelChange)="newEmail.set($event)"
+            [disabled]="isEmailLoading()"
+            [ngModel]="newEmail()"
+            id="newEmail"
+            name="newEmail"
+            placeholder="new@email.com"
+            type="email"
+          />
+        </div>
+
+        @if (emailError()) {
+          <div class="error-message">{{ emailError() }}</div>
+        }
+
+        @if (emailSuccess()) {
+          <div class="success-message">Verification email sent</div>
+        }
+
+        <button
+          [disabled]="isEmailLoading()"
+          class="btn btn-secondary"
+          type="submit"
+        >
+          @if (isEmailLoading()) {
+            <span class="spinner spinner--dark"></span>
+            <span>Sending...</span>
+          } @else {
+            <span>Change Email</span>
+          }
+        </button>
+      </form>
+    </div>
+
+    <!-- Password Settings -->
+    <div class="settings-card">
+      <h2>Password</h2>
+      <p class="card-description">Reset your password. A reset link will be sent to your email.</p>
+
+      @if (passwordError()) {
+        <div class="error-message">{{ passwordError() }}</div>
+      }
+
+      @if (passwordSuccess()) {
+        <div class="success-message">Password reset email sent</div>
+      }
+
+      <button
+        (click)="requestPasswordReset()"
+        [disabled]="isPasswordLoading()"
+        class="btn btn-secondary"
+        type="button"
+      >
+        @if (isPasswordLoading()) {
+          <span class="spinner spinner--dark"></span>
+          <span>Sending...</span>
+        } @else {
+          <span>Reset Password</span>
+        }
+      </button>
+    </div>
+  </div>
+</section>

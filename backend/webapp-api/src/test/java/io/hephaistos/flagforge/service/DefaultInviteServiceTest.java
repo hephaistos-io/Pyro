@@ -48,6 +48,9 @@ class DefaultInviteServiceTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
+    @Mock
+    private EmailService emailService;
+
     private DefaultInviteService inviteService;
     private UUID testCompanyId;
     private UUID testCustomerId;
@@ -55,7 +58,7 @@ class DefaultInviteServiceTest {
     @BeforeEach
     void setUp() {
         inviteService = new DefaultInviteService(companyInviteRepository, companyRepository,
-                applicationRepository);
+                applicationRepository, emailService);
         testCompanyId = UUID.randomUUID();
         testCustomerId = UUID.randomUUID();
     }
@@ -66,8 +69,9 @@ class DefaultInviteServiceTest {
     }
 
     @Test
-    void createInviteGenerates64CharHexToken() {
+    void createInviteReturnsExpectedResponse() {
         setupSecurityContext(testCompanyId, testCustomerId, CustomerRole.ADMIN);
+        setupCompanyMock();
 
         var request = new InviteCreationRequest("test@example.com", CustomerRole.DEV, null, null);
 
@@ -80,13 +84,15 @@ class DefaultInviteServiceTest {
 
         var response = inviteService.createInvite(request, "https://example.com");
 
-        assertThat(response.token()).hasSize(64);
-        assertThat(response.token()).matches("[0-9a-f]+");
+        assertThat(response.email()).isEqualTo("test@example.com");
+        assertThat(response.role()).isEqualTo(CustomerRole.DEV);
+        assertThat(response.id()).isNotNull();
     }
 
     @Test
     void createInviteExpiresAfterConfiguredDays() {
         setupSecurityContext(testCompanyId, testCustomerId, CustomerRole.ADMIN);
+        setupCompanyMock();
 
         var request = new InviteCreationRequest("test@example.com", CustomerRole.DEV, null, 14);
 
@@ -111,6 +117,7 @@ class DefaultInviteServiceTest {
     @Test
     void createInviteDefaultsTo7DaysExpiry() {
         setupSecurityContext(testCompanyId, testCustomerId, CustomerRole.ADMIN);
+        setupCompanyMock();
 
         var request = new InviteCreationRequest("test@example.com", CustomerRole.DEV, null, null);
 
@@ -139,6 +146,7 @@ class DefaultInviteServiceTest {
     @Test
     void createInviteCannotAssignHigherRoleThanOwn() {
         setupSecurityContext(testCompanyId, testCustomerId, CustomerRole.ADMIN);
+        setupCompanyMock();
 
         // Trying to assign ADMIN role when the ordinal is the same should work
         var request = new InviteCreationRequest("test@example.com", CustomerRole.ADMIN, null, null);
@@ -306,5 +314,12 @@ class DefaultInviteServiceTest {
         context.setAuthentication(new UsernamePasswordAuthenticationToken("test@example.com", null,
                 List.of(new SimpleGrantedAuthority(role.toAuthority()))));
         SecurityContextHolder.setContext(context);
+    }
+
+    private void setupCompanyMock() {
+        var company = new CompanyEntity();
+        company.setId(testCompanyId);
+        company.setName("Test Company");
+        when(companyRepository.findById(testCompanyId)).thenReturn(Optional.of(company));
     }
 }

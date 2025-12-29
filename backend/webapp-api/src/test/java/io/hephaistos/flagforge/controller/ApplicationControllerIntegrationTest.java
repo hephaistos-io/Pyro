@@ -1,7 +1,9 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
+import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.common.enums.TemplateType;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
@@ -21,7 +23,8 @@ import org.springframework.http.HttpStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(PostgresTestContainerConfiguration.class)
+@Import({PostgresTestContainerConfiguration.class, RedisTestContainerConfiguration.class,
+        MailpitTestConfiguration.class})
 @Tag("integration")
 class ApplicationControllerIntegrationTest extends IntegrationTestSupport {
 

@@ -15,6 +15,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -54,6 +55,12 @@ public class CustomerEntity {
             joinColumns = @JoinColumn(name = "customer_id"),
             inverseJoinColumns = @JoinColumn(name = "application_id"))
     private Set<ApplicationEntity> accessibleApplications = new HashSet<>();
+
+    @Column(name = "password_changed_at")
+    private Instant passwordChangedAt;
+
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
 
     public UUID getId() {
         return id;
@@ -117,5 +124,21 @@ public class CustomerEntity {
 
     public void setAccessibleApplications(Set<ApplicationEntity> accessibleApplications) {
         this.accessibleApplications = accessibleApplications;
+    }
+
+    public Instant getPasswordChangedAt() {
+        return passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(Instant passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

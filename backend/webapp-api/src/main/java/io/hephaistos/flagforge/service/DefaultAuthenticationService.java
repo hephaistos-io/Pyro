@@ -1,8 +1,10 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.controller.dto.AuthenticationResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
+import io.hephaistos.flagforge.exception.EmailNotVerifiedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,6 +38,17 @@ public class DefaultAuthenticationService implements AuthenticationService {
     public AuthenticationResponse login(
             CustomerAuthenticationRequest customerAuthenticationRequest) {
         LOGGER.info("Customer logging in: {}", customerAuthenticationRequest.email());
+
+        // Check if email is verified before authenticating
+        CustomerEntity customer =
+                customerService.getCustomerByEmail(customerAuthenticationRequest.email())
+                        .orElse(null);
+
+        if (customer != null && !customer.isEmailVerified()) {
+            throw new EmailNotVerifiedException(
+                    "Please verify your email address before logging in");
+        }
+
         var authorization = authenticationManager.authenticate(
                 customerAuthenticationRequest.toUsernamePasswordAuthenticationToken());
         SecurityContextHolder.getContext().setAuthentication(authorization);

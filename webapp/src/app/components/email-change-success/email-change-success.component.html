@@ -1,0 +1,31 @@
+<div class="email-change-success">
+  <div class="success-icon">
+    <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+      <path d="M14 18l10 7 10-7M14 18v12h20V18H14z" stroke="currentColor" stroke-linecap="round"
+            stroke-linejoin="round" stroke-width="2"/>
+    </svg>
+  </div>
+  <h2>Verification Link Generated</h2>
+  <p>A verification link has been created for <strong>{{ data().newEmail }}</strong>. Copy the link below and open it to
+    confirm your email change.</p>
+
+  <div class="url-section">
+    <label>Verification Link</label>
+    <div class="url-container">
+      <input [value]="data().verificationUrl" class="url-input" readonly type="text"/>
+      <button (click)="copyUrl()" class="btn-copy" type="button">
+        @if (urlCopied()) {
+          Copied!
+        } @else {
+          Copy
+        }
+      </button>
+    </div>
+    <p class="expiration-notice">This link expires in 1 hour</p>
+  </div>
+
+  <button (click)="done()" class="btn-done" type="button">
+    Done
+  </button>
+</div>

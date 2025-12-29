@@ -36,15 +36,38 @@
   margin-bottom: 1.5rem;
   text-align: left;
 
+  .label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
   label {
     display: block;
-    margin-bottom: 0.5rem;
     font-weight: 500;
     font-size: 0.875rem;
     color: $charcoal;
 
     @include dark-mode {
       color: $dark-text;
+    }
+  }
+
+  .forgot-link {
+    font-size: 0.85rem;
+    color: $pyro-red;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $pyro-red-deep;
+    }
+
+    @include dark-mode {
+      &:hover {
+        color: $pyro-red-light;
+      }
     }
   }
 

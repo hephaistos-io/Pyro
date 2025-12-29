@@ -15,6 +15,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("io.lettuce:lettuce-core")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -25,6 +26,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-resttestclient")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.tngtech.archunit:archunit-junit5")
+    testImplementation("com.redis:testcontainers-redis")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

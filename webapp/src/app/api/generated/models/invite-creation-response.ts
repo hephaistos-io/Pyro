@@ -8,7 +8,5 @@ export interface InviteCreationResponse {
   email?: string;
   expiresAt?: string;
   id?: string;
-  inviteUrl?: string;
   role?: CustomerRole;
-  token?: string;
 }

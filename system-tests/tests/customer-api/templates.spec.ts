@@ -17,7 +17,7 @@ const CUSTOMER_API_BASE = '';
 async function getReadApiKey(page: Page): Promise<string> {
     // Navigate to Overview tab (should already be there after setup)
     await page.getByRole('button', {name: 'Overview', exact: true}).click();
-    await expect(page.locator('.overview-cards')).toBeVisible();
+    await expect(page.locator('.overview-layout')).toBeVisible();
 
     const readKeySection = page.locator('.stat').filter({hasText: 'Read-Key'});
 
@@ -33,30 +33,43 @@ async function getReadApiKey(page: Page): Promise<string> {
 }
 
 /**
- * Helper to make authenticated requests to customer-api
+ * Helper to make authenticated requests to customer-api with retry on rate limit
  */
 async function fetchWithApiKey(
     page: Page,
     path: string,
-    apiKey: string
+    apiKey: string,
+    maxRetries = 3
 ): Promise<{ status: number; body: unknown }> {
     const baseUrl = process.env.BASE_URL || 'http://localhost';
     const url = `${baseUrl}${CUSTOMER_API_BASE}${path}`;
 
-    const response = await page.request.get(url, {
-        headers: {
-            'X-API-Key': apiKey
-        }
-    });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const response = await page.request.get(url, {
+            headers: {
+                'X-API-Key': apiKey
+            }
+        });
 
-    let body: unknown;
-    try {
-        body = await response.json();
-    } catch {
-        body = await response.text();
+        // Retry on 429 (rate limit)
+        if (response.status() === 429 && attempt < maxRetries) {
+            const delayMs = 1000 * (attempt + 1); // 1s, 2s, 3s
+            await page.waitForTimeout(delayMs);
+            continue;
+        }
+
+        let body: unknown;
+        try {
+            body = await response.json();
+        } catch {
+            body = await response.text();
+        }
+
+        return {status: response.status(), body};
     }
 
-    return {status: response.status(), body};
+    // Should not reach here, but TypeScript needs a return
+    throw new Error('Max retries exceeded');
 }
 
 test.describe('Customer API - Templates Endpoint', () => {
@@ -154,14 +167,20 @@ test.describe('Customer API - Templates Endpoint', () => {
     });
 
     test('returns null appliedIdentifier for non-existent identifier', async () => {
-        const {body} = await fetchWithApiKey(
+        const {status, body} = await fetchWithApiKey(
             sharedPage,
             '/v1/api/templates/system?identifier=non-existent',
             apiKey
-        ) as { body: { appliedIdentifier: string | null; values: Record<string, unknown> } };
+        ) as {
+            status: number;
+            body: { appliedIdentifier: string | null | undefined; values: Record<string, unknown> }
+        };
 
-        expect(body.appliedIdentifier).toBeNull();
+        expect(status).toBe(200);
+        // appliedIdentifier should be null or undefined when identifier is not found
+        expect(body.appliedIdentifier ?? null).toBeNull();
         // Should still return defaults
+        expect(body.values).toBeDefined();
         expect(body.values).toHaveProperty('api_url', 'https://default.api.com');
     });
 });

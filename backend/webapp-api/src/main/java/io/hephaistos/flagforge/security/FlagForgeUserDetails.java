@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.security;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -21,10 +22,11 @@ public class FlagForgeUserDetails implements UserDetails {
     private final UUID companyId;
     private final Set<UUID> accessibleApplicationIds;
     private final Collection<? extends GrantedAuthority> authorities;
+    private final Instant passwordChangedAt;
 
     public FlagForgeUserDetails(String email, String password, UUID customerId, UUID companyId,
-            Set<UUID> accessibleApplicationIds,
-            Collection<? extends GrantedAuthority> authorities) {
+            Set<UUID> accessibleApplicationIds, Collection<? extends GrantedAuthority> authorities,
+            Instant passwordChangedAt) {
         this.email = email;
         this.password = password;
         this.customerId = customerId;
@@ -32,6 +34,7 @@ public class FlagForgeUserDetails implements UserDetails {
         this.accessibleApplicationIds =
                 accessibleApplicationIds != null ? accessibleApplicationIds : Set.of();
         this.authorities = authorities != null ? authorities : Set.of();
+        this.passwordChangedAt = passwordChangedAt;
     }
 
     @Override
@@ -60,5 +63,9 @@ public class FlagForgeUserDetails implements UserDetails {
 
     public Set<UUID> getAccessibleApplicationIds() {
         return accessibleApplicationIds;
+    }
+
+    public Instant getPasswordChangedAt() {
+        return passwordChangedAt;
     }
 }

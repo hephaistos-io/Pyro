@@ -1,7 +1,9 @@
 package io.hephaistos.flagforge.controller;
 
 import io.hephaistos.flagforge.IntegrationTestSupport;
+import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
@@ -31,7 +33,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(PostgresTestContainerConfiguration.class)
+@Import({PostgresTestContainerConfiguration.class, RedisTestContainerConfiguration.class,
+        MailpitTestConfiguration.class})
 @Tag("integration")
 class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
@@ -48,12 +51,22 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
         customerRepository.deleteAll();
     }
 
+    /**
+     * Helper method to get the invite token by email from the database.
+     */
+    private String getInviteTokenByEmail(String email) {
+        return companyInviteRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invite not found for email: " + email))
+                .getToken();
+    }
+
+
     @Nested
     @DisplayName("POST /v1/company/invite - Create Invite")
     class CreateInvite {
 
         @Test
-        void createInviteReturns201WithValidToken() {
+        void createInviteReturns201AndSendsEmail() {
             // Setup: register user, create company, re-authenticate
             String token = registerAndAuthenticateWithCompany();
             token = authenticate(); // Re-authenticate to get company in token
@@ -65,10 +78,13 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
             assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().token()).hasSize(64);
             assertThat(response.getBody().email()).isEqualTo("newuser@example.com");
             assertThat(response.getBody().role()).isEqualTo(CustomerRole.DEV);
-            assertThat(response.getBody().inviteUrl()).contains(response.getBody().token());
+
+            // Verify token was created in the database
+            var invite = companyInviteRepository.findByEmail("newuser@example.com");
+            assertThat(invite).isPresent();
+            assertThat(invite.get().getToken()).hasSize(64);
         }
 
         @Test
@@ -124,12 +140,11 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             var devInviteRequest =
                     new InviteCreationRequest("dev@example.com", CustomerRole.DEV, null, null);
-            var devInviteResponse = post("/v1/company/invite", devInviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", devInviteRequest, adminToken, InviteCreationResponse.class);
 
             // DEV user registers and authenticates
-            registerUserWithInvite("Dev", "User", "password123",
-                    devInviteResponse.getBody().token());
+            String devInviteToken = getInviteTokenByEmail("dev@example.com");
+            registerUserWithInvite("Dev", "User", "password123", devInviteToken);
             String devToken = authenticate("dev@example.com", "password123");
 
             // DEV user tries to create an invite - should fail with 403
@@ -158,12 +173,11 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             // Create invite
             var createRequest =
                     new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
-            var createResponse =
-                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+            post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
             // Validate (public endpoint, no auth needed)
-            var validateResponse = get("/v1/invite/" + createResponse.getBody().token(),
-                    InviteValidationResponse.class);
+            String inviteToken = getInviteTokenByEmail("newuser@example.com");
+            var validateResponse = get("/v1/invite/" + inviteToken, InviteValidationResponse.class);
 
             assertThat(validateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(validateResponse.getBody().valid()).isTrue();
@@ -189,17 +203,15 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             // Create invite with 1 day expiry
             var createRequest =
                     new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, 1);
-            var createResponse =
-                    post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
+            post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
             // Manually expire the invite in the database
-            var invite =
-                    companyInviteRepository.findByToken(createResponse.getBody().token()).get();
+            String inviteToken = getInviteTokenByEmail("newuser@example.com");
+            var invite = companyInviteRepository.findByToken(inviteToken).get();
             invite.setExpiresAt(Instant.now().minus(1, ChronoUnit.DAYS));
             companyInviteRepository.save(invite);
 
-            var validateResponse = get("/v1/invite/" + createResponse.getBody().token(),
-                    InviteValidationResponse.class);
+            var validateResponse = get("/v1/invite/" + inviteToken, InviteValidationResponse.class);
 
             assertThat(validateResponse.getBody().valid()).isFalse();
             assertThat(validateResponse.getBody().reason()).isEqualTo(InvalidInviteReason.EXPIRED);
@@ -219,12 +231,11 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             var inviteRequest =
                     new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
-            var inviteResponse = post("/v1/company/invite", inviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
 
             // New user registers with invite
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    inviteResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Verify user was created with correct values
             var customer = customerRepository.findByEmail("invited@example.com");
@@ -242,15 +253,13 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             var inviteRequest =
                     new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
-            var inviteResponse = post("/v1/company/invite", inviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
 
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    inviteResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Verify invite is marked as used
-            var invite =
-                    companyInviteRepository.findByToken(inviteResponse.getBody().token()).get();
+            var invite = companyInviteRepository.findByToken(inviteToken).get();
             assertThat(invite.getUsedAt()).isNotNull();
             assertThat(invite.getUsedBy()).isNotNull();
         }
@@ -262,16 +271,16 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             var inviteRequest =
                     new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
-            var inviteResponse = post("/v1/company/invite", inviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
 
             // First registration succeeds
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    inviteResponse.getBody().token());
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Second registration with same token fails
             var registration = CustomerRegistrationRequest.withInvite("John", "Doe", "password456",
-                    inviteResponse.getBody().token());
+                    inviteToken);
             var response = post("/v1/auth/register", registration,
                     GlobalExceptionHandler.ErrorResponse.class);
 
@@ -292,11 +301,10 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             // Create invite with app access
             var inviteRequest = new InviteCreationRequest("invited@example.com", CustomerRole.DEV,
                     Set.of(appResponse.getBody().id()), null);
-            var inviteResponse = post("/v1/company/invite", inviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
 
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    inviteResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Verify user has app access
             var customer =
@@ -376,11 +384,10 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             // Create and use an invite
             var inviteRequest =
                     new InviteCreationRequest("invited@example.com", CustomerRole.DEV, null, null);
-            var inviteResponse = post("/v1/company/invite", inviteRequest, adminToken,
-                    InviteCreationResponse.class);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
 
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    inviteResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Team should show the new member but not the used invite
             var response = get("/v1/customer/all", adminToken, TeamResponse.class);
@@ -396,7 +403,7 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
     class RegenerateInvite {
 
         @Test
-        void regenerateInviteReturns200WithNewToken() {
+        void regenerateInviteReturns200AndCreatesNewToken() {
             String token = registerAndAuthenticateWithCompany();
             token = authenticate();
 
@@ -405,7 +412,7 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                     new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
             var createResponse =
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
-            String originalToken = createResponse.getBody().token();
+            String originalToken = getInviteTokenByEmail("newuser@example.com");
 
             // Regenerate invite
             var regenerateResponse =
@@ -414,10 +421,13 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(regenerateResponse.getBody()).isNotNull();
-            assertThat(regenerateResponse.getBody().token()).hasSize(64);
-            assertThat(regenerateResponse.getBody().token()).isNotEqualTo(originalToken);
             assertThat(regenerateResponse.getBody().email()).isEqualTo("newuser@example.com");
             assertThat(regenerateResponse.getBody().role()).isEqualTo(CustomerRole.DEV);
+
+            // Verify new token was created and is different from original
+            String newToken = getInviteTokenByEmail("newuser@example.com");
+            assertThat(newToken).hasSize(64);
+            assertThat(newToken).isNotEqualTo(originalToken);
         }
 
         @Test
@@ -430,7 +440,7 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                     new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
             var createResponse =
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
-            String originalToken = createResponse.getBody().token();
+            String originalToken = getInviteTokenByEmail("newuser@example.com");
 
             // Regenerate invite
             post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate", null, token,
@@ -456,13 +466,12 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
             // Regenerate invite
-            var regenerateResponse =
-                    post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate",
-                            null, token, InviteCreationResponse.class);
+            post("/v1/company/invite/" + createResponse.getBody().id() + "/regenerate", null, token,
+                    InviteCreationResponse.class);
 
             // Validate new token should succeed
-            var validateResponse = get("/v1/invite/" + regenerateResponse.getBody().token(),
-                    InviteValidationResponse.class);
+            String newToken = getInviteTokenByEmail("newuser@example.com");
+            var validateResponse = get("/v1/invite/" + newToken, InviteValidationResponse.class);
             assertThat(validateResponse.getBody().valid()).isTrue();
             assertThat(validateResponse.getBody().email()).isEqualTo("newuser@example.com");
         }
@@ -507,8 +516,8 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
             // Manually expire the invite
-            var invite =
-                    companyInviteRepository.findByToken(createResponse.getBody().token()).get();
+            String inviteToken = getInviteTokenByEmail("newuser@example.com");
+            var invite = companyInviteRepository.findByToken(inviteToken).get();
             invite.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS));
             companyInviteRepository.save(invite);
 
@@ -534,8 +543,8 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             var createResponse =
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    createResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Try to regenerate used invite
             var regenerateResponse =
@@ -627,7 +636,7 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                     new InviteCreationRequest("newuser@example.com", CustomerRole.DEV, null, null);
             var createResponse =
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
-            String inviteToken = createResponse.getBody().token();
+            String inviteToken = getInviteTokenByEmail("newuser@example.com");
 
             // Delete invite
             delete("/v1/company/invite/" + createResponse.getBody().id(), token, Void.class);
@@ -718,8 +727,8 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
             var createResponse =
                     post("/v1/company/invite", createRequest, token, InviteCreationResponse.class);
 
-            registerUserWithInvite("Jane", "Smith", "password123",
-                    createResponse.getBody().token());
+            String inviteToken = getInviteTokenByEmail("invited@example.com");
+            registerUserWithInvite("Jane", "Smith", "password123", inviteToken);
 
             // Delete used invite - should still work (cleanup)
             var deleteResponse =

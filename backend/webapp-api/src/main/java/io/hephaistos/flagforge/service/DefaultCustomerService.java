@@ -5,12 +5,14 @@ import io.hephaistos.flagforge.common.data.CompanyInviteEntity;
 import io.hephaistos.flagforge.common.data.CustomerEntity;
 import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
+import io.hephaistos.flagforge.controller.dto.ProfileUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.UpdateCustomerRequest;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NotFoundException;
+import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
 import io.hephaistos.flagforge.security.FlagForgeUserDetails;
 import io.hephaistos.flagforge.security.RequireAdmin;
 import org.jspecify.annotations.NullMarked;
@@ -41,15 +43,18 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
     private final ApplicationRepository applicationRepository;
     private final BreachedPasswordService breachedPasswordService;
     private final InviteService inviteService;
+    private final RegistrationVerificationService registrationVerificationService;
 
     public DefaultCustomerService(PasswordEncoder passwordEncoder,
             CustomerRepository customerRepository, ApplicationRepository applicationRepository,
-            BreachedPasswordService breachedPasswordService, InviteService inviteService) {
+            BreachedPasswordService breachedPasswordService, InviteService inviteService,
+            RegistrationVerificationService registrationVerificationService) {
         this.passwordEncoder = passwordEncoder;
         this.customerRepository = customerRepository;
         this.applicationRepository = applicationRepository;
         this.breachedPasswordService = breachedPasswordService;
         this.inviteService = inviteService;
+        this.registrationVerificationService = registrationVerificationService;
     }
 
     @Override
@@ -78,6 +83,7 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
         }
 
         // Create customer with values from invite
+        // Invite-based registrations are pre-verified (user received the invite email)
         var customer = new CustomerEntity();
         customer.setEmail(invite.getEmail());
         customer.setFirstName(request.firstName());
@@ -86,6 +92,7 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
         customer.setCompanyId(invite.getCompanyId());
         customer.setRole(invite.getAssignedRole());
         customer.setAccessibleApplications(new HashSet<>(invite.getPreAssignedApplications()));
+        customer.setEmailVerified(true);
 
         try {
             customerRepository.save(customer);
@@ -114,12 +121,14 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
                     "This password has been found in data breaches. Please choose a different password.");
         }
 
+        // Standard registration requires email verification
         var customer = new CustomerEntity();
         customer.setEmail(request.email());
         customer.setFirstName(request.firstName());
         customer.setLastName(request.lastName());
         customer.setPassword(passwordEncoder.encode(request.password()));
         customer.setRole(CustomerRole.ADMIN);
+        customer.setEmailVerified(false);
 
         try {
             customerRepository.save(customer);
@@ -127,6 +136,9 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
         catch (DataIntegrityViolationException ex) {
             throw new DuplicateResourceException("Email already exists", ex);
         }
+
+        // Send verification email
+        registrationVerificationService.sendVerificationEmail(customer.getId(), request.email());
     }
 
     @Override
@@ -180,6 +192,25 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
         return customer;
     }
 
+    @Override
+    public CustomerEntity updateOwnProfile(ProfileUpdateRequest request) {
+        var securityContext = FlagForgeSecurityContext.getCurrent();
+        UUID customerId = securityContext.getCustomerId();
+
+        var customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Customer not found"));
+
+        if (request.firstName() != null && !request.firstName().isBlank()) {
+            customer.setFirstName(request.firstName().trim());
+        }
+
+        if (request.lastName() != null && !request.lastName().isBlank()) {
+            customer.setLastName(request.lastName().trim());
+        }
+
+        return customer;
+    }
+
     private FlagForgeUserDetails toUserDetails(CustomerEntity customer) {
         var accessibleAppIds = customer.getAccessibleApplications()
                 .stream()
@@ -188,6 +219,7 @@ public class DefaultCustomerService implements CustomerService, UserDetailsServi
 
         return new FlagForgeUserDetails(customer.getEmail(), customer.getPassword(),
                 customer.getId(), customer.getCompanyId().orElse(null), accessibleAppIds,
-                List.of(new SimpleGrantedAuthority(customer.getRole().toAuthority())));
+                List.of(new SimpleGrantedAuthority(customer.getRole().toAuthority())),
+                customer.getPasswordChangedAt());
     }
 }

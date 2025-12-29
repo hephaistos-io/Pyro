@@ -38,7 +38,6 @@ export class UserCreationFormComponent implements OnInit {
   roleOptions = ROLE_OPTIONS;
   // Success state
   inviteCreated = signal<InviteCreationResponse | null>(null);
-  copied = signal(false);
   // Events
   userCreated = output<void>();
   private api = inject(Api);
@@ -76,15 +75,6 @@ export class UserCreationFormComponent implements OnInit {
 
   selectRole(role: CustomerRole): void {
     this.selectedRole.set(role);
-  }
-
-  async copyInviteUrl(): Promise<void> {
-    const url = this.inviteCreated()?.inviteUrl;
-    if (url) {
-      await navigator.clipboard.writeText(url);
-      this.copied.set(true);
-      setTimeout(() => this.copied.set(false), 2000);
-    }
   }
 
   toggleApplication(appId: string): void {

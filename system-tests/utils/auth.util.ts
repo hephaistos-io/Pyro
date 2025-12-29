@@ -1,8 +1,10 @@
 import {expect, Page} from '@playwright/test';
 import {DEFAULT_PASSWORD} from './test-data.util';
+import {getRegistrationVerificationLink} from './mailpit.util';
 
 /**
- * Registers a new user via the registration form
+ * Registers a new user via the registration form.
+ * Completes the full registration flow including email verification.
  */
 export async function registerUser(
     page: Page,
@@ -19,7 +21,15 @@ export async function registerUser(
     await page.getByLabel('Confirm Password').fill(password);
     await page.getByRole('button', {name: 'Create Account'}).click();
 
-    await expect(page).toHaveURL('/login');
+    // Wait for success message with email verification instructions
+    await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();
+
+    // Get verification link from email and verify
+    const verificationUrl = await getRegistrationVerificationLink(email);
+    await page.goto(verificationUrl);
+
+    // Confirm email is verified
+    await expect(page.getByRole('heading', {name: 'Email Verified!'})).toBeVisible();
 }
 
 /**

@@ -263,9 +263,11 @@
           } @else {
               <div class="success-message">
                   <div class="success-icon">✓</div>
-                  <h3>Account created!</h3>
+                <h3>Check your email</h3>
                 <p>Welcome to Flagforge, <strong>{{ firstName() }}</strong>!</p>
-                <p class="next-steps">Check your email at <strong>{{ email() }}</strong> to verify your account.</p>
+                <p class="next-steps">We've sent a verification link to <strong>{{ email() }}</strong>.</p>
+                <p class="next-steps">Please click the link in the email to verify your account before logging in.</p>
+                <a class="btn btn-primary btn-login" routerLink="/login">Go to Login</a>
               </div>
           }
     }
