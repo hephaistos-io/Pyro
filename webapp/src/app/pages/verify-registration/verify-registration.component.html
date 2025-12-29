@@ -1,0 +1,26 @@
+<section class="verify-registration">
+  <div class="verify-registration-content">
+    @if (isVerifying()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Verifying your email...</p>
+      </div>
+    } @else if (isVerified()) {
+      <div class="success-message">
+        <div class="success-icon">✓</div>
+        <h2>Email Verified!</h2>
+        <p>Your email has been verified successfully.</p>
+        <p class="next-steps">You can now log in to your account.</p>
+        <button (click)="goToLogin()" class="btn btn-primary">Go to Login</button>
+      </div>
+    } @else {
+      <div class="error-state">
+        <div class="error-icon">!</div>
+        <h2>Verification Failed</h2>
+        <p>{{ error() }}</p>
+        <p class="next-steps">The verification link may be invalid or expired.</p>
+        <a class="btn btn-primary" routerLink="/register">Register Again</a>
+      </div>
+    }
+  </div>
+</section>

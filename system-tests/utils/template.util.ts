@@ -5,7 +5,7 @@ import {expect, Page} from '@playwright/test';
  */
 export async function getReadApiKey(page: Page): Promise<string> {
     await page.getByRole('button', {name: 'Overview', exact: true}).click();
-    await expect(page.locator('.overview-cards')).toBeVisible();
+    await expect(page.locator('.overview-layout')).toBeVisible();
 
     const readKeySection = page.locator('.stat').filter({hasText: 'Read-Key'});
     await readKeySection.getByRole('button', {name: 'Show key'}).click();
@@ -22,7 +22,7 @@ export async function getReadApiKey(page: Page): Promise<string> {
  */
 export async function getWriteApiKey(page: Page): Promise<string> {
     await page.getByRole('button', {name: 'Overview', exact: true}).click();
-    await expect(page.locator('.overview-cards')).toBeVisible();
+    await expect(page.locator('.overview-layout')).toBeVisible();
 
     const writeKeySection = page.locator('.stat').filter({hasText: 'Write-Key'});
     await writeKeySection.getByRole('button', {name: 'Show key'}).click();

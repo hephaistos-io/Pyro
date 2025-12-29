@@ -3,31 +3,11 @@
     <!-- Success State -->
     <div class="success-state">
       <div class="success-icon">&#10003;</div>
-      <h2>Invitation Created!</h2>
+    <h2>Invitation Sent!</h2>
       <p class="success-description">
-        An invitation has been created for <strong>{{ inviteCreated()!.email }}</strong>.
-        Share the link below with them to join your team.
+        An invitation email has been sent to <strong>{{ inviteCreated()!.email }}</strong>.
+        They can use the link in the email to join your team.
       </p>
-
-      <div class="invite-url-section">
-        <label>Invitation Link</label>
-        <div class="invite-url-container">
-          <input
-            type="text"
-            readonly
-            [value]="inviteCreated()!.inviteUrl"
-            class="invite-url-input"
-          />
-          <button
-            type="button"
-            class="btn-copy"
-            (click)="copyInviteUrl()"
-            [class.copied]="copied()"
-          >
-            {{ copied() ? 'Copied!' : 'Copy' }}
-          </button>
-        </div>
-      </div>
 
       <div class="expiration-info">
         Expires: {{ formatExpirationDate(inviteCreated()!.expiresAt) }}

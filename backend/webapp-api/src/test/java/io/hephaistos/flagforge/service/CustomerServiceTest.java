@@ -1,7 +1,9 @@
 package io.hephaistos.flagforge.service;
 
+import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.MockPasswordCheck;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
+import io.hephaistos.flagforge.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(PostgresTestContainerConfiguration.class)
+@Import({PostgresTestContainerConfiguration.class, RedisTestContainerConfiguration.class,
+        MailpitTestConfiguration.class})
 @Tag("integration")
 public class CustomerServiceTest extends MockPasswordCheck {
 

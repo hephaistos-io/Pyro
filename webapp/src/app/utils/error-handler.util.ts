@@ -19,7 +19,19 @@ function isApiErrorResponse(obj: unknown): obj is ApiErrorResponse {
   return typeof obj === 'object' && obj !== null && ('code' in obj || 'message' in obj);
 }
 
-function getDefaultErrorMessage(context: 'login' | 'registration' | 'company' | 'profile' | 'application'): string {
+type ErrorContext =
+  'login'
+  | 'registration'
+  | 'company'
+  | 'profile'
+  | 'application'
+  | 'profile update'
+  | 'email change request'
+  | 'password reset request'
+  | 'email verification'
+  | 'password reset';
+
+function getDefaultErrorMessage(context: ErrorContext): string {
   switch (context) {
     case 'registration':
       return 'Registration failed. Please try again';
@@ -29,6 +41,16 @@ function getDefaultErrorMessage(context: 'login' | 'registration' | 'company' | 
       return 'Failed to load profile. Please try again';
     case 'application':
       return 'Failed to create application. Please try again';
+    case 'profile update':
+      return 'Failed to update profile. Please try again';
+    case 'email change request':
+      return 'Failed to request email change. Please try again';
+    case 'password reset request':
+      return 'Failed to request password reset. Please try again';
+    case 'email verification':
+      return 'Failed to verify email. Please try again';
+    case 'password reset':
+      return 'Failed to reset password. Please try again';
     default:
       return 'Login failed. Please try again';
   }
@@ -37,7 +59,7 @@ function getDefaultErrorMessage(context: 'login' | 'registration' | 'company' | 
 /**
  * Parse and handle API errors, returning user-friendly error messages
  */
-export function handleApiError(err: unknown, context: 'login' | 'registration' | 'company' | 'profile' | 'application' = 'login'): string {
+export function handleApiError(err: unknown, context: ErrorContext = 'login'): string {
   if (!isHttpErrorResponse(err)) {
     return getDefaultErrorMessage(context);
   }
@@ -66,6 +88,8 @@ export function handleApiError(err: unknown, context: 'login' | 'registration' |
         return 'This email is already registered';
       case 'BREACHED_PASSWORD':
         return message || 'This password has been found in data breaches. Please choose a different password.';
+      case 'EMAIL_NOT_VERIFIED':
+        return message || 'Please verify your email address before logging in';
       case 'VALIDATION_ERROR':
         return message || 'Validation error';
       case 'INTERNAL_ERROR':

@@ -109,7 +109,12 @@ export class RegisterComponent implements OnInit {
       // Handle success
       this.submitted.set(true);
       this.isLoading.set(false);
-      await this.router.navigate(['/login']);
+
+      // Invite-based registrations are pre-verified, redirect to login
+      // Standard registrations require email verification, stay on success message
+      if (this.isInviteFlow()) {
+        await this.router.navigate(['/login']);
+      }
     } catch (err: unknown) {
       // Handle error
       this.submitted.set(false);

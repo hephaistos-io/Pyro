@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>You're Invited to Join {{COMPANY_NAME}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:wght@600&display=swap"
+          rel="stylesheet">
+</head>
+<body style="font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #2D2D2D; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FAFAFA;">
+<div style="background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);">
+    <!-- Header with Logo -->
+    <div style="padding: 32px 40px; border-bottom: 1px solid #F5F3F1;">
+        <div style="display: inline-block;">
+            <div style="width: 28px; height: 28px; background: #C94C4C; border-radius: 6px; display: inline-block; vertical-align: middle; text-align: center;">
+                <svg fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                     style="width: 16px; height: 16px; margin-top: 6px;" viewBox="0 0 24 24">
+                    <path d="M4 3L4 21"/>
+                    <rect height="8" rx="4" width="14" x="7" y="5"/>
+                    <circle cx="17" cy="9" fill="#ffffff" r="2.5"/>
+                </svg>
+            </div>
+            <span style="font-family: 'Fraunces', Georgia, serif; font-size: 1.5rem; font-weight: 600; color: #C94C4C; margin-left: 8px; vertical-align: middle;">Flagforge</span>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 40px;">
+        <h2 style="font-family: 'Fraunces', Georgia, serif; font-size: 1.75rem; font-weight: 600; color: #2D2D2D; margin: 0 0 16px 0;">
+            You're Invited!</h2>
+        <p style="color: #4A4A4A; font-size: 1rem; margin: 0 0 24px 0;">You've been invited to join <strong>{{COMPANY_NAME}}</strong>
+            on Flagforge as a <strong>{{ROLE}}</strong>.</p>
+        <p style="color: #4A4A4A; font-size: 1rem; margin: 0 0 32px 0;">Click the button below to create your account
+            and get started:</p>
+
+        <div style="text-align: center; margin: 32px 0;">
+            <a href="{{ACTION_URL}}"
+               style="background: #C94C4C; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 0.95rem; display: inline-block;">Accept
+                Invitation</a>
+        </div>
+
+        <p style="color: #4A4A4A; font-size: 0.875rem; margin: 32px 0 8px 0;">If the button doesn't work, copy and paste
+            this link into your browser:</p>
+        <p style="color: #C94C4C; font-size: 0.875rem; word-break: break-all; margin: 0;">{{ACTION_URL}}</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background: #F5F3F1; padding: 24px 40px; border-top: 1px solid rgba(45, 45, 45, 0.1);">
+        <p style="color: #4A4A4A; font-size: 0.75rem; margin: 0; line-height: 1.6;">This invitation will expire in 7
+            days. If you didn't expect this invitation, you can safely ignore this email.</p>
+        <p style="color: #4A4A4A; font-size: 0.75rem; margin: 16px 0 0 0;">&copy; Flagforge &middot; <a
+                href="https://flagforge.dev" style="color: #C94C4C; text-decoration: none;">flagforge.dev</a></p>
+    </div>
+</div>
+</body>
+</html>

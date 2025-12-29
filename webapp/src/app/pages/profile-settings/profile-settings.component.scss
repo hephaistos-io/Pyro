@@ -1,0 +1,286 @@
+@use '../../../styles/index' as *;
+
+.profile-settings {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-header {
+  margin-bottom: 2.5rem;
+
+  h1 {
+    font-family: $font-serif;
+    font-size: 2rem;
+    color: $charcoal;
+    margin: 0 0 0.5rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  .profile-subtitle {
+    font-size: 1.1rem;
+    color: $charcoal-light;
+    margin: 0;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $charcoal-light;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $pyro-red;
+  }
+
+  @include dark-mode {
+    color: $dark-text-muted;
+
+    &:hover {
+      color: $pyro-red;
+    }
+  }
+}
+
+.settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-card {
+  background: $white;
+  border: 1px solid rgba($charcoal, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+  }
+
+  h2 {
+    font-family: $font-serif;
+    font-size: 1.25rem;
+    color: $charcoal;
+    margin: 0 0 0.25rem;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  .card-description {
+    font-size: 0.9rem;
+    color: $charcoal-light;
+    margin: 0 0 1.5rem;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}
+
+.settings-form {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba($charcoal, 0.15);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: $font-sans;
+    transition: border-color 0.2s, background 0.4s;
+    outline: none;
+
+    &:focus {
+      border-color: $pyro-red;
+    }
+
+    &::placeholder {
+      color: $charcoal-light;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    @include dark-mode {
+      background: rgba($white, 0.05);
+      border-color: $dark-border;
+      color: $dark-text;
+
+      &::placeholder {
+        color: $dark-text-muted;
+      }
+
+      &:focus {
+        border-color: $pyro-red;
+      }
+    }
+  }
+}
+
+.current-value {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba($charcoal, 0.03);
+  border-radius: 8px;
+
+  @include dark-mode {
+    background: rgba($white, 0.03);
+  }
+
+  .current-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+
+  .current-email {
+    font-size: 0.95rem;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+}
+
+.error-message {
+  color: $pyro-red;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  color: #22c55e;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+
+  @include dark-mode {
+    color: #4ade80;
+  }
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba($charcoal, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: $charcoal;
+  font-family: $font-sans;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba($charcoal, 0.05);
+    border-color: $charcoal;
+  }
+
+  @include dark-mode {
+    border-color: $dark-border;
+    color: $dark-text;
+
+    &:hover {
+      background: rgba($white, 0.05);
+      border-color: $dark-text-muted;
+    }
+  }
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+
+  &--dark {
+    border-color: rgba($charcoal, 0.2);
+    border-top-color: $charcoal;
+
+    @include dark-mode {
+      border-color: rgba($white, 0.2);
+      border-top-color: $dark-text;
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-settings {
+    padding: 1.5rem 1rem;
+  }
+
+  .profile-header h1 {
+    font-size: 1.5rem;
+  }
+}

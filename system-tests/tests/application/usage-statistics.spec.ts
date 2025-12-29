@@ -76,6 +76,9 @@ test.describe('Usage Statistics', () => {
         // Verify 15d button now has active class
         await expect(btn15d).toHaveClass(/active/);
 
+        // Wait for Angular to update the view after clicking
+        await sharedPage.waitForTimeout(300);
+
         // Verify the total label updates to show 15 days (only if stats grid is visible)
         const emptyState = sharedPage.locator('.usage-chart__empty');
         const hasEmptyState = await emptyState.isVisible();

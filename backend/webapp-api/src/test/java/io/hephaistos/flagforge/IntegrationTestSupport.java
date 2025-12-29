@@ -5,6 +5,8 @@ import io.hephaistos.flagforge.controller.dto.CompanyCreationRequest;
 import io.hephaistos.flagforge.controller.dto.CompanyResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerAuthenticationRequest;
 import io.hephaistos.flagforge.controller.dto.CustomerRegistrationRequest;
+import io.hephaistos.flagforge.data.repository.CustomerRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -48,6 +50,9 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
     protected int port;
 
     protected TestRestTemplate restTemplate;
+
+    @Autowired
+    protected CustomerRepository customerRepository;
 
     /**
      * Initialize the test support. Call this in your @BeforeEach method.
@@ -150,11 +155,24 @@ public abstract class IntegrationTestSupport extends MockPasswordCheck {
 
     /**
      * Register a user with custom credentials.
+     * Automatically verifies the email for test purposes.
      */
     protected void registerUser(String firstName, String lastName, String email, String password) {
         var registration =
                 CustomerRegistrationRequest.withEmail(firstName, lastName, email, password);
         restTemplate.postForEntity(getBaseUrl() + "/v1/auth/register", registration, Void.class);
+        // Verify email for test purposes
+        verifyEmailForTest(email);
+    }
+
+    /**
+     * Directly verify a user's email in the database for test purposes.
+     */
+    private void verifyEmailForTest(String email) {
+        customerRepository.findByEmail(email).ifPresent(customer -> {
+            customer.setEmailVerified(true);
+            customerRepository.save(customer);
+        });
     }
 
     /**

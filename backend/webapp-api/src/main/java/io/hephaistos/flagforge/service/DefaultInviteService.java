@@ -41,13 +41,16 @@ public class DefaultInviteService implements InviteService {
     private final CompanyInviteRepository companyInviteRepository;
     private final CompanyRepository companyRepository;
     private final ApplicationRepository applicationRepository;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public DefaultInviteService(CompanyInviteRepository companyInviteRepository,
-            CompanyRepository companyRepository, ApplicationRepository applicationRepository) {
+            CompanyRepository companyRepository, ApplicationRepository applicationRepository,
+            EmailService emailService) {
         this.companyInviteRepository = companyInviteRepository;
         this.companyRepository = companyRepository;
         this.applicationRepository = applicationRepository;
+        this.emailService = emailService;
     }
 
     @Override
@@ -94,7 +97,14 @@ public class DefaultInviteService implements InviteService {
         LOGGER.info("Created invite for email {} with role {} in company {}", request.email(),
                 request.role(), companyId);
 
-        return InviteCreationResponse.fromEntity(invite, baseUrl);
+        // Send invite email
+        var company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new NotFoundException("Company not found"));
+        String inviteUrl = baseUrl + "/register?invite=" + invite.getToken();
+        emailService.sendInviteEmail(invite.getEmail(), inviteUrl, company.getName(),
+                request.role().getDisplayName());
+
+        return InviteCreationResponse.fromEntity(invite);
     }
 
     @Override
@@ -189,7 +199,14 @@ public class DefaultInviteService implements InviteService {
         companyInviteRepository.save(invite);
         LOGGER.info("Regenerated invite {} for email {}", inviteId, invite.getEmail());
 
-        return InviteCreationResponse.fromEntity(invite, baseUrl);
+        // Send invite email
+        var company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new NotFoundException("Company not found"));
+        String inviteUrl = baseUrl + "/register?invite=" + invite.getToken();
+        emailService.sendInviteEmail(invite.getEmail(), inviteUrl, company.getName(),
+                invite.getAssignedRole().getDisplayName());
+
+        return InviteCreationResponse.fromEntity(invite);
     }
 
     @Override

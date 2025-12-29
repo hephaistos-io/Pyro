@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -29,8 +30,12 @@ import java.util.List;
 public class ApiSecurityConfiguration {
 
     private static final String[] WHITELIST_POST_ENDPOINTS =
-            {"/v1/auth/register", "/v1/auth/authenticate"};
-    private static final String[] WHITELIST_GET_ENDPOINTS = {"/v3/api-docs", "/v1/invite/**"};
+            {"/v1/auth/register", "/v1/auth/authenticate", "/v1/auth/verify-registration",
+                    "/v1/auth/resend-verification", "/v1/password-reset/request",
+                    "/v1/password-reset/reset", "/v1/email-verification/confirm"};
+    private static final String[] WHITELIST_GET_ENDPOINTS =
+            {"/v3/api-docs", "/v1/invite/**", "/v1/password-reset/validate",
+                    "/v1/email-verification/validate"};
 
     private final JwtOncePerRequestFilter jwtOncePerRequestFilter;
     private final String allowedOrigins;
@@ -49,7 +54,7 @@ public class ApiSecurityConfiguration {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers
                         // Prevent clickjacking attacks
-                        .frameOptions(frame -> frame.deny())
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                         // Prevent MIME type sniffing
                         .contentTypeOptions(Customizer.withDefaults())
                         // Enable XSS protection (legacy, but still useful for older browsers)

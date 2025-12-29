@@ -37,6 +37,7 @@ subprojects {
             implementation("io.lettuce:lettuce-core:6.5.2.RELEASE")
 
             implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.0")
+            implementation("org.springframework.boot:spring-boot-starter-mail:4.0.0")
             implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
             runtimeOnly("org.postgresql:postgresql:42.7.4")
 

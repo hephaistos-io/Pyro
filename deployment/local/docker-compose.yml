@@ -25,6 +25,24 @@ services:
     networks:
       - flagforge-network
 
+  # Mailpit for Email Testing
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: flagforge-mailpit
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8025/api/v1/info" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - flagforge-network
+
   # PostgreSQL Database
   postgres:
     image: postgres:18.1-alpine
@@ -60,10 +78,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${WEBAPP_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${WEBAPP_DB_PASSWORD}
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      APP_BASE_URL: http://localhost
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v3/api-docs" ]

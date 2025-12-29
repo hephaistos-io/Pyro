@@ -1,0 +1,75 @@
+<section class="verify-email">
+  <div class="verify-email-content">
+    @if (isValidating()) {
+      <div class="loading-state">
+        <div class="spinner-large"></div>
+        <p>Validating your verification link...</p>
+      </div>
+    } @else if (!isTokenValid()) {
+      <div class="error-state">
+        <div class="error-icon">
+          <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+            <path d="M16 16l16 16M32 16l-16 16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="3"/>
+          </svg>
+        </div>
+        <h1>Invalid or Expired Link</h1>
+        <p class="verify-email-text">
+          This email verification link is no longer valid. It may have expired or already been used.
+        </p>
+        <a class="btn btn-primary" routerLink="/login">Go to Login</a>
+      </div>
+    } @else if (isConfirmed()) {
+      <div class="success-state">
+        <div class="success-icon">
+          <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+            <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="3"/>
+          </svg>
+        </div>
+        <h1>Email Updated</h1>
+        <p class="verify-email-text">
+          Your email has been successfully changed to <strong>{{ newEmail() }}</strong>.
+          Please log in with your new email address.
+        </p>
+        <button (click)="goToLogin()" class="btn btn-primary" type="button">
+          Log In
+        </button>
+      </div>
+    } @else {
+      <div class="confirm-state">
+        <div class="email-icon">
+          <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+            <path d="M14 18l10 7 10-7M14 18v12h20V18H14z" stroke="currentColor" stroke-linecap="round"
+                  stroke-linejoin="round" stroke-width="2"/>
+          </svg>
+        </div>
+        <h1>Confirm Email Change</h1>
+        <p class="verify-email-text">
+          Click the button below to change your email address to <strong>{{ newEmail() }}</strong>.
+        </p>
+
+        @if (error()) {
+          <div class="error-message">{{ error() }}</div>
+        }
+
+        <button
+          (click)="confirmChange()"
+          [disabled]="isConfirming()"
+          class="btn btn-primary btn-confirm"
+          type="button"
+        >
+          @if (isConfirming()) {
+            <span class="spinner"></span>
+            <span>Confirming...</span>
+          } @else {
+            <span>Confirm Email Change</span>
+          }
+        </button>
+      </div>
+    }
+  </div>
+</section>

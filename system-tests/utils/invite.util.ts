@@ -1,5 +1,6 @@
 import {expect, Page} from '@playwright/test';
 import {DEFAULT_PASSWORD} from './test-data.util';
+import {clearMailbox, getInviteLink} from './mailpit.util';
 
 export type InviteRole = 'Admin' | 'Developer' | 'Viewer';
 
@@ -9,7 +10,7 @@ export interface CreateInviteOptions {
 }
 
 /**
- * Creates an invite via the UI and returns the invite URL
+ * Creates an invite via the UI and returns the invite URL from the email
  */
 export async function createInvite(
     page: Page,
@@ -17,6 +18,9 @@ export async function createInvite(
     role: InviteRole = 'Developer',
     options: CreateInviteOptions = {}
 ): Promise<string> {
+    // Clear mailbox before creating invite
+    await clearMailbox();
+
     // Click the invite button
     await page.getByRole('button', {name: '+ Invite User'}).click();
 
@@ -40,17 +44,14 @@ export async function createInvite(
     await page.getByRole('button', {name: 'Send Invitation'}).click();
 
     // Wait for success state
-    await expect(page.getByText('Invitation Created!')).toBeVisible();
-
-    // Get the invite URL
-    const urlInput = page.locator('input.invite-url-input');
-    const inviteUrl = await urlInput.inputValue();
+    await expect(page.getByText('Invitation Sent!')).toBeVisible();
 
     // Close the success overlay
     await page.getByRole('button', {name: 'Done'}).click();
-    await expect(page.getByText('Invitation Created!')).not.toBeVisible();
+    await expect(page.getByText('Invitation Sent!')).not.toBeVisible();
 
-    return inviteUrl;
+    // Get the invite URL from the email
+    return await getInviteLink(email);
 }
 
 /**
@@ -61,7 +62,27 @@ export async function createInviteSimple(
     email: string,
     role: InviteRole = 'Developer'
 ): Promise<void> {
-    await createInvite(page, email, role);
+    // Click the invite button
+    await page.getByRole('button', {name: '+ Invite User'}).click();
+
+    // Wait for the invite form
+    await expect(page.getByLabel('Email')).toBeVisible();
+
+    // Fill the form
+    await page.getByLabel('Email Address').fill(email);
+
+    // Select role using radio button
+    await page.getByRole('radio', {name: new RegExp(role, 'i')}).click();
+
+    // Submit the invite
+    await page.getByRole('button', {name: 'Send Invitation'}).click();
+
+    // Wait for success state
+    await expect(page.getByText('Invitation Sent!')).toBeVisible();
+
+    // Close the success overlay
+    await page.getByRole('button', {name: 'Done'}).click();
+    await expect(page.getByText('Invitation Sent!')).not.toBeVisible();
 }
 
 /**
@@ -99,20 +120,21 @@ export async function completeInviteRegistration(
 
 /**
  * Gets an invite URL by regenerating the invite from the users table
+ * The URL is retrieved from the email sent by the backend
  */
 export async function getInviteUrl(page: Page, invitedEmail: string): Promise<string> {
+    // Clear mailbox before regenerating
+    await clearMailbox();
+
     const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
     await inviteRow.locator('.btn-regenerate-user').click();
 
     // Wait for regenerate overlay to appear
-    await expect(page.getByText('Invite Regenerated')).toBeVisible();
-
-    // Get the invite URL from the input field
-    const urlInput = page.locator('input.invite-url-input');
-    const inviteUrl = await urlInput.inputValue();
+    await expect(page.getByText('Invite Resent')).toBeVisible();
 
     // Close the overlay
     await page.getByRole('button', {name: 'Done'}).click();
 
-    return inviteUrl;
+    // Get the invite URL from the email
+    return await getInviteLink(invitedEmail);
 }

@@ -3,10 +3,13 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.exception.BreachedPasswordException;
 import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
+import io.hephaistos.flagforge.exception.EmailNotVerifiedException;
 import io.hephaistos.flagforge.exception.InvalidInviteException;
+import io.hephaistos.flagforge.exception.InvalidTokenException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.exception.OperationNotAllowedException;
+import io.hephaistos.flagforge.exception.RateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -128,6 +131,27 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Invalid invite: {} (reason: {})", ex.getMessage(), ex.getReason());
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse("INVALID_INVITE", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidToken(InvalidTokenException ex) {
+        LOGGER.warn("Invalid token: {}", ex.getMessage());
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse("INVALID_TOKEN", ex.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex) {
+        LOGGER.warn("Rate limit exceeded: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse("RATE_LIMIT_EXCEEDED", ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        LOGGER.warn("Email not verified: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse("EMAIL_NOT_VERIFIED", ex.getMessage()));
     }
 
     @ExceptionHandler(AsyncRequestNotUsableException.class)

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Optional;
 
 import static java.util.Objects.isNull;
@@ -41,9 +42,10 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        extractJwtToken(request).filter(jwtService::validateToken)
-                .map(jwtService::decomposeToken)
-                .ifPresent(email -> updateSecurityContext(email, request));
+        extractJwtToken(request).filter(jwtService::validateToken).ifPresent(token -> {
+            String email = jwtService.decomposeToken(token);
+            updateSecurityContext(email, token, request);
+        });
 
         filterChain.doFilter(request, response);
     }
@@ -64,11 +66,18 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
      * Updates the security context for the currently logged in user. Using the email provided, we
      * fetch the user as well as any details that are relevant for multi-tenancy filtering.
      */
-    private void updateSecurityContext(String email, HttpServletRequest request) {
+    private void updateSecurityContext(String email, String token, HttpServletRequest request) {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (isNull(authentication) || !email.equals(authentication.getName())) {
             var userDetails = (FlagForgeUserDetails) userDetailsService.loadUserByUsername(email);
+
+            // Check if token was issued before password was changed
+            if (isTokenInvalidatedByPasswordChange(token, userDetails)) {
+                LOGGER.info("Token invalidated due to password change for user: {}", email);
+                return; // Don't authenticate - token is no longer valid
+            }
+
             var newAuthorization = new UsernamePasswordAuthenticationToken(userDetails, null,
                     userDetails.getAuthorities());
             newAuthorization.setDetails(new WebAuthenticationDetails(request));
@@ -85,5 +94,20 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
         else {
             LOGGER.info("Authentication not required, already so");
         }
+    }
+
+    /**
+     * Checks if the JWT token was issued before the user's password was changed. If so, the token
+     * should be considered invalid.
+     */
+    private boolean isTokenInvalidatedByPasswordChange(String token,
+            FlagForgeUserDetails userDetails) {
+        Instant passwordChangedAt = userDetails.getPasswordChangedAt();
+        if (passwordChangedAt == null) {
+            return false; // Password has never been changed, token is valid
+        }
+
+        Instant tokenIssuedAt = jwtService.getTokenIssuedAt(token);
+        return tokenIssuedAt.isBefore(passwordChangedAt);
     }
 }

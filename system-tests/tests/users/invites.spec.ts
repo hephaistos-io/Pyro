@@ -225,7 +225,7 @@ test.describe('Invite Display in Users Table', () => {
 });
 
 test.describe('Invite Regenerate and Delete', () => {
-    test('regenerate invite shows new link with 7-day expiration', async ({page}) => {
+    test('regenerate invite sends new email and shows success message', async ({page}) => {
         const adminEmail = uniqueEmail('admin');
         const invitedEmail = uniqueEmail('invited');
 
@@ -249,64 +249,16 @@ test.describe('Invite Regenerate and Delete', () => {
         await regenerateButton.click();
 
         // Verify the regenerate success overlay appears
-        await expect(page.getByRole('heading', {name: 'Invite Regenerated'})).toBeVisible();
-        await expect(page.getByText(`A new invitation link has been created for`)).toBeVisible();
+        await expect(page.getByRole('heading', {name: 'Invite Resent'})).toBeVisible();
+        await expect(page.getByText(`A new invitation email has been sent to`)).toBeVisible();
         await expect(page.getByRole('strong')).toContainText(invitedEmail);
 
-        // Verify the invite URL input is present
-        const urlInput = page.locator('input.invite-url-input');
-        await expect(urlInput).toBeVisible();
-        const inviteUrl = await urlInput.inputValue();
-        expect(inviteUrl).toContain('/register?invite=');
-
         // Verify expiration notice
-        await expect(page.getByText('This link expires in 7 days')).toBeVisible();
+        await expect(page.getByText('This invitation expires in 7 days')).toBeVisible();
 
         // Close the overlay
         await page.getByRole('button', {name: 'Done'}).click();
-        await expect(page.getByText('Invite Regenerated')).not.toBeVisible();
-    });
-
-    test('regenerate invite copy button works', async ({page, context, browserName}) => {
-        const adminEmail = uniqueEmail('admin');
-        const invitedEmail = uniqueEmail('invited');
-
-        // Grant clipboard permissions (only supported in Chromium via Playwright API)
-        if (browserName === 'chromium') {
-            await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-        }
-
-        // Setup
-        await registerUser(page, adminEmail, 'Admin', 'User');
-        await loginUser(page, adminEmail);
-        await createCompany(page, 'Test Company');
-        await navigateToUsersTab(page);
-        await createInviteSimple(page, invitedEmail);
-        await page.waitForTimeout(1000);
-
-        // Regenerate the invite
-        const inviteRow = getUserRow(page, invitedEmail);
-        await inviteRow.locator('.btn-regenerate-user').click();
-        await expect(page.getByText('Invite Regenerated')).toBeVisible();
-
-        // Get the URL before copying
-        const urlInput = page.locator('input.invite-url-input');
-        const inviteUrl = await urlInput.inputValue();
-
-        // Click copy button
-        await page.getByRole('button', {name: 'Copy'}).click();
-
-        // Verify "Copied!" feedback appears
-        await expect(page.getByRole('button', {name: 'Copied!'})).toBeVisible();
-
-        // Verify clipboard contains the URL (only in Chromium where we can read clipboard)
-        if (browserName === 'chromium') {
-            const clipboardText = await page.evaluate(() => navigator.clipboard.readText());
-            expect(clipboardText).toBe(inviteUrl);
-        }
-
-        // Close the overlay
-        await page.getByRole('button', {name: 'Done'}).click();
+        await expect(page.getByText('Invite Resent')).not.toBeVisible();
     });
 
     test('delete invite removes it from the table', async ({page}) => {

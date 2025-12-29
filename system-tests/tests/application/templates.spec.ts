@@ -383,7 +383,7 @@ test.describe('Tab Navigation', () => {
         await setupUserWithApplication(page);
 
         // Should start on Overview tab
-        await expect(page.locator('.overview-cards')).toBeVisible();
+        await expect(page.locator('.overview-layout')).toBeVisible();
 
         // Navigate to Template
         await page.getByRole('button', {name: 'Template'}).click();
@@ -395,7 +395,7 @@ test.describe('Tab Navigation', () => {
 
         // Navigate back to Overview
         await page.getByRole('button', {name: 'Overview'}).click();
-        await expect(page.locator('.overview-cards')).toBeVisible();
+        await expect(page.locator('.overview-layout')).toBeVisible();
     });
 });
 

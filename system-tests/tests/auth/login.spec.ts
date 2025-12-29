@@ -1,4 +1,5 @@
 import {expect, test} from '@playwright/test';
+import {loginUser, registerUser} from '../../utils';
 
 test.describe('User Login', () => {
     test.beforeEach(async ({page}) => {
@@ -56,30 +57,16 @@ test.describe('User Login', () => {
     });
 
     test('successful login redirects to dashboard', async ({page}) => {
-        // First register a new user with truly unique email
+        // Register a new user (includes email verification)
         const uniqueEmail = `login-test-${Date.now()}-${crypto.randomUUID()}@example.com`;
         const password = 'SecurePassword123!@#';
 
-        await page.goto('/register');
-        await page.getByLabel('First Name').fill('Test');
-        await page.getByLabel('Last Name').fill('User');
-        await page.getByLabel('Email').fill(uniqueEmail);
-        await page.getByLabel('Password', {exact: true}).fill(password);
-        await page.getByLabel('Confirm Password').fill(password);
-        await page.getByRole('button', {name: 'Create Account'}).click();
+        await registerUser(page, uniqueEmail, 'Test', 'User', password);
 
-        // Wait for redirect to login page after registration
-        await expect(page).toHaveURL('/login');
+        // Now log in with the newly created and verified user
+        await loginUser(page, uniqueEmail, password);
 
-        // Wait for the login form to be ready
-        await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
-
-        // Now log in with the newly created user
-        await page.getByLabel('Email').fill(uniqueEmail);
-        await page.getByLabel('Password').fill(password);
-        await page.getByRole('button', {name: 'Log In'}).click();
-
-        // Verify redirect to dashboard
+        // Verify we're on the dashboard
         await expect(page).toHaveURL('/dashboard');
     });
 });

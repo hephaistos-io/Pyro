@@ -11,9 +11,22 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(enumAsRef = true)
 public enum CustomerRole {
-    READ_ONLY,
-    DEV,
-    ADMIN;
+    READ_ONLY("Viewer"),
+    DEV("Developer"),
+    ADMIN("Admin");
+
+    private final String displayName;
+
+    CustomerRole(String displayName) {
+        this.displayName = displayName;
+    }
+
+    /**
+     * Returns a user-friendly display name for this role.
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
 
     /**
      * Returns the Spring Security authority string for this role. Spring Security expects the ROLE_

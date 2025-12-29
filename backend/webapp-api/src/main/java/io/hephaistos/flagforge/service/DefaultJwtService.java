@@ -67,4 +67,14 @@ public class DefaultJwtService implements JwtService {
         }
     }
 
+    @Override
+    public Instant getTokenIssuedAt(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getIssuedAt()
+                .toInstant();
+    }
 }

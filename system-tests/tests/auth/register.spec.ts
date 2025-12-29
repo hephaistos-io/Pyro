@@ -1,4 +1,5 @@
 import {expect, test} from '@playwright/test';
+import {getRegistrationVerificationLink} from '../../utils/mailpit.util';
 
 test.describe('User Registration', () => {
     test.beforeEach(async ({page}) => {
@@ -64,7 +65,7 @@ test.describe('User Registration', () => {
         await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
     });
 
-    test('successful registration redirects to login', async ({page}) => {
+    test('successful registration shows email verification message', async ({page}) => {
         // Generate truly unique email to avoid conflicts in parallel tests
         const uniqueEmail = `test-${Date.now()}-${crypto.randomUUID()}@example.com`;
 
@@ -76,7 +77,79 @@ test.describe('User Registration', () => {
 
         await page.getByRole('button', {name: 'Create Account'}).click();
 
-        // Wait for redirect to login page
+        // Should show success message with email verification instructions
+        await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();
+        await expect(page.getByText('We\'ve sent a verification link to')).toBeVisible();
+        await expect(page.getByText(uniqueEmail)).toBeVisible();
+
+        // Should have a link to go to login
+        await expect(page.getByRole('link', {name: 'Go to Login'})).toBeVisible();
+    });
+
+    test('unverified user cannot login', async ({page}) => {
+        // Generate unique email for this test
+        const uniqueEmail = `unverified-${Date.now()}-${crypto.randomUUID()}@example.com`;
+        const password = 'SecurePassword123!@#';
+
+        // Register
+        await page.getByLabel('First Name').fill('Unverified');
+        await page.getByLabel('Last Name').fill('User');
+        await page.getByLabel('Email').fill(uniqueEmail);
+        await page.getByLabel('Password', {exact: true}).fill(password);
+        await page.getByLabel('Confirm Password').fill(password);
+        await page.getByRole('button', {name: 'Create Account'}).click();
+
+        // Wait for success message
+        await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();
+
+        // Go to login
+        await page.goto('/login');
+
+        // Try to login
+        await page.getByLabel('Email').fill(uniqueEmail);
+        await page.getByLabel('Password').fill(password);
+        await page.getByRole('button', {name: 'Log In'}).click();
+
+        // Should show email not verified error
+        await expect(page.getByText('Please verify your email address before logging in')).toBeVisible();
+    });
+
+    test('complete email verification flow', async ({page}) => {
+        // Generate unique email for this test
+        const uniqueEmail = `verify-${Date.now()}-${crypto.randomUUID()}@example.com`;
+        const password = 'SecurePassword123!@#';
+
+        // Register
+        await page.getByLabel('First Name').fill('Verified');
+        await page.getByLabel('Last Name').fill('User');
+        await page.getByLabel('Email').fill(uniqueEmail);
+        await page.getByLabel('Password', {exact: true}).fill(password);
+        await page.getByLabel('Confirm Password').fill(password);
+        await page.getByRole('button', {name: 'Create Account'}).click();
+
+        // Wait for success message
+        await expect(page.getByRole('heading', {name: 'Check your email'})).toBeVisible();
+
+        // Get verification link from email
+        const verificationUrl = await getRegistrationVerificationLink(uniqueEmail);
+
+        // Visit the verification URL
+        await page.goto(verificationUrl);
+
+        // Should show success message
+        await expect(page.getByRole('heading', {name: 'Email Verified!'})).toBeVisible();
+        await expect(page.getByText('Your email has been verified successfully')).toBeVisible();
+
+        // Click go to login
+        await page.getByRole('button', {name: 'Go to Login'}).click();
         await expect(page).toHaveURL('/login');
+
+        // Login should now work
+        await page.getByLabel('Email').fill(uniqueEmail);
+        await page.getByLabel('Password').fill(password);
+        await page.getByRole('button', {name: 'Log In'}).click();
+
+        // Should be redirected to dashboard (company creation flow)
+        await expect(page).toHaveURL(/\/(dashboard|register)/);
     });
 });

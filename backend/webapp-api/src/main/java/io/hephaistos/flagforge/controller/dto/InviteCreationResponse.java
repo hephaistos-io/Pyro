@@ -7,12 +7,11 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
-public record InviteCreationResponse(UUID id, String token, String email, String inviteUrl,
-                                     CustomerRole role, Set<UUID> applicationIds,
-                                     Instant expiresAt) {
-    public static InviteCreationResponse fromEntity(CompanyInviteEntity entity, String baseUrl) {
-        return new InviteCreationResponse(entity.getId(), entity.getToken(), entity.getEmail(),
-                baseUrl + "/register?invite=" + entity.getToken(), entity.getAssignedRole(),
-                entity.getPreAssignedApplicationIds(), entity.getExpiresAt());
+public record InviteCreationResponse(UUID id, String email, CustomerRole role,
+                                     Set<UUID> applicationIds, Instant expiresAt) {
+    public static InviteCreationResponse fromEntity(CompanyInviteEntity entity) {
+        return new InviteCreationResponse(entity.getId(), entity.getEmail(),
+                entity.getAssignedRole(), entity.getPreAssignedApplicationIds(),
+                entity.getExpiresAt());
     }
 }
