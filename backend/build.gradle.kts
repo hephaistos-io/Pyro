@@ -63,4 +63,29 @@ subprojects {
             excludeTags("architecture")
         }
     }
+
+    tasks.register<Test>("unitTest") {
+        description = "Run unit tests only (fast, no containers needed)"
+        group = "verification"
+        testClassesDirs = sourceSets["test"].output.classesDirs
+        classpath = sourceSets["test"].runtimeClasspath
+        useJUnitPlatform {
+            includeTags("unit")
+        }
+    }
+
+    tasks.register<Test>("integrationTest") {
+        description = "Run integration tests (requires testcontainers)"
+        group = "verification"
+        testClassesDirs = sourceSets["test"].output.classesDirs
+        classpath = sourceSets["test"].runtimeClasspath
+        useJUnitPlatform {
+            includeTags("integration")
+        }
+    }
+}
+
+// Make backend:test run all subproject tests
+tasks.named("test") {
+    dependsOn(subprojects.map { it.tasks.named("test") })
 }

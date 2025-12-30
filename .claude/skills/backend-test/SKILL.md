@@ -13,7 +13,8 @@ This Skill runs backend tests to verify functionality and architecture complianc
 1. From the project root, run these commands:
    - `./gradlew backend:build` - verify everything builds
    - `./gradlew backend:architectureTest` - Verify architecture rules
-   - `./gradlew backend:test` - Run all backend unit tests
+   - `./gradlew backend:unitTest` - Run all backend unit tests
+   - `./gradlew backend:integrationTest` - Run all backend integration tests
 
 ## When to use
 

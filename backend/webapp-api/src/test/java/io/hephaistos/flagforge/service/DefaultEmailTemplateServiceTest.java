@@ -73,7 +73,7 @@ class DefaultEmailTemplateServiceTest {
                 Map.of("ACTION_URL", "https://example.com"));
 
         assertThat(result).contains("<!DOCTYPE html>");
-        assertThat(result).contains("<html>");
+        assertThat(result).contains("<html lang=\"en\">");
         assertThat(result).contains("</html>");
     }
 
