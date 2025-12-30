@@ -30,3 +30,11 @@ tasks.register<Exec>("bootRun") {
     "ng serve"
   )
 }
+
+tasks.register<Exec>("npmBuild") {
+  group = "build"
+  description = "Build the Angular webapp for production"
+
+  workingDir = file("${project.projectDir}")
+  commandLine("bash", "-c", "npm run build")
+}

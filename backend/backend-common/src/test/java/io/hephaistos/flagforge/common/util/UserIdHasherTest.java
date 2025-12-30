@@ -1,11 +1,13 @@
 package io.hephaistos.flagforge.common.util;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Tag("unit")
 class UserIdHasherTest {
 
     @Test

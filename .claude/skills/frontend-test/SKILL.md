@@ -11,7 +11,7 @@ This Skill runs end-to-end system tests using Playwright to verify the Angular w
 ## Instructions
 
 1. Build the frontend:
-   - From the `/webapp` folder in the project root, run `npm build`
+   - From the `/webapp` folder in the project root, run `./gradlew webapp:npmBuild`
    - Fix any build issues
 
 2. Run tests from project root:
