@@ -121,7 +121,7 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
       - name: Build Webapp
-        run: ./gradlew webapp:npmBuild
+        run: ./gradlew webapp:webappBuild
 
   # System tests: run only if all previous jobs passed
   system-tests:

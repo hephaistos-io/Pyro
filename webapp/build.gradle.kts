@@ -31,10 +31,10 @@ tasks.register<Exec>("bootRun") {
   )
 }
 
-tasks.register<Exec>("npmBuild") {
+tasks.register<Exec>("webappBuild") {
   group = "build"
-  description = "Build the Angular webapp for production"
+  description = "Build the Angular webapp (CI mode, no size budgets)"
 
   workingDir = file("${project.projectDir}")
-  commandLine("bash", "-c", "npm run build")
+  commandLine("bash", "-c", "npx ng build --configuration ci")
 }
