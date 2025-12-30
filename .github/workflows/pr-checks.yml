@@ -36,6 +36,7 @@ jobs:
           # Check for backend changes
           if echo "$CHANGED_FILES" | grep -q "^backend/"; then
             echo "backend=true" >> $GITHUB_OUTPUT
+            echo "Backend changes detected"
           else
             echo "backend=false" >> $GITHUB_OUTPUT
           fi
@@ -43,6 +44,7 @@ jobs:
           # Check for webapp changes
           if echo "$CHANGED_FILES" | grep -q "^webapp/"; then
             echo "webapp=true" >> $GITHUB_OUTPUT
+            echo "Webapp changes detected"
           else
             echo "webapp=false" >> $GITHUB_OUTPUT
           fi
