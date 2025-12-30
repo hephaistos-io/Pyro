@@ -84,3 +84,8 @@ subprojects {
         }
     }
 }
+
+// Make backend:test run all subproject tests
+tasks.named("test") {
+    dependsOn(subprojects.map { it.tasks.named("test") })
+}
