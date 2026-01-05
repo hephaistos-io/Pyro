@@ -1,5 +1,6 @@
 import {Component, computed, inject, OnInit, signal} from '@angular/core';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
+import {CommonModule, Location} from '@angular/common';
 import {OnboardingOverlayComponent} from '../../components/onboarding-overlay/onboarding-overlay.component';
 import {FormOverlayComponent} from '../../components/form-overlay/form-overlay.component';
 import {CompanyCreationFormComponent} from '../../components/company-creation-form/company-creation-form.component';
@@ -11,20 +12,22 @@ import {UserEditFormComponent} from '../../components/user-edit-form/user-edit-f
 import {AppCardComponent} from '../../components/app-card/app-card.component';
 import {UsersTableComponent} from '../../components/users-table/users-table.component';
 import {PricingStatisticsComponent} from '../../components/pricing-statistics/pricing-statistics.component';
+import {BillingTabComponent} from '../../components/billing-tab/billing-tab.component';
 import {CustomerService} from '../../services/customer.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
 import {ApplicationListResponse, ApplicationResponse, CompanyResponse, CustomerRole} from '../../api/generated/models';
 import {User, UsersService} from '../../services/users.service';
-import {CommonModule} from '@angular/common';
 import {HasRoleDirective} from '../../directives/has-role.directive';
 
 const SUCCESS_MESSAGE_DURATION_MS = 2000;
 
+export type DashboardTab = 'applications' | 'users' | 'billing';
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent, PricingStatisticsComponent, HasRoleDirective],
+  imports: [CommonModule, OnboardingOverlayComponent, FormOverlayComponent, CompanyCreationFormComponent, ApplicationCreationFormComponent, UserCreationFormComponent, UserEditFormComponent, AppCardComponent, UsersTableComponent, PricingStatisticsComponent, BillingTabComponent, HasRoleDirective],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -33,6 +36,8 @@ export class DashboardComponent implements OnInit {
 
   private customerService = inject(CustomerService);
   private router = inject(Router);
+  activeTab = signal<DashboardTab>('applications');
+  private location = inject(Location);
   showApplicationCreation = signal(false);
   showUserCreation = signal(false);
   userToEdit = signal<User | null>(null);
@@ -41,7 +46,7 @@ export class DashboardComponent implements OnInit {
   showSuccessMessage = signal(false);
   applications = signal<ApplicationListResponse[]>([]);
   private api = inject(Api);
-  activeTab = signal<'applications' | 'users'>('applications');
+  private route = inject(ActivatedRoute);
 
   showCompanyOnboarding = computed(() =>
     !this.customerService.isProfileLoading() && !this.customerService.hasCompany()
@@ -69,6 +74,12 @@ export class DashboardComponent implements OnInit {
   companyName = computed(() => this.customerService.customerCompany()?.name ?? '');
 
   async ngOnInit(): Promise<void> {
+    // Read initial tab from route data
+    const tabFromRoute = this.route.snapshot.data['tab'] as DashboardTab | undefined;
+    if (tabFromRoute) {
+      this.activeTab.set(tabFromRoute);
+    }
+
     await this.customerService.fetchProfile();
     if (this.customerService.hasCompany()) {
       await this.fetchApplications();
@@ -105,8 +116,11 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  setActiveTab(tab: 'applications' | 'users'): void {
+  setActiveTab(tab: DashboardTab): void {
     this.activeTab.set(tab);
+    // Update URL without triggering navigation/reload
+    const path = tab === 'applications' ? '/dashboard' : `/dashboard/${tab}`;
+    this.location.replaceState(path);
   }
 
   onAddUserClick(): void {

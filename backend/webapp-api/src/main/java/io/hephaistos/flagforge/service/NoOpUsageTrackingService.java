@@ -15,7 +15,8 @@ import java.util.UUID;
  * generation).
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false")
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false",
+        matchIfMissing = true)
 public class NoOpUsageTrackingService implements UsageTrackingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NoOpUsageTrackingService.class);

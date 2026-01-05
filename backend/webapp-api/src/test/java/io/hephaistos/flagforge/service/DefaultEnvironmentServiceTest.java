@@ -48,23 +48,29 @@ class DefaultEnvironmentServiceTest {
     @Mock
     private CacheInvalidationPublisher cacheInvalidationPublisher;
 
+    @Mock
+    private StripeService stripeService;
+
     private DefaultEnvironmentService environmentService;
 
     private UUID testApplicationId;
+    private UUID testCompanyId;
 
     @BeforeEach
     void setUp() {
         environmentService =
                 new DefaultEnvironmentService(environmentRepository, applicationRepository,
-                        apiKeyService, redisCleanupService, cacheInvalidationPublisher);
+                        apiKeyService, redisCleanupService, cacheInvalidationPublisher,
+                        stripeService);
         testApplicationId = UUID.randomUUID();
+        testCompanyId = UUID.randomUUID();
     }
 
     // ========== Create Environment Tests ==========
 
     @Test
     void createEnvironmentCreatesReadAndWriteApiKeys() {
-        var request = new EnvironmentCreationRequest("Production", "Prod env");
+        var request = new EnvironmentCreationRequest("Production", "Prod env", PricingTier.BASIC);
         var application = createApplicationEntity(testApplicationId);
         UUID environmentId = UUID.randomUUID();
 
@@ -86,7 +92,8 @@ class DefaultEnvironmentServiceTest {
 
     @Test
     void createEnvironmentReturnsCorrectResponse() {
-        var request = new EnvironmentCreationRequest("Staging", "Staging environment");
+        var request =
+                new EnvironmentCreationRequest("Staging", "Staging environment", PricingTier.BASIC);
         var application = createApplicationEntity(testApplicationId);
         UUID environmentId = UUID.randomUUID();
 
@@ -110,7 +117,7 @@ class DefaultEnvironmentServiceTest {
 
     @Test
     void createEnvironmentThrowsDuplicateResourceExceptionForExistingName() {
-        var request = new EnvironmentCreationRequest("Production", "Prod");
+        var request = new EnvironmentCreationRequest("Production", "Prod", PricingTier.BASIC);
         var application = createApplicationEntity(testApplicationId);
 
         when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
@@ -127,7 +134,7 @@ class DefaultEnvironmentServiceTest {
 
     @Test
     void createEnvironmentThrowsNotFoundExceptionForNonExistentApplication() {
-        var request = new EnvironmentCreationRequest("Production", "Prod");
+        var request = new EnvironmentCreationRequest("Production", "Prod", PricingTier.BASIC);
 
         when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
                 Optional.empty());
@@ -270,16 +277,20 @@ class DefaultEnvironmentServiceTest {
     // ========== Delete Environment Tests ==========
 
     @Test
-    void deleteEnvironmentSucceedsForBasicTier() {
+    void deleteEnvironmentSucceedsForBasicTierAndCleansUpSubscription() {
         UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
         var environment =
                 createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
 
-        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
 
         environmentService.deleteEnvironment(testApplicationId, environmentId);
 
+        // Verify subscription item is removed for paid tier
+        verify(stripeService).removeSubscriptionItem(testCompanyId, environmentId);
         verify(environmentRepository).deleteById(environmentId);
         verify(redisCleanupService).cleanupEnvironmentKeys(environmentId);
         verify(cacheInvalidationPublisher).publishEnvironmentDeleted(testApplicationId,
@@ -287,27 +298,69 @@ class DefaultEnvironmentServiceTest {
     }
 
     @Test
-    void deleteEnvironmentSucceedsForFreeTier() {
+    void deleteEnvironmentSucceedsForFreeTierWithoutSubscriptionCleanup() {
         UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
         var environment =
                 createEnvironmentEntity(environmentId, testApplicationId, PricingTier.FREE);
 
-        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
 
         environmentService.deleteEnvironment(testApplicationId, environmentId);
 
+        // Verify subscription item is NOT removed for free tier
+        verify(stripeService, never()).removeSubscriptionItem(any(), any());
         verify(environmentRepository).deleteById(environmentId);
         verify(redisCleanupService).cleanupEnvironmentKeys(environmentId);
         verify(cacheInvalidationPublisher).publishEnvironmentDeleted(testApplicationId,
                 environmentId);
+    }
+
+    @Test
+    void deleteEnvironmentCleansUpSubscriptionForProTier() {
+        UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.PRO);
+
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+
+        environmentService.deleteEnvironment(testApplicationId, environmentId);
+
+        // Verify subscription item is removed for PRO tier
+        verify(stripeService).removeSubscriptionItem(testCompanyId, environmentId);
+        verify(environmentRepository).deleteById(environmentId);
+    }
+
+    @Test
+    void deleteEnvironmentCleansUpSubscriptionForBusinessTier() {
+        UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BUSINESS);
+
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+
+        environmentService.deleteEnvironment(testApplicationId, environmentId);
+
+        // Verify subscription item is removed for BUSINESS tier
+        verify(stripeService).removeSubscriptionItem(testCompanyId, environmentId);
+        verify(environmentRepository).deleteById(environmentId);
     }
 
     @Test
     void deleteEnvironmentThrowsNotFoundExceptionForNonExistentEnvironment() {
         UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
 
-        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> environmentService.deleteEnvironment(testApplicationId,
@@ -319,19 +372,37 @@ class DefaultEnvironmentServiceTest {
     void deleteEnvironmentThrowsNotFoundExceptionForEnvironmentInDifferentApplication() {
         UUID environmentId = UUID.randomUUID();
         UUID differentApplicationId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
         var environment =
                 createEnvironmentEntity(environmentId, differentApplicationId, PricingTier.BASIC);
 
-        when(applicationRepository.existsByIdFiltered(testApplicationId)).thenReturn(true);
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
         when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
 
         assertThatThrownBy(() -> environmentService.deleteEnvironment(testApplicationId,
                 environmentId)).isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Environment not found");
 
+        verify(stripeService, never()).removeSubscriptionItem(any(), any());
         verify(environmentRepository, never()).deleteById(any());
         verify(redisCleanupService, never()).cleanupEnvironmentKeys(any());
         verify(cacheInvalidationPublisher, never()).publishEnvironmentDeleted(any(), any());
+    }
+
+    @Test
+    void deleteEnvironmentThrowsNotFoundExceptionForNonExistentApplication() {
+        UUID environmentId = UUID.randomUUID();
+
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.empty());
+
+        assertThatThrownBy(() -> environmentService.deleteEnvironment(testApplicationId,
+                environmentId)).isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Application not found");
+
+        verify(stripeService, never()).removeSubscriptionItem(any(), any());
+        verify(environmentRepository, never()).deleteById(any());
     }
 
     // ========== Update Environment Tests ==========
@@ -450,7 +521,7 @@ class DefaultEnvironmentServiceTest {
         var entity = new ApplicationEntity();
         entity.setId(id);
         entity.setName("Test App");
-        entity.setCompanyId(UUID.randomUUID());
+        entity.setCompanyId(testCompanyId);
         return entity;
     }
 

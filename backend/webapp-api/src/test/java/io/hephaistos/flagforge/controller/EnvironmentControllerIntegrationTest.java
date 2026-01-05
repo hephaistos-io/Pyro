@@ -4,16 +4,23 @@ import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.RedisTestContainerConfiguration;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
+import io.hephaistos.flagforge.controller.dto.EnvironmentUpdateRequest;
+import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
+import io.hephaistos.flagforge.controller.dto.InviteCreationResponse;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,9 +51,13 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
     @Autowired
     private EnvironmentRepository environmentRepository;
 
+    @Autowired
+    private CompanyInviteRepository companyInviteRepository;
+
     @BeforeEach
     void beforeEach() {
         initializeTestSupport();
+        companyInviteRepository.deleteAll();
         environmentRepository.deleteAll();
         applicationRepository.deleteAll();
         companyRepository.deleteAll();
@@ -58,7 +70,8 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         UUID applicationId = createApplication(token, "Test App");
 
         var response = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging environment"), token,
+                new EnvironmentCreationRequest("Staging", "Staging environment", PricingTier.BASIC),
+                token,
                 EnvironmentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -75,12 +88,13 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create first environment
         post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "First"), token,
+                new EnvironmentCreationRequest("Production", "First", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
 
         // Try to create duplicate
         var response = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Production", "Second"), token, String.class);
+                new EnvironmentCreationRequest("Production", "Second", PricingTier.BASIC), token,
+                String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).contains("DUPLICATE_RESOURCE");
@@ -93,7 +107,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create additional environment
         post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
 
         var response = get("/v1/applications/" + applicationId + "/environments", token,
@@ -110,7 +124,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a BASIC tier environment
         var createResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
         UUID environmentId = createResponse.getBody().id();
 
@@ -156,7 +170,8 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create environment
         var createResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging environment"), token,
+                new EnvironmentCreationRequest("Staging", "Staging environment", PricingTier.BASIC),
+                token,
                 EnvironmentResponse.class);
         UUID environmentId = createResponse.getBody().id();
 
@@ -171,7 +186,8 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Recreate with same name
         var recreateResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "New staging environment"), token,
+                new EnvironmentCreationRequest("Staging", "New staging environment",
+                        PricingTier.BASIC), token,
                 EnvironmentResponse.class);
 
         assertThat(recreateResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -200,7 +216,7 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create environment in app 1
         var createResponse = post("/v1/applications/" + applicationId1 + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging"), token,
+                new EnvironmentCreationRequest("Staging", "Staging", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
         UUID environmentId = createResponse.getBody().id();
 
@@ -258,7 +274,8 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
 
         // User 2 should not be able to create environment in Company A's app
         var response = post("/v1/applications/" + appIdA + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging env"), token2, String.class);
+                new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC), token2,
+                String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
@@ -267,5 +284,191 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         var response = post("/v1/applications", new ApplicationCreationRequest(name), token,
                 ApplicationResponse.class);
         return response.getBody().id();
+    }
+
+    private String createUserWithRoleAndAppAccess(String adminToken, CustomerRole role,
+            UUID applicationId) {
+        String email = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+        var inviteRequest = new InviteCreationRequest(email, role, Set.of(applicationId), null);
+        var inviteResponse =
+                post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+        assertThat(inviteResponse.getStatusCode()).as(
+                "Invite creation should succeed for email: " + email).isEqualTo(HttpStatus.CREATED);
+
+        String inviteToken = getInviteTokenByEmail(email);
+        registerUserWithInvite("Test", "User", "password123", inviteToken);
+        return authenticate(email, "password123");
+    }
+
+    private String getInviteTokenByEmail(String email) {
+        return companyInviteRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invite not found for email: " + email))
+                .getToken();
+    }
+
+    @Nested
+    @DisplayName("Role-based Access Control")
+    class RoleBasedAccessControl {
+
+        @Test
+        void devRoleCanCreateEnvironment() {
+            // Setup: Admin creates company and application
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            // Create DEV user in the same company with app access
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            // DEV should be able to create environment
+            var response = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    devToken, EnvironmentResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            assertThat(response.getBody().name()).isEqualTo("Staging");
+        }
+
+        @Test
+        void readOnlyRoleCannotCreateEnvironment() {
+            // Setup: Admin creates company and application
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            // Create READ_ONLY user with app access
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            // READ_ONLY should NOT be able to create environment
+            var response = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void devRoleCanUpdateEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Create DEV user with app access
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            // DEV should be able to update environment
+            var response =
+                    put("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            new EnvironmentUpdateRequest("Updated Staging", "Updated desc"),
+                            devToken, EnvironmentResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().name()).isEqualTo("Updated Staging");
+        }
+
+        @Test
+        void readOnlyRoleCannotUpdateEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Create READ_ONLY user with app access
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            // READ_ONLY should NOT be able to update environment
+            var response =
+                    put("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            new EnvironmentUpdateRequest("Updated Staging", "Updated desc"),
+                            readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void devRoleCanDeleteEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Create DEV user with app access
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            // DEV should be able to delete environment
+            var response =
+                    delete("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            devToken, Void.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        }
+
+        @Test
+        void readOnlyRoleCannotDeleteEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Create READ_ONLY user with app access
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            // READ_ONLY should NOT be able to delete environment
+            var response =
+                    delete("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void readOnlyRoleCanListEnvironments() {
+            // Setup: Admin creates company and application
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            // Create READ_ONLY user with app access
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            // READ_ONLY should be able to list environments (read operation)
+            var response = get("/v1/applications/" + applicationId + "/environments", readOnlyToken,
+                    EnvironmentResponse[].class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).hasSizeGreaterThanOrEqualTo(2); // Default environments
+        }
     }
 }

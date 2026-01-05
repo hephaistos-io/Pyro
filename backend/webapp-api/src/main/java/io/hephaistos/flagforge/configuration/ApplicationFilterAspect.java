@@ -47,13 +47,11 @@ public class ApplicationFilterAspect {
     }
 
     private void enableFilter(Set<UUID> accessibleAppIds) {
-        Session session = entityManager.unwrap(Session.class);
+        // PostgreSQL doesn't support empty IN clauses, so use a non-matching UUID
+        var filterIds = accessibleAppIds.isEmpty() ? Set.of(new UUID(0L, 0L)) : accessibleAppIds;
 
-        // Handle empty set - use a non-matching UUID to return no results
-        Set<UUID> filterValue =
-                accessibleAppIds.isEmpty() ? Set.of(new UUID(0, 0)) : accessibleAppIds;
-
-        session.enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER)
-                .setParameterList("accessibleAppIds", filterValue);
+        entityManager.unwrap(Session.class)
+                .enableFilter(ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER)
+                .setParameterList("accessibleAppIds", filterIds);
     }
 }

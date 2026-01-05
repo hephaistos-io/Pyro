@@ -4,6 +4,7 @@ import io.hephaistos.flagforge.IntegrationTestSupport;
 import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.RedisTestContainerConfiguration;
+import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.common.enums.TemplateType;
 import io.hephaistos.flagforge.common.types.BooleanTemplateField;
 import io.hephaistos.flagforge.common.types.TemplateSchema;
@@ -11,18 +12,22 @@ import io.hephaistos.flagforge.controller.dto.AllTemplateOverridesResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
+import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
+import io.hephaistos.flagforge.controller.dto.InviteCreationResponse;
 import io.hephaistos.flagforge.controller.dto.MergedTemplateValuesResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;
 import io.hephaistos.flagforge.data.repository.TemplateValuesRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -36,6 +41,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,9 +70,13 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
     @Autowired
     private TemplateValuesRepository templateValuesRepository;
 
+    @Autowired
+    private CompanyInviteRepository companyInviteRepository;
+
     @BeforeEach
     void beforeEach() {
         initializeTestSupport();
+        companyInviteRepository.deleteAll();
         templateValuesRepository.deleteAll();
         templateRepository.deleteAll();
         environmentRepository.deleteAll();
@@ -397,5 +407,198 @@ class TemplateControllerIntegrationTest extends IntegrationTestSupport {
         return new TemplateSchema(
                 List.of(new BooleanTemplateField("night_mode", "Dark theme preference", true,
                         false)));
+    }
+
+    private String createUserWithRoleAndAppAccess(String adminToken, CustomerRole role,
+            UUID applicationId) {
+        String email = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+        var inviteRequest = new InviteCreationRequest(email, role, Set.of(applicationId), null);
+        post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+
+        String inviteToken = getInviteTokenByEmail(email);
+        registerUserWithInvite("Test", "User", "password123", inviteToken);
+        return authenticate(email, "password123");
+    }
+
+    private String getInviteTokenByEmail(String email) {
+        return companyInviteRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invite not found for email: " + email))
+                .getToken();
+    }
+
+    @Nested
+    @DisplayName("Role-based Access Control")
+    class RoleBasedAccessControl {
+
+        @Test
+        void devRoleCanUpdateTemplate() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            var response = put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), devToken,
+                    TemplateResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void readOnlyRoleCannotUpdateTemplate() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            var response = put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void devRoleCanSetOverride() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(adminToken, applicationId);
+
+            // First update template schema
+            put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), adminToken,
+                    TemplateResponse.class);
+
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            var response =
+                    put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                            new TemplateValuesRequest(Map.of("night_mode", true)), devToken,
+                            TemplateValuesResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        void readOnlyRoleCannotSetOverride() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(adminToken, applicationId);
+
+            // First update template schema
+            put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), adminToken,
+                    TemplateResponse.class);
+
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            var response =
+                    put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                            new TemplateValuesRequest(Map.of("night_mode", true)), readOnlyToken,
+                            String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void devRoleCanDeleteOverride() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(adminToken, applicationId);
+
+            // Setup: update template and create override
+            put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), adminToken,
+                    TemplateResponse.class);
+            put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), adminToken,
+                    TemplateValuesResponse.class);
+
+            String devToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
+
+            var response =
+                    delete("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                            devToken, Void.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        }
+
+        @Test
+        void readOnlyRoleCannotDeleteOverride() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(adminToken, applicationId);
+
+            // Setup: update template and create override
+            put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), adminToken,
+                    TemplateResponse.class);
+            put("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                    new TemplateValuesRequest(Map.of("night_mode", true)), adminToken,
+                    TemplateValuesResponse.class);
+
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            var response =
+                    delete("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/overrides/id-123",
+                            readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void readOnlyRoleCanListTemplates() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            // Read operations should be allowed
+            var response = get("/v1/applications/" + applicationId + "/templates", readOnlyToken,
+                    TemplateResponse[].class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).hasSize(2);
+        }
+
+        @Test
+        void readOnlyRoleCanGetMergedValues() {
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+            UUID environmentId = getDefaultEnvironmentId(adminToken, applicationId);
+
+            // Setup: update template
+            put("/v1/applications/" + applicationId + "/templates/USER",
+                    new TemplateUpdateRequest(createTestSchema()), adminToken,
+                    TemplateResponse.class);
+
+            String readOnlyToken =
+                    createUserWithRoleAndAppAccess(adminToken, CustomerRole.READ_ONLY,
+                            applicationId);
+
+            var response =
+                    get("/v1/applications/" + applicationId + "/templates/USER/environments/" + environmentId + "/values",
+                            readOnlyToken, MergedTemplateValuesResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
     }
 }

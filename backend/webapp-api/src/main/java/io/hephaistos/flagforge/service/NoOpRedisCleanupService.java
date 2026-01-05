@@ -12,7 +12,8 @@ import java.util.UUID;
  * are no-ops since there's nothing to clean up.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false")
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false",
+        matchIfMissing = true)
 public class NoOpRedisCleanupService implements RedisCleanupService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NoOpRedisCleanupService.class);

@@ -32,7 +32,8 @@ public class ApiSecurityConfiguration {
     private static final String[] WHITELIST_POST_ENDPOINTS =
             {"/v1/auth/register", "/v1/auth/authenticate", "/v1/auth/verify-registration",
                     "/v1/auth/resend-verification", "/v1/password-reset/request",
-                    "/v1/password-reset/reset", "/v1/email-verification/confirm"};
+                    "/v1/password-reset/reset", "/v1/email-verification/confirm",
+                    "/webhooks/stripe"};
     private static final String[] WHITELIST_GET_ENDPOINTS =
             {"/v3/api-docs", "/v1/invite/**", "/v1/password-reset/validate",
                     "/v1/email-verification/validate"};
@@ -52,16 +53,7 @@ public class ApiSecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .headers(headers -> headers
-                        // Prevent clickjacking attacks
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
-                        // Prevent MIME type sniffing
-                        .contentTypeOptions(Customizer.withDefaults())
-                        // Enable XSS protection (legacy, but still useful for older browsers)
-                        .xssProtection(Customizer.withDefaults())
-                        // HTTP Strict Transport Security - only over HTTPS
-                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true)
-                                .maxAgeInSeconds(31536000))) // 1 year
+                .headers(this::configureHttpSecurityHeaders) // 1 year
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(HttpMethod.POST, WHITELIST_POST_ENDPOINTS)
                                 .permitAll()
@@ -74,6 +66,18 @@ public class ApiSecurityConfiguration {
                 .addFilterBefore(jwtOncePerRequestFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    private void configureHttpSecurityHeaders(HeadersConfigurer<HttpSecurity> headers) {
+        // Prevent clickjacking attacks
+        headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                // Prevent MIME type sniffing
+                .contentTypeOptions(Customizer.withDefaults())
+                // Enable XSS protection (legacy, but still useful for older browsers)
+                .xssProtection(Customizer.withDefaults())
+                // HTTP Strict Transport Security - only over HTTPS
+                .httpStrictTransportSecurity(
+                        hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000));
     }
 
     /**

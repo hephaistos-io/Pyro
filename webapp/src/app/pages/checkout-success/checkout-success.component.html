@@ -1,0 +1,47 @@
+<div class="success-page">
+  <div class="success-content">
+    @if (isProcessing()) {
+      <div class="processing-state">
+        <div class="spinner"></div>
+        <p>Activating your subscription...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-icon">
+        <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+          <path d="M16 16l16 16M32 16l-16 16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="3"/>
+        </svg>
+      </div>
+      <h1>Something went wrong</h1>
+      <p class="error-message">{{ error() }}</p>
+      <div class="success-actions">
+        <a class="btn btn-primary" routerLink="/dashboard/billing">View Billing</a>
+        <a class="btn btn-secondary" routerLink="/dashboard">Go to Dashboard</a>
+      </div>
+    } @else {
+      <div class="success-icon">
+        <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+          <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                stroke-width="3"/>
+        </svg>
+      </div>
+
+      <h1>Payment Successful!</h1>
+      <p class="success-message">
+        Thank you for your payment, your environment changes are now active.
+      </p>
+
+      <div class="success-details">
+        <p>A confirmation email has been sent to your registered email address.</p>
+        <p>You can view your subscription details and invoices in the billing settings.</p>
+      </div>
+
+      <div class="success-actions">
+        <a class="btn btn-primary" routerLink="/dashboard/billing">View Billing</a>
+        <a class="btn btn-secondary" routerLink="/dashboard">Go to Dashboard</a>
+      </div>
+    }
+  </div>
+</div>

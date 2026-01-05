@@ -4,6 +4,7 @@ import io.hephaistos.flagforge.controller.dto.DailyUsageStatisticsResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentResponse;
 import io.hephaistos.flagforge.controller.dto.EnvironmentUpdateRequest;
+import io.hephaistos.flagforge.security.RequireDev;
 import io.hephaistos.flagforge.service.EnvironmentService;
 import io.hephaistos.flagforge.service.UsageTrackingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +44,7 @@ public class EnvironmentController {
     @Operation(summary = "Create a new environment for an application")
     @PostMapping(value = "", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
+    @RequireDev
     public EnvironmentResponse createEnvironment(@PathVariable UUID applicationId,
             @Valid @RequestBody EnvironmentCreationRequest request) {
         return environmentService.createEnvironment(applicationId, request);
@@ -58,6 +60,7 @@ public class EnvironmentController {
     @Operation(summary = "Update an environment")
     @PutMapping(value = "/{environmentId}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireDev
     public EnvironmentResponse updateEnvironment(@PathVariable UUID applicationId,
             @PathVariable UUID environmentId,
             @Valid @RequestBody EnvironmentUpdateRequest request) {
@@ -67,6 +70,7 @@ public class EnvironmentController {
     @Operation(summary = "Delete an environment")
     @DeleteMapping(value = "/{environmentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequireDev
     public void deleteEnvironment(@PathVariable UUID applicationId,
             @PathVariable UUID environmentId) {
         environmentService.deleteEnvironment(applicationId, environmentId);

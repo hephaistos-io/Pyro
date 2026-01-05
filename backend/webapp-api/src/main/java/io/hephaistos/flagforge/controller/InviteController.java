@@ -3,6 +3,7 @@ package io.hephaistos.flagforge.controller;
 import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
 import io.hephaistos.flagforge.controller.dto.InviteCreationResponse;
 import io.hephaistos.flagforge.controller.dto.InviteValidationResponse;
+import io.hephaistos.flagforge.security.RequireAdmin;
 import io.hephaistos.flagforge.service.InviteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +35,7 @@ public class InviteController {
     @Operation(summary = "Create an invite link for a new team member")
     @PostMapping(value = "/v1/company/invite", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
+    @RequireAdmin
     public InviteCreationResponse createInvite(@Valid @RequestBody InviteCreationRequest request) {
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .replacePath(null)
@@ -51,6 +53,7 @@ public class InviteController {
     @Operation(summary = "Regenerate an invite link with a new token")
     @PostMapping(value = "/v1/company/invite/{id}/regenerate", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireAdmin
     public InviteCreationResponse regenerateInvite(@PathVariable UUID id) {
         String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .replacePath(null)
@@ -61,6 +64,7 @@ public class InviteController {
     @Operation(summary = "Delete an invite")
     @DeleteMapping(value = "/v1/company/invite/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequireAdmin
     public void deleteInvite(@PathVariable UUID id) {
         inviteService.deleteInvite(id);
     }

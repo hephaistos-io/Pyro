@@ -7,7 +7,13 @@
       </div>
     } @else if (isVerified()) {
       <div class="success-message">
-        <div class="success-icon">✓</div>
+        <div class="success-icon">
+          <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+            <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="3"/>
+          </svg>
+        </div>
         <h2>Email Verified!</h2>
         <p>Your email has been verified successfully.</p>
         <p class="next-steps">You can now log in to your account.</p>

@@ -120,9 +120,8 @@ class ApplicationFilterAspectTest {
         ArgumentCaptor<Collection<UUID>> captor = ArgumentCaptor.forClass(Collection.class);
         verify(filter).setParameterList(eq("accessibleAppIds"), captor.capture());
 
-        // Should be an empty set
-        assertThat(captor.getValue()).hasSize(1);
-        assertThat(captor.getValue()).containsExactly(new UUID(0, 0));
+        // Should contain a non-matching UUID (nil UUID) to avoid empty IN clause SQL errors
+        assertThat(captor.getValue()).containsExactly(new UUID(0L, 0L));
     }
 
     @Test

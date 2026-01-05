@@ -1,0 +1,131 @@
+<div class="billing-tab">
+  @if (error()) {
+    <div class="error-banner">
+      {{ error() }}
+      <button (click)="loadBillingData()" type="button">Try Again</button>
+    </div>
+  }
+
+  <div class="billing-sections">
+    <!-- Subscription Status -->
+    <div class="billing-card">
+      <div class="card-header">
+        <h3>Subscription</h3>
+        <button (click)="openCustomerPortal()" [disabled]="loading()" class="btn btn-secondary" type="button">
+          Manage Billing
+        </button>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+          Loading subscription details...
+        </div>
+      } @else if (subscription()) {
+        <div class="subscription-info">
+          <div class="info-row">
+            <span class="label">Status</span>
+            <span [ngClass]="getStatusClass(subscription()!.status)" class="value status-badge">
+              {{ subscription()!.status }}
+            </span>
+          </div>
+
+          <div class="info-row">
+            <span class="label">Monthly Total</span>
+            <span class="value">{{ formatPrice(subscription()!.totalMonthlyPriceCents) }}/month</span>
+          </div>
+
+          @if (subscription()!.currentPeriodEnd) {
+            <div class="info-row">
+              <span class="label">Current Period Ends</span>
+              <span class="value">{{ formatDate(subscription()!.currentPeriodEnd) }}</span>
+            </div>
+          }
+
+          @if (subscription()!.cancelAtPeriodEnd) {
+            <div class="cancel-notice">
+              Your subscription will be cancelled at the end of the current billing period.
+            </div>
+          }
+        </div>
+
+        @if (subscription()!.items.length > 0) {
+          <div class="subscription-items">
+            <h4>Active Environments</h4>
+            @for (item of subscription()!.items; track item.environmentId) {
+              <div class="subscription-item">
+                <div class="item-info">
+                  <span class="item-name">{{ item.environmentName }}</span>
+                  <span class="item-tier tier-{{ item.tier.toLowerCase() }}">{{ item.tier }}</span>
+                </div>
+                <span class="item-price">{{ formatPrice(item.monthlyPriceCents) }}/mo</span>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <div class="no-subscription">
+          <p>You don't have an active subscription yet.</p>
+          <p class="help-text">Create paid environments to get started with a subscription.</p>
+        </div>
+      }
+    </div>
+
+    <!-- Invoice History -->
+    <div class="billing-card">
+      <div class="card-header">
+        <h3>Invoice History</h3>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <span class="spinner spinner--dark"></span>
+          Loading invoices...
+        </div>
+      } @else if (invoices().length > 0) {
+        <div class="invoices-list">
+          @for (invoice of invoices(); track invoice.id) {
+            <div class="invoice-row">
+              <div class="invoice-info">
+                <span class="invoice-date">{{ formatDate(invoice.createdAt) }}</span>
+                <span class="invoice-id">{{ invoice.id }}</span>
+              </div>
+              <div class="invoice-amount">
+                <span class="amount">{{ formatPrice(invoice.amountCents) }}</span>
+                <span [ngClass]="getInvoiceStatusClass(invoice.status)" class="invoice-status">
+                  {{ invoice.status }}
+                </span>
+              </div>
+              <div class="invoice-actions">
+                @if (invoice.invoicePdfUrl) {
+                  <a [href]="invoice.invoicePdfUrl" class="invoice-link" rel="noopener" target="_blank">
+                    <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" x2="12" y1="15" y2="3"/>
+                    </svg>
+                    PDF
+                  </a>
+                }
+                @if (invoice.hostedInvoiceUrl) {
+                  <a [href]="invoice.hostedInvoiceUrl" class="invoice-link" rel="noopener" target="_blank">
+                    <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/>
+                      <line x1="10" x2="21" y1="14" y2="3"/>
+                    </svg>
+                    View
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="no-invoices">
+          <p>No invoices yet.</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

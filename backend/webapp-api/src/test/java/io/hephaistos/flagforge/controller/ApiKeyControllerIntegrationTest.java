@@ -5,6 +5,7 @@ import io.hephaistos.flagforge.MailpitTestConfiguration;
 import io.hephaistos.flagforge.PostgresTestContainerConfiguration;
 import io.hephaistos.flagforge.RedisTestContainerConfiguration;
 import io.hephaistos.flagforge.common.enums.KeyType;
+import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.ApiKeyResponse;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
@@ -143,7 +144,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a new environment
         var envResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
         UUID stagingEnvId = envResponse.getBody().id();
 
@@ -167,7 +168,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a second environment
         var envResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging env"), token,
+                new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
         UUID stagingEnvId = envResponse.getBody().id();
 
@@ -343,7 +344,7 @@ class ApiKeyControllerIntegrationTest extends IntegrationTestSupport {
 
         // Create a deletable (PAID tier) environment
         var envResponse = post("/v1/applications/" + applicationId + "/environments",
-                new EnvironmentCreationRequest("Staging", "Staging"), token,
+                new EnvironmentCreationRequest("Staging", "Staging", PricingTier.BASIC), token,
                 EnvironmentResponse.class);
         UUID envId = envResponse.getBody().id();
 

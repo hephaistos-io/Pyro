@@ -5,11 +5,14 @@ import {Api} from '../../api/generated/api';
 import {validateToken} from '../../api/generated/fn/password-reset/validate-token';
 import {resetPassword} from '../../api/generated/fn/password-reset/reset-password';
 import {handleApiError} from '../../utils/error-handler.util';
+import {
+  PasswordStrengthMeterComponent
+} from '../../components/password-strength-meter/password-strength-meter.component';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PasswordStrengthMeterComponent],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss'
 })

@@ -4,3 +4,18 @@
     @content;
   }
 }
+
+// Dashboard page layout - use for all pages within the dashboard area
+@mixin dashboard-page($max-width: none) {
+  min-height: calc(100vh - 128px);
+  padding: 8rem 4rem 4rem;
+
+  @if $max-width != none {
+    max-width: $max-width;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 768px) {
+    padding: 6rem 1.5rem 4rem;
+  }
+}

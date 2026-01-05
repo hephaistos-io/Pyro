@@ -121,7 +121,7 @@ test.describe('Rate Limit Selector Visibility', () => {
 
         // Verify the display updates to Business tier values
         await expect(adminPage.locator('.tier-display__limit-value')).toContainText('2k');
-        await expect(adminPage.getByText('$400')).toBeVisible();
+        await expect(adminPage.getByText('$100')).toBeVisible();
         await expect(adminPage.getByText('100M/month')).toBeVisible();
 
         // Move slider to middle position (Standard tier - index 2)
@@ -129,7 +129,7 @@ test.describe('Rate Limit Selector Visibility', () => {
 
         // Verify the display updates to Standard tier values
         await expect(adminPage.locator('.tier-display__limit-value')).toContainText('100');
-        await expect(adminPage.getByText('$40')).toBeVisible();
+        await expect(adminPage.getByText('$25')).toBeVisible();
         await expect(adminPage.getByText('10M/month')).toBeVisible();
 
         await adminPage.close();

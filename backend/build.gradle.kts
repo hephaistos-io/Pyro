@@ -41,6 +41,10 @@ subprojects {
             implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
             runtimeOnly("org.postgresql:postgresql:42.7.4")
 
+            // Stripe payment integration
+            implementation("com.stripe:stripe-java:28.2.0")
+            implementation("com.google.code.gson:gson:2.11.0")
+
             testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
             testImplementation("org.springframework.boot:spring-boot-testcontainers:4.0.0")
             testImplementation("org.testcontainers:testcontainers:2.0.2")

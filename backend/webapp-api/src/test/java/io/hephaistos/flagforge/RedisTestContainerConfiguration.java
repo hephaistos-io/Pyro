@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Primary;
  * Test configuration that provides a Redis Testcontainer for integration tests.
  * <p>
  * The container is shared across all tests for performance.
+ * <p>
+ * Sets flagforge.redis.enabled=true to enable Redis-dependent beans.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class RedisTestContainerConfiguration {
@@ -19,6 +21,8 @@ public class RedisTestContainerConfiguration {
     private static final RedisContainer REDIS = new RedisContainer("redis:7-alpine");
 
     static {
+        // Enable Redis beans in tests that import this configuration
+        System.setProperty("flagforge.redis.enabled", "true");
         REDIS.start();
     }
 

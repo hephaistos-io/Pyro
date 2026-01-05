@@ -9,6 +9,7 @@ import io.hephaistos.flagforge.exception.InvalidTokenException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
 import io.hephaistos.flagforge.exception.OperationNotAllowedException;
+import io.hephaistos.flagforge.exception.PaymentException;
 import io.hephaistos.flagforge.exception.RateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,6 +153,13 @@ public class GlobalExceptionHandler {
         LOGGER.warn("Email not verified: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse("EMAIL_NOT_VERIFIED", ex.getMessage()));
+    }
+
+    @ExceptionHandler(PaymentException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentException(PaymentException ex) {
+        LOGGER.warn("Payment error: {}, cause: {}", ex.getMessage(), ex.getCause());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse("PAYMENT_ERROR", ex.getMessage()));
     }
 
     @ExceptionHandler(AsyncRequestNotUsableException.class)

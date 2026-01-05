@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SmtpEmailServiceTest {
 
-    private static final String FROM_ADDRESS = "noreply@flagforge.io";
+    private static final String FROM_ADDRESS = "noreply@flagforge.dev";
     private static final String FROM_NAME = "FlagForge";
     private static final String BASE_URL = "http://localhost";
     private static final String TEST_EMAIL = "user@example.com";

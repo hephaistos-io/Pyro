@@ -600,6 +600,37 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
 
             assertThat(regenerateResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
+
+        @Test
+        void regenerateInviteRequiresAdminRole() {
+            // Setup: admin creates invite for a DEV user
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            var devInviteRequest =
+                    new InviteCreationRequest("dev@example.com", CustomerRole.DEV, null, null);
+            post("/v1/company/invite", devInviteRequest, adminToken, InviteCreationResponse.class);
+
+            // DEV user registers and authenticates
+            String devInviteToken = getInviteTokenByEmail("dev@example.com");
+            registerUserWithInvite("Dev", "User", "password123", devInviteToken);
+            String devToken = authenticate("dev@example.com", "password123");
+
+            // Admin creates another invite
+            var anotherInviteRequest =
+                    new InviteCreationRequest("another@example.com", CustomerRole.READ_ONLY, null,
+                            null);
+            var anotherInvite = post("/v1/company/invite", anotherInviteRequest, adminToken,
+                    InviteCreationResponse.class);
+
+            // DEV user tries to regenerate invite - should fail with 403
+            var response =
+                    post("/v1/company/invite/" + anotherInvite.getBody().id() + "/regenerate", null,
+                            devToken, GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
+        }
     }
 
 
@@ -736,6 +767,36 @@ class InviteControllerIntegrationTest extends IntegrationTestSupport {
                             Void.class);
 
             assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        }
+
+        @Test
+        void deleteInviteRequiresAdminRole() {
+            // Setup: admin creates invite for a DEV user
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            var devInviteRequest =
+                    new InviteCreationRequest("dev@example.com", CustomerRole.DEV, null, null);
+            post("/v1/company/invite", devInviteRequest, adminToken, InviteCreationResponse.class);
+
+            // DEV user registers and authenticates
+            String devInviteToken = getInviteTokenByEmail("dev@example.com");
+            registerUserWithInvite("Dev", "User", "password123", devInviteToken);
+            String devToken = authenticate("dev@example.com", "password123");
+
+            // Admin creates another invite
+            var anotherInviteRequest =
+                    new InviteCreationRequest("another@example.com", CustomerRole.READ_ONLY, null,
+                            null);
+            var anotherInvite = post("/v1/company/invite", anotherInviteRequest, adminToken,
+                    InviteCreationResponse.class);
+
+            // DEV user tries to delete invite - should fail with 403
+            var response = delete("/v1/company/invite/" + anotherInvite.getBody().id(), devToken,
+                    GlobalExceptionHandler.ErrorResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
         }
     }
 }

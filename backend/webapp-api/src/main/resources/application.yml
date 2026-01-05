@@ -1,8 +1,20 @@
 flagforge:
   redis:
+    enabled: ${FLAGFORGE_REDIS_ENABLED:false}
     uri: ${REDIS_URI:redis://localhost:6379}
+  stripe:
+    api-key: ${STRIPE_API_KEY:sk_test_mock}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_mock}
+    publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_mock}
+    mode: ${STRIPE_MODE:mock}
+    mock-base-url: ${STRIPE_MOCK_URL:http://localhost:12111}
+    price-ids:
+      BASIC: ${STRIPE_PRICE_BASIC:price_basic}
+      STANDARD: ${STRIPE_PRICE_STANDARD:price_standard}
+      PRO: ${STRIPE_PRICE_PRO:price_pro}
+      BUSINESS: ${STRIPE_PRICE_BUSINESS:price_business}
   email:
-    from-address: ${EMAIL_FROM:noreply@flagforge.io}
+    from-address: ${EMAIL_FROM:noreply@flagforge.dev}
     from-name: ${EMAIL_FROM_NAME:FlagForge}
     base-url: ${APP_BASE_URL:http://localhost}
   security:

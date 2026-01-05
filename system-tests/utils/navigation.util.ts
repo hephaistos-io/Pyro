@@ -6,6 +6,8 @@ import {expect, Page} from '@playwright/test';
 export async function navigateToUsersTab(page: Page): Promise<void> {
     await page.getByRole('button', {name: 'Users'}).click();
     await expect(page.locator('.users-table')).toBeVisible();
+    // Wait for loading to complete
+    await expect(page.getByText('Loading users...')).not.toBeVisible();
 }
 
 /**

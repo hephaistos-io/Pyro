@@ -6,6 +6,7 @@ import {createEnvironment} from '../../api/generated/fn/environments/create-envi
 import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
 import {updateEnvironment} from '../../api/generated/fn/environments/update-environment';
 import {OverlayService} from '../../services/overlay.service';
+import {PricingStateService, PricingTier, TIER_PRICES} from '../../services/pricing-state.service';
 import {
   EnvironmentCreationOverlayComponent,
   EnvironmentCreationOverlayData
@@ -54,6 +55,7 @@ export class EnvironmentManagerComponent {
   });
   private api = inject(Api);
   private overlayService = inject(OverlayService);
+  private pricingState = inject(PricingStateService);
 
   constructor() {
     // Auto-select first environment when environments change
@@ -93,8 +95,9 @@ export class EnvironmentManagerComponent {
       component: EnvironmentCreationOverlayComponent,
       data: {
         mode: 'create',
-        onConfirm: async (name: string, description?: string) => {
+        onConfirm: async (name: string, description: string, tier: PricingTier) => {
           const appId = this.applicationId();
+          const appName = this.applicationName();
           if (!appId) {
             return;
           }
@@ -103,15 +106,27 @@ export class EnvironmentManagerComponent {
             applicationId: appId,
             body: {
               name: name,
-              description: description ?? ''
+              description: description,
+              tier: tier
             }
           });
+
+          // Add to cart if it's a paid tier
+          if (tier !== 'FREE' && newEnv.id) {
+            this.pricingState.addPendingEnvironment({
+              environmentId: newEnv.id,
+              environmentName: name,
+              applicationName: appName,
+              tier: tier,
+              monthlyPriceCents: TIER_PRICES[tier]
+            });
+          }
 
           this.selectedEnvironment.set(newEnv);
           this.environmentCreated.emit(newEnv);
         }
       },
-      maxWidth: '500px'
+      maxWidth: '550px'
     });
   }
 
@@ -129,13 +144,14 @@ export class EnvironmentManagerComponent {
         mode: 'edit',
         initialName: currentEnv.name ?? '',
         initialDescription: currentEnv.description ?? '',
-        onConfirm: async (name: string, description?: string) => {
+        initialTier: currentEnv.tier as PricingTier ?? 'FREE',
+        onConfirm: async (name: string, description: string) => {
           const updatedEnv = await this.api.invoke(updateEnvironment, {
             applicationId: appId,
             environmentId: currentEnv.id!,
             body: {
               name: name,
-              description: description ?? ''
+              description: description
             }
           });
 
@@ -143,7 +159,7 @@ export class EnvironmentManagerComponent {
           this.environmentUpdated.emit(updatedEnv);
         }
       },
-      maxWidth: '500px'
+      maxWidth: '550px'
     });
   }
 

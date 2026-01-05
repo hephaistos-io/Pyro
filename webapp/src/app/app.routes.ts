@@ -12,6 +12,8 @@ import {DashboardComponent} from './pages/dashboard/dashboard.component';
 import {DashboardLayoutComponent} from './layouts/dashboard-layout/dashboard-layout.component';
 import {ApplicationOverview} from './pages/application-overview/application-overview';
 import {ProfileSettingsComponent} from './pages/profile-settings/profile-settings.component';
+import {CheckoutComponent} from './pages/checkout/checkout.component';
+import {CheckoutSuccessComponent} from './pages/checkout-success/checkout-success.component';
 import {authGuard} from './guards/auth.guard';
 import {profileResolver} from './guards/profile.resolver';
 
@@ -33,8 +35,12 @@ export const routes: Routes = [
     data: {isDashboard: true},
     children: [
       {path: '', component: DashboardComponent},
+      {path: 'users', component: DashboardComponent, data: {tab: 'users'}},
+      {path: 'billing', component: DashboardComponent, data: {tab: 'billing'}},
       {path: 'application/:id', component: ApplicationOverview},
-      {path: 'profile', component: ProfileSettingsComponent}
+      {path: 'profile', component: ProfileSettingsComponent},
+      {path: 'checkout', component: CheckoutComponent},
+      {path: 'checkout/success', component: CheckoutSuccessComponent}
     ]
   },
   {path: '**', redirectTo: ''}

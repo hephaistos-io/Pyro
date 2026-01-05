@@ -15,8 +15,10 @@ import {
 } from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
 import {getApplicationStatistics} from '../../api/generated/fn/application/get-application-statistics';
+import {CurrencyPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {TemplateService} from '../../services/template.service';
+import {PricingStateService, PricingTier, TIER_PRICES} from '../../services/pricing-state.service';
 import {ApiKeysCardComponent} from '../../components/api-keys-card/api-keys-card.component';
 import {EnvironmentManagerComponent} from '../../components/environment-manager/environment-manager.component';
 import {UsageStatsCardComponent} from '../../components/usage-stats-card/usage-stats-card.component';
@@ -36,7 +38,7 @@ interface RateLimitTier {
 @Component({
     selector: 'app-application-overview',
   standalone: true,
-  imports: [FormsModule, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent, HasRoleDirective],
+  imports: [FormsModule, CurrencyPipe, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent, HasRoleDirective],
     templateUrl: './application-overview.html',
     styleUrl: './application-overview.scss',
 })
@@ -59,30 +61,43 @@ export class ApplicationOverview implements OnInit {
     // Mock total hits this month - Replace with actual stats from backend
     totalHitsThisMonth = signal(0);
 
-  // Rate limit tiers (matching pricing page)
+  // Rate limit tiers (aligned with PricingTier enum)
   rateLimitTiers = signal<RateLimitTier[]>([
-    {id: 'free', name: 'Free', price: '$0', requestsPerMonth: '500k/month', rateLimit: 5, description: 'Dev/Test'},
-    {id: 'basic', name: 'Basic', price: '$10', requestsPerMonth: '2M/month', rateLimit: 20, description: 'Small apps'},
+    {id: 'FREE', name: 'Free', price: '$0', requestsPerMonth: '500k/month', rateLimit: 5, description: 'Dev/Test'},
+    {id: 'BASIC', name: 'Basic', price: '$10', requestsPerMonth: '2M/month', rateLimit: 20, description: 'Small apps'},
     {
-      id: 'standard',
+      id: 'STANDARD',
       name: 'Standard',
-      price: '$40',
+      price: '$25',
       requestsPerMonth: '10M/month',
       rateLimit: 100,
       description: 'Growing startups'
     },
-    {id: 'pro', name: 'Pro', price: '$100', requestsPerMonth: '25M/month', rateLimit: 500, description: 'Scale-ups'},
+    {id: 'PRO', name: 'Pro', price: '$50', requestsPerMonth: '25M/month', rateLimit: 500, description: 'Scale-ups'},
     {
-      id: 'business',
+      id: 'BUSINESS',
       name: 'Business',
-      price: '$400',
+      price: '$100',
       requestsPerMonth: '100M/month',
       rateLimit: 2000,
       description: 'Enterprise'
     },
-    ]);
+  ]);
   selectedRateLimitTierIndex = signal(0); // Default to Free
+  originalTierIndex = signal(0); // The environment's saved tier index
   currentRateLimitTier = computed(() => this.rateLimitTiers()[this.selectedRateLimitTierIndex()]);
+
+  // Tier change detection
+  hasTierChanged = computed(() => this.selectedRateLimitTierIndex() !== this.originalTierIndex());
+  priceDifference = computed(() => {
+    const originalTier = this.rateLimitTiers()[this.originalTierIndex()];
+    const selectedTier = this.rateLimitTiers()[this.selectedRateLimitTierIndex()];
+    const originalPrice = TIER_PRICES[originalTier.id as PricingTier] ?? 0;
+    const selectedPrice = TIER_PRICES[selectedTier.id as PricingTier] ?? 0;
+    return selectedPrice - originalPrice;
+  });
+
+  private pricingState = inject(PricingStateService);
 
   // Expose CustomerRole for template
   readonly CustomerRole = CustomerRole;
@@ -193,6 +208,18 @@ export class ApplicationOverview implements OnInit {
   });
 
     constructor() {
+      // Initialize rate tier slider from environment's current tier
+      effect(() => {
+        const env = this.selectedEnvironment();
+        if (env?.tier) {
+          const index = this.rateLimitTiers().findIndex(t => t.id === env.tier);
+          if (index >= 0) {
+            this.selectedRateLimitTierIndex.set(index);
+            this.originalTierIndex.set(index);
+          }
+        }
+      }, {allowSignalWrites: true});
+
       // Reset template override visibility when environment changes
       effect(() => {
         this.selectedEnvironment();
@@ -300,6 +327,25 @@ export class ApplicationOverview implements OnInit {
         }
     return rateLimit.toLocaleString();
     }
+
+  confirmTierChange(): void {
+    const env = this.selectedEnvironment();
+    const app = this.application();
+    const newTier = this.currentRateLimitTier();
+
+    if (!env?.id || !app?.name) return;
+
+    this.pricingState.addPendingEnvironment({
+      environmentId: env.id,
+      environmentName: env.name ?? 'Environment',
+      applicationName: app.name,
+      tier: newTier.id as PricingTier,
+      monthlyPriceCents: TIER_PRICES[newTier.id as PricingTier]
+    });
+
+    // Update original to reflect pending change
+    this.originalTierIndex.set(this.selectedRateLimitTierIndex());
+  }
 
   // ============================================================================
   // TEMPLATE METHODS

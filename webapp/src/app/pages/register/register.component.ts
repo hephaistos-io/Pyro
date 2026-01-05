@@ -9,11 +9,14 @@ import zxcvbn from 'zxcvbn';
 import {handleApiError} from '../../utils/error-handler.util';
 import {isValidEmail} from '../../utils/validators.util';
 import {AuthService} from '../../services/auth.service';
+import {
+  PasswordStrengthMeterComponent
+} from '../../components/password-strength-meter/password-strength-meter.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PasswordStrengthMeterComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss'
 })
@@ -55,27 +58,6 @@ export class RegisterComponent implements OnInit {
 
   isInviteFlow(): boolean {
     return this.inviteToken() !== null && this.inviteData() !== null;
-  }
-
-  get passwordStrength(): { score: number; label: string; feedback: string } {
-    const pwd = this.password();
-    if (!pwd) {
-      return {score: 0, label: '', feedback: ''};
-    }
-
-    if (pwd.length < 8) {
-      return {score: 0, label: 'Too short', feedback: 'At least 8 characters required'};
-    }
-
-    const result = zxcvbn(pwd);
-    const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
-    const feedback = result.feedback.warning || result.feedback.suggestions[0] || '';
-
-    return {
-      score: result.score,
-      label: labels[result.score],
-      feedback: feedback
-    };
   }
 
   async onSubmit(): Promise<void> {

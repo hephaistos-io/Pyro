@@ -51,7 +51,7 @@ public class ApplicationController {
     @Operation(summary = "Get statistics for an application")
     @GetMapping(value = "/{id}/statistics", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public ApplicationStatisticsResponse getApplicationStatistics(@PathVariable UUID id) {
+    public ApplicationStatisticsResponse getApplicationStatistics(@Valid @PathVariable UUID id) {
         return applicationService.getApplicationStatistics(id);
     }
 }

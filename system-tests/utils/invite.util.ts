@@ -1,6 +1,6 @@
 import {expect, Page} from '@playwright/test';
 import {DEFAULT_PASSWORD} from './test-data.util';
-import {clearMailbox, getInviteLink} from './mailpit.util';
+import {getInviteLink} from './mailpit.util';
 
 export type InviteRole = 'Admin' | 'Developer' | 'Viewer';
 
@@ -18,8 +18,6 @@ export async function createInvite(
     role: InviteRole = 'Developer',
     options: CreateInviteOptions = {}
 ): Promise<string> {
-    // Clear mailbox before creating invite
-    await clearMailbox();
 
     // Click the invite button
     await page.getByRole('button', {name: '+ Invite User'}).click();
@@ -123,9 +121,6 @@ export async function completeInviteRegistration(
  * The URL is retrieved from the email sent by the backend
  */
 export async function getInviteUrl(page: Page, invitedEmail: string): Promise<string> {
-    // Clear mailbox before regenerating
-    await clearMailbox();
-
     const inviteRow = page.locator('.users-table__row').filter({hasText: invitedEmail});
     await inviteRow.locator('.btn-regenerate-user').click();
 
