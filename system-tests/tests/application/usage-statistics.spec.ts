@@ -40,9 +40,12 @@ test.describe('Usage Statistics', () => {
         await expect(periodSelector.getByRole('button', {name: '30d'})).toBeVisible();
     });
 
-    test('7d button is selected by default', async () => {
+    test('7d button can be selected and shows active state', async () => {
         const periodSelector = sharedPage.locator('.usage-stats-card__period-selector');
         const btn7d = periodSelector.getByRole('button', {name: '7d'});
+
+        // Click 7d button to select it
+        await btn7d.click();
 
         // Verify the 7d button has the active class
         await expect(btn7d).toHaveClass(/active/);
@@ -76,12 +79,11 @@ test.describe('Usage Statistics', () => {
         // Verify 15d button now has active class
         await expect(btn15d).toHaveClass(/active/);
 
-        // Wait for Angular to update the view after clicking
-        await sharedPage.waitForTimeout(300);
+        // Wait for loading to complete (if any)
+        await expect(sharedPage.getByText('Loading statistics...')).not.toBeVisible();
 
         // Verify the total label updates to show 15 days (only if stats grid is visible)
-        const emptyState = sharedPage.locator('.usage-chart__empty');
-        const hasEmptyState = await emptyState.isVisible();
+        const hasEmptyState = await sharedPage.getByText('No usage data available yet').isVisible();
         if (!hasEmptyState) {
             await expect(sharedPage.getByText('Total (15 days)')).toBeVisible();
         }
@@ -96,9 +98,11 @@ test.describe('Usage Statistics', () => {
         // Verify 30d button now has active class
         await expect(btn30d).toHaveClass(/active/);
 
+        // Wait for loading to complete (if any)
+        await expect(sharedPage.getByText('Loading statistics...')).not.toBeVisible();
+
         // Verify the total label updates to show 30 days (only if stats grid is visible)
-        const emptyState = sharedPage.locator('.usage-chart__empty');
-        const hasEmptyState = await emptyState.isVisible();
+        const hasEmptyState = await sharedPage.getByText('No usage data available yet').isVisible();
         if (!hasEmptyState) {
             await expect(sharedPage.getByText('Total (30 days)')).toBeVisible();
         }

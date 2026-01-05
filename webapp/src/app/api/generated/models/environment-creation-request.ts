@@ -4,4 +4,5 @@
 export interface EnvironmentCreationRequest {
   description: string;
   name: string;
+  tier?: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'BUSINESS';
 }

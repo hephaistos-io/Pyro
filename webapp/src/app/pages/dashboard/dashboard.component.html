@@ -19,6 +19,13 @@
         type="button">
         Users
       </button>
+      <button
+        (click)="setActiveTab('billing')"
+        [class.dashboard-tab--active]="activeTab() === 'billing'"
+        class="dashboard-tab"
+        type="button">
+        Billing
+      </button>
     </div>
   }
 
@@ -44,6 +51,9 @@
         <app-users-table
           (addUserClick)="onAddUserClick()"
           (editUserClick)="onEditUserClick($event)"/>
+      } @else if (activeTab() === 'billing') {
+        <h2 class="section-title">Billing & Subscription</h2>
+        <app-billing-tab/>
       }
     }
   </div>
@@ -53,7 +63,13 @@
   <app-onboarding-overlay>
     @if (showSuccessMessage()) {
       <div class="success-message">
-        <div class="success-icon">&#10003;</div>
+        <div class="success-icon">
+          <svg fill="none" height="48" viewBox="0 0 48 48" width="48" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="24" cy="24" fill="currentColor" opacity="0.1" r="24"/>
+            <path d="M15 24l6 6 12-12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                  stroke-width="3"/>
+          </svg>
+        </div>
         <h2>Company Created!</h2>
         <p>Setting up your workspace...</p>
       </div>

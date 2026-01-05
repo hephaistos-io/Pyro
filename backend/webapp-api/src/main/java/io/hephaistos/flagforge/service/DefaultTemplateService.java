@@ -24,7 +24,6 @@ import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;
 import io.hephaistos.flagforge.data.repository.TemplateValuesRepository;
 import io.hephaistos.flagforge.exception.NotFoundException;
-import io.hephaistos.flagforge.security.RequireAdmin;
 import io.hephaistos.flagforge.security.RequireDev;
 import io.hephaistos.flagforge.security.RequireReadOnly;
 import org.springframework.stereotype.Service;
@@ -101,7 +100,7 @@ public class DefaultTemplateService implements TemplateService {
     }
 
     @Override
-    @RequireAdmin
+    @RequireDev
     public TemplateResponse updateTemplate(UUID applicationId, TemplateType type,
             TemplateUpdateRequest request) {
         if (!applicationRepository.existsByIdFiltered(applicationId)) {

@@ -19,8 +19,7 @@ import java.util.UUID;
  * daily statistics from database.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true",
-        matchIfMissing = true)
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true")
 public class DefaultUsageTrackingService implements UsageTrackingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultUsageTrackingService.class);

@@ -5,6 +5,7 @@ import io.hephaistos.flagforge.controller.dto.TeamResponse;
 import io.hephaistos.flagforge.controller.dto.UpdateCustomerRequest;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.security.RequireAdmin;
 import io.hephaistos.flagforge.service.CustomerService;
 import io.hephaistos.flagforge.service.InviteService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,6 +52,7 @@ public class CustomerController {
     @Operation(summary = "Retrieve all team members and pending invites for the assigned company")
     @GetMapping(value = "/all", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireAdmin
     public TeamResponse getTeam() {
         FlagForgeSecurityContext.getCurrent()
                 .getCompanyId()
@@ -71,6 +73,7 @@ public class CustomerController {
     @PutMapping(value = "/{customerId}", consumes = APPLICATION_JSON_VALUE,
             produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireAdmin
     public CustomerResponse updateCustomer(@PathVariable UUID customerId,
             @Valid @RequestBody UpdateCustomerRequest request) {
         var updatedCustomer = customerService.updateCustomer(customerId, request);

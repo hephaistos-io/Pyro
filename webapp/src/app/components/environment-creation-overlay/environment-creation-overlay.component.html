@@ -29,6 +29,25 @@
         type="text">
     </div>
 
+    @if (mode() === 'create') {
+      <div class="form-group">
+        <label class="form-label">Pricing Tier</label>
+        <div class="tier-selector">
+          @for (tier of tiers; track tier.value) {
+            <button
+              (click)="onTierChange(tier.value)"
+              [class.tier-option--selected]="selectedTier() === tier.value"
+              [disabled]="isSubmitting()"
+              class="tier-option"
+              type="button">
+              <span class="tier-option__label">{{ tier.label }}</span>
+              <span class="tier-option__price">{{ tier.price }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
     <div class="environment-creation-overlay__actions">
       <button
         (click)="onCancel()"

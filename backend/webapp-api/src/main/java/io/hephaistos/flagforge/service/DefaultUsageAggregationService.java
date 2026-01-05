@@ -26,8 +26,7 @@ import java.util.UUID;
  * daily usage data for historical queries.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true",
-        matchIfMissing = true)
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true")
 public class DefaultUsageAggregationService implements UsageAggregationService {
 
     private static final Logger LOGGER =

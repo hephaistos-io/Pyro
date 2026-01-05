@@ -15,8 +15,7 @@ import org.springframework.context.annotation.Configuration;
  * true (default).
  */
 @Configuration
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true",
-        matchIfMissing = true)
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true")
 public class RedisConfiguration {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RedisConfiguration.class);

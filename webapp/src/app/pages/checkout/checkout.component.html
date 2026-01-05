@@ -1,0 +1,87 @@
+<div class="checkout-page">
+  <a class="back-link" routerLink="/dashboard">
+    <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    Back to Dashboard
+  </a>
+
+  <div class="checkout-header">
+    <h1>Checkout</h1>
+    <p class="checkout-subtitle">Review your pending environment subscriptions</p>
+  </div>
+
+  @if (!hasItems()) {
+    <div class="empty-cart">
+      <p>Your cart is empty.</p>
+      <a class="btn btn-secondary" routerLink="/dashboard">Return to Dashboard</a>
+      <button class="btn btn-primary checkout-btn" disabled type="button">
+        Proceed to Payment
+      </button>
+    </div>
+  } @else {
+    <div class="checkout-content">
+      <div class="cart-items">
+        <h2>Cart Items</h2>
+
+        @for (item of pendingEnvironments(); track item.environmentId) {
+          <div class="cart-item">
+            <div class="item-info">
+              <span class="item-name">{{ item.environmentName }}</span>
+              <span class="item-app">{{ item.applicationName }}</span>
+              <span class="item-tier tier-{{ item.tier.toLowerCase() }}">{{ item.tier }}</span>
+            </div>
+            <div class="item-price">
+              <span>{{ formatPrice(item.monthlyPriceCents) }}/mo</span>
+              <button (click)="removeItem(item.environmentId)" aria-label="Remove item" class="remove-item-btn"
+                      type="button">
+                <svg fill="none" height="16" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="16">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="order-summary">
+        <h2>Order Summary</h2>
+
+        <div class="summary-line">
+          <span>Subtotal</span>
+          <span>{{ totalFormatted() }}/mo</span>
+        </div>
+
+        <div class="summary-total cart-total">
+          <span>Total (monthly)</span>
+          <span>{{ totalFormatted() }}</span>
+        </div>
+
+        @if (error) {
+          <div class="error-message">{{ error }}</div>
+        }
+
+        <button
+          (click)="proceedToCheckout()"
+          [disabled]="loading() || checkoutInProgress"
+          class="btn btn-primary checkout-btn"
+          type="button">
+          @if (loading() || checkoutInProgress) {
+            <span class="spinner"></span>
+            Processing...
+          } @else {
+            Proceed to Payment
+          }
+        </button>
+
+        <p class="secure-payment">
+          <svg fill="none" height="14" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="14">
+            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Secure payment powered by Stripe
+        </p>
+      </div>
+    </div>
+  }
+</div>

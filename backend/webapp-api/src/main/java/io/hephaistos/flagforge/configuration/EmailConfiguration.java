@@ -14,7 +14,7 @@ public class EmailConfiguration {
     /**
      * Email address used as the "From" address for outgoing emails.
      */
-    private String fromAddress = "noreply@flagforge.io";
+    private String fromAddress = "noreply@flagforge.dev";
 
     /**
      * Display name used in the "From" field of outgoing emails.

@@ -49,7 +49,13 @@ test.describe('User Login', () => {
         await page.getByLabel('Email').fill('test@example.com');
         await page.getByLabel('Password').fill('somepassword');
 
-        // Click and immediately check for loading state
+        // Slow down network to ensure loading state is visible
+        await page.route('**/auth/**', async route => {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await route.continue();
+        });
+
+        // Click and check for loading state
         await page.getByRole('button', {name: 'Log In'}).click();
 
         // Button should show loading state (spinner or text change)

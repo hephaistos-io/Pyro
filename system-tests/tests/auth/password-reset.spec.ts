@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import {clearMailbox, getPasswordResetLink} from '../../utils/mailpit.util';
+import {getPasswordResetLink} from '../../utils/mailpit.util';
 import {registerUser} from '../../utils/auth.util';
 import {uniqueEmail} from '../../utils/test-data.util';
 
@@ -80,9 +80,6 @@ test.describe('Password Reset - Full Flow via Email', () => {
         // Create a user first
         const email = uniqueEmail('forgot-pw');
         await registerUser(page, email, 'Test', 'User');
-
-        // Clear mailbox to ensure we get the right email
-        await clearMailbox();
 
         // Request password reset via forgot password page
         await page.goto('/forgot-password');

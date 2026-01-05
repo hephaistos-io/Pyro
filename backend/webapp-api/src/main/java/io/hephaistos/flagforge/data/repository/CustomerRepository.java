@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,5 +31,11 @@ public interface CustomerRepository extends JpaRepository<CustomerEntity, UUID> 
      */
     @Query("SELECT DISTINCT c FROM CustomerEntity c LEFT JOIN FETCH c.accessibleApplications WHERE c.id = :id")
     Optional<CustomerEntity> findByIdFiltered(@Param("id") UUID id);
+
+    /**
+     * Find customers by company ID. Returns the first customer found (typically the admin).
+     */
+    @Query("SELECT c FROM CustomerEntity c WHERE c.companyId = :companyId ORDER BY c.id ASC")
+    List<CustomerEntity> findByCompanyId(@Param("companyId") UUID companyId);
 
 }

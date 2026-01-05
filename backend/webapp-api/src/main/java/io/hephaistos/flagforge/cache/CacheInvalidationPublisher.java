@@ -18,8 +18,7 @@ import java.util.UUID;
  * customer-api instances when template data changes.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true",
-        matchIfMissing = true)
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true")
 public class CacheInvalidationPublisher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CacheInvalidationPublisher.class);
@@ -31,17 +30,14 @@ public class CacheInvalidationPublisher {
             JsonMapper jsonMapper) {
         this.redisConnection = redisConnection;
         this.jsonMapper = jsonMapper;
-        LOGGER.info("Cache invalidation publisher initialized");
     }
 
     /**
      * Publish a schema change event (affects all environments for the app + template type).
      */
     public void publishSchemaChange(UUID appId, TemplateType type) {
-        var event =
-                new CacheInvalidationEvent(CacheInvalidationType.SCHEMA_CHANGE, appId, null, type,
-                        null);
-        publish(event);
+        publish(new CacheInvalidationEvent(CacheInvalidationType.SCHEMA_CHANGE, appId, null, type,
+                null));
     }
 
     /**
@@ -49,9 +45,8 @@ public class CacheInvalidationPublisher {
      */
     public void publishOverrideChange(UUID appId, UUID envId, TemplateType type,
             String identifier) {
-        var event = new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
-                type, identifier);
-        publish(event);
+        publish(new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
+                type, identifier));
     }
 
     /**
@@ -59,14 +54,10 @@ public class CacheInvalidationPublisher {
      */
     public void publishEnvironmentDeleted(UUID appId, UUID envId) {
         // Invalidate both SYSTEM and USER caches for this environment
-        var systemEvent =
-                new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
-                        TemplateType.SYSTEM, null);
-        var userEvent =
-                new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
-                        TemplateType.USER, null);
-        publish(systemEvent);
-        publish(userEvent);
+        publish(new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
+                TemplateType.SYSTEM, null));
+        publish(new CacheInvalidationEvent(CacheInvalidationType.OVERRIDE_CHANGE, appId, envId,
+                TemplateType.USER, null));
     }
 
     private void publish(CacheInvalidationEvent event) {

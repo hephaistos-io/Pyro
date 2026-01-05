@@ -3,6 +3,7 @@ import {Router, RouterLink} from '@angular/router';
 import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 import {fromEvent, map} from 'rxjs';
 import {AuthService} from '../../services/auth.service';
+import {PricingStateService} from '../../services/pricing-state.service';
 
 @Component({
   selector: 'app-navbar',
@@ -13,6 +14,7 @@ import {AuthService} from '../../services/auth.service';
 })
 export class NavbarComponent {
   authService = inject(AuthService);
+  pricingState = inject(PricingStateService);
   private router = inject(Router);
 
   isMobile = signal(window.innerWidth <= 768);

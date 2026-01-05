@@ -18,8 +18,7 @@ import java.util.UUID;
  * (production-safe, non-blocking). Fails open: cleanup errors don't block environment deletion.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true",
-        matchIfMissing = true)
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "true")
 public class DefaultRedisCleanupService implements RedisCleanupService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRedisCleanupService.class);

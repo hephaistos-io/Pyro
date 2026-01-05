@@ -23,7 +23,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -90,34 +89,6 @@ class DefaultApplicationServiceTest {
 
         assertThatThrownBy(() -> applicationService.createApplication(request)).isInstanceOf(
                 NoCompanyAssignedException.class);
-    }
-
-    @Test
-    void createApplicationUpdatesSecurityContextAccessibleApplicationIds() {
-        var request = new ApplicationCreationRequest("Test App");
-        var customer = new CustomerEntity();
-        customer.setId(testCustomerId);
-        UUID newAppId = UUID.randomUUID();
-
-        when(applicationRepository.existsByNameAndCompanyId("Test App", testCompanyId)).thenReturn(
-                false);
-        when(applicationRepository.save(any(ApplicationEntity.class))).thenAnswer(invocation -> {
-            ApplicationEntity entity = invocation.getArgument(0);
-            entity.setId(newAppId);
-            return entity;
-        });
-        when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(customer));
-
-        // Set up initial accessible app IDs
-        var context = (FlagForgeSecurityContext) SecurityContextHolder.getContext();
-        UUID existingAppId = UUID.randomUUID();
-        context.setAccessibleApplicationIds(Set.of(existingAppId));
-
-        applicationService.createApplication(request);
-
-        // Verify the security context was updated with the new app ID
-        Set<UUID> accessibleAppIds = context.getAccessibleApplicationIds();
-        assertThat(accessibleAppIds).contains(existingAppId, newAppId);
     }
 
     @Test

@@ -105,22 +105,26 @@ test.describe('Application Access Management', () => {
         // Invite dev2 with access to app2
         await createInvite(page, dev2Email, 'Developer', {grantAccessToApps: [app2Name]});
 
-        // Reload to get fresh data
+        // Reload to get fresh data and wait for dashboard to load
         await page.reload();
+        await expect(page.locator('.app-cards, .users-table')).toBeVisible();
         await navigateToUsersTab(page);
 
         // Check dev1's applications
         const dev1Row = getUserRow(page, dev1Email);
+        await expect(dev1Row).toBeVisible();
         await expect(dev1Row.getByText(app1Name)).toBeVisible();
         await expect(dev1Row.getByText(app2Name)).not.toBeVisible();
 
         // Check dev2's applications
         const dev2Row = getUserRow(page, dev2Email);
+        await expect(dev2Row).toBeVisible();
         await expect(dev2Row.getByText(app2Name)).toBeVisible();
         await expect(dev2Row.getByText(app1Name)).not.toBeVisible();
 
         // Admin should have access to all applications (displayed as "All (Admin Role)")
         const adminRow = getUserRow(page, adminEmail);
+        await expect(adminRow).toBeVisible();
         await expect(adminRow.getByText('All (Admin Role)')).toBeVisible();
     });
 
@@ -198,53 +202,73 @@ test.describe('Application Access Management', () => {
         const appAName = 'Company A App';
         const appBName = 'Company B App';
 
-        // Setup Company A
-        const pageA = await browser.newPage();
-        await registerUser(pageA, adminAEmail, 'Admin', 'CompanyA');
-        await loginUser(pageA, adminAEmail);
-        await createCompany(pageA, 'Company Alpha');
-        await createApplication(pageA, appAName);
+        // Setup both companies in parallel
+        const [pageA, pageB] = await Promise.all([
+            browser.newPage(),
+            browser.newPage()
+        ]);
 
-        // Invite dev to Company A with access to Company A's app
-        await navigateToUsersTab(pageA);
-        await createInvite(pageA, devAEmail, 'Developer', {grantAccessToApps: [appAName]});
+        // Register both admins in parallel
+        await Promise.all([
+            registerUser(pageA, adminAEmail, 'Admin', 'CompanyA'),
+            registerUser(pageB, adminBEmail, 'Admin', 'CompanyB')
+        ]);
 
-        // Reload and verify
-        await pageA.reload();
-        await navigateToUsersTab(pageA);
-        const devARow = getUserRow(pageA, devAEmail);
-        await expect(devARow.getByText(appAName)).toBeVisible();
-        await expect(devARow.getByText(appBName)).not.toBeVisible();
+        // Login both admins in parallel
+        await Promise.all([
+            loginUser(pageA, adminAEmail),
+            loginUser(pageB, adminBEmail)
+        ]);
 
-        // Setup Company B
-        const pageB = await browser.newPage();
-        await registerUser(pageB, adminBEmail, 'Admin', 'CompanyB');
-        await loginUser(pageB, adminBEmail);
-        await createCompany(pageB, 'Company Beta');
-        await createApplication(pageB, appBName);
+        // Create companies in parallel
+        await Promise.all([
+            createCompany(pageA, 'Company Alpha'),
+            createCompany(pageB, 'Company Beta')
+        ]);
 
-        // Invite dev to Company B with access to Company B's app
-        await navigateToUsersTab(pageB);
-        await createInvite(pageB, devBEmail, 'Developer', {grantAccessToApps: [appBName]});
+        // Create applications in parallel
+        await Promise.all([
+            createApplication(pageA, appAName),
+            createApplication(pageB, appBName)
+        ]);
 
-        // Reload and verify
-        await pageB.reload();
-        await navigateToUsersTab(pageB);
-        const devBRow = getUserRow(pageB, devBEmail);
-        await expect(devBRow.getByText(appBName)).toBeVisible();
-        await expect(devBRow.getByText(appAName)).not.toBeVisible();
+        // Navigate to Users and create invites in parallel
+        await Promise.all([
+            navigateToUsersTab(pageA),
+            navigateToUsersTab(pageB)
+        ]);
 
-        // Verify Company A still only sees their data
-        await pageA.reload();
-        await navigateToUsersTab(pageA);
-        const emails = await pageA.locator('.users-table__row .user-identity__email').allTextContents();
-        expect(emails).toContain(adminAEmail);
-        expect(emails).toContain(devAEmail);
-        expect(emails).not.toContain(adminBEmail);
-        expect(emails).not.toContain(devBEmail);
+        await Promise.all([
+            createInvite(pageA, devAEmail, 'Developer', {grantAccessToApps: [appAName]}),
+            createInvite(pageB, devBEmail, 'Developer', {grantAccessToApps: [appBName]})
+        ]);
 
-        await pageA.close();
-        await pageB.close();
+        // Reload both pages in parallel and verify isolation
+        await Promise.all([
+            pageA.reload(),
+            pageB.reload()
+        ]);
+
+        await Promise.all([
+            navigateToUsersTab(pageA),
+            navigateToUsersTab(pageB)
+        ]);
+
+        // Verify Company A only sees their users
+        const emailsA = await pageA.locator('.users-table__row .user-identity__email').allTextContents();
+        expect(emailsA).toContain(adminAEmail);
+        expect(emailsA).toContain(devAEmail);
+        expect(emailsA).not.toContain(adminBEmail);
+        expect(emailsA).not.toContain(devBEmail);
+
+        // Verify Company B only sees their users
+        const emailsB = await pageB.locator('.users-table__row .user-identity__email').allTextContents();
+        expect(emailsB).toContain(adminBEmail);
+        expect(emailsB).toContain(devBEmail);
+        expect(emailsB).not.toContain(adminAEmail);
+        expect(emailsB).not.toContain(devAEmail);
+
+        await Promise.all([pageA.close(), pageB.close()]);
     });
 
     test('user with no application access sees empty dashboard', async ({browser}) => {
@@ -300,17 +324,19 @@ test.describe('Application Access Management', () => {
 
         // Navigate back to Applications tab
         await page.getByRole('button', {name: 'Applications'}).click();
+        await expect(page.locator('.app-cards')).toBeVisible();
 
         // Create a second application
         await createApplication(page, app2Name);
 
-        // Navigate back to Users tab
-        await navigateToUsersTab(page);
+        // Reload and navigate to Users tab
         await page.reload();
+        await expect(page.locator('.app-cards, .users-table')).toBeVisible();
         await navigateToUsersTab(page);
 
         // Verify dev only has access to app1, not app2
         const devRow = getUserRow(page, devEmail);
+        await expect(devRow).toBeVisible();
         await expect(devRow.getByText(app1Name)).toBeVisible();
         await expect(devRow.getByText(app2Name)).not.toBeVisible();
     });
@@ -327,13 +353,14 @@ test.describe('Application Access Management', () => {
         // Create application
         await createApplication(page, appName);
 
-        // Navigate to Users tab
-        await navigateToUsersTab(page);
+        // Reload and navigate to Users tab
         await page.reload();
+        await expect(page.locator('.app-cards, .users-table')).toBeVisible();
         await navigateToUsersTab(page);
 
         // Verify admin has access to all applications (displayed as "All (Admin Role)")
         const adminRow = getUserRow(page, adminEmail);
+        await expect(adminRow).toBeVisible();
         await expect(adminRow.getByText('All (Admin Role)')).toBeVisible();
     });
 });

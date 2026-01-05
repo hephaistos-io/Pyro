@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.common.data;
 
+import io.hephaistos.flagforge.common.enums.PaymentStatus;
 import io.hephaistos.flagforge.common.enums.PricingTier;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,6 +44,10 @@ public class EnvironmentEntity extends ApplicationOwnedEntity {
 
     @Column(name = "requests_per_month", nullable = false)
     private Integer requestsPerMonth = 500000;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus = PaymentStatus.PAID;
 
     public UUID getId() {
         return id;
@@ -101,5 +106,13 @@ public class EnvironmentEntity extends ApplicationOwnedEntity {
 
     public void setRequestsPerMonth(Integer requestsPerMonth) {
         this.requestsPerMonth = requestsPerMonth;
+    }
+
+    public PaymentStatus getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(PaymentStatus paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 }

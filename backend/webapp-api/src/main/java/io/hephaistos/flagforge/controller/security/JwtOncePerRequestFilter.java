@@ -92,7 +92,7 @@ public class JwtOncePerRequestFilter extends OncePerRequestFilter {
             SecurityContextHolder.setContext(securityContext);
         }
         else {
-            LOGGER.info("Authentication not required, already so");
+            LOGGER.info("Authentication not required, already authenticated");
         }
     }
 

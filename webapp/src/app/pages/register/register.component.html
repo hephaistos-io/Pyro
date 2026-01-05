@@ -82,23 +82,8 @@
                               [disabled]="isLoading()"
                       />
                     @if (password()) {
-                          <div class="password-strength">
-                              <div class="strength-bar">
-                                  <div
-                                          class="strength-fill"
-                                          [attr.data-score]="passwordStrength.score"
-                                  ></div>
-                              </div>
-                              <div class="strength-info">
-                  <span class="strength-label" [attr.data-score]="passwordStrength.score">
-                    {{ passwordStrength.label }}
-                  </span>
-                                  @if (passwordStrength.feedback) {
-                                      <span class="strength-feedback">{{ passwordStrength.feedback }}</span>
-                                  }
-                              </div>
-                          </div>
-                      }
+                      <app-password-strength-meter [password]="password()"/>
+                    }
                   </div>
 
                   <div class="form-group">
@@ -207,23 +192,8 @@
                               [disabled]="isLoading()"
                       />
                     @if (password()) {
-                          <div class="password-strength">
-                              <div class="strength-bar">
-                                  <div
-                                          class="strength-fill"
-                                          [attr.data-score]="passwordStrength.score"
-                                  ></div>
-                              </div>
-                              <div class="strength-info">
-                  <span class="strength-label" [attr.data-score]="passwordStrength.score">
-                    {{ passwordStrength.label }}
-                  </span>
-                                  @if (passwordStrength.feedback) {
-                                      <span class="strength-feedback">{{ passwordStrength.feedback }}</span>
-                                  }
-                              </div>
-                          </div>
-                      }
+                      <app-password-strength-meter [password]="password()"/>
+                    }
                   </div>
 
                   <div class="form-group">

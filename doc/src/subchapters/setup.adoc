@@ -349,6 +349,41 @@ FlagForge has a comprehensive test suite covering unit tests, integration tests,
 | `./gradlew allTests`
 |===
 
+=== Email Testing with Mailpit
+
+For local development, all outgoing emails are captured by https://mailpit.axllent.org/[Mailpit], a lightweight email testing tool.
+
+[cols="1,2"]
+|===
+| Web UI | http://localhost:8025
+| SMTP Port | 1025
+|===
+
+To view emails sent by the application (registration confirmations, password resets, team invitations, etc.):
+
+[source,bash]
+----
+# Ensure Docker is running
+./gradlew dockerUp
+
+# Open the Mailpit web interface
+open http://localhost:8025
+----
+
+The Mailpit UI allows you to:
+
+* View all captured emails
+* Inspect email content (HTML and plain text)
+* Check email headers
+* Search through emails
+* Delete individual emails or clear all
+
+[NOTE]
+====
+Mailpit is only available in the local Docker environment.
+No emails are sent to real addresses during local development.
+====
+
 === Backend Tests
 
 ==== Unit Tests

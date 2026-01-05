@@ -18,9 +18,7 @@ import io.hephaistos.flagforge.security.RequireReadOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -70,11 +68,6 @@ public class DefaultApplicationService implements ApplicationService {
         // Grant the creator access to the application
         CustomerEntity customer = customerRepository.findById(customerId).orElseThrow();
         customer.getAccessibleApplications().add(application);
-
-        // Update the security context's cached accessible application IDs
-        Set<UUID> updatedAppIds = new HashSet<>(securityContext.getAccessibleApplicationIds());
-        updatedAppIds.add(application.getId());
-        securityContext.setAccessibleApplicationIds(updatedAppIds);
 
         environmentService.createDefaultEnvironments(application);
         templateService.createDefaultTemplates(application);

@@ -57,3 +57,73 @@
   @include spinner(14px, 2px, $white);
   margin-right: 0.5rem;
 }
+
+.tier-selector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+
+  @media (max-width: 500px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tier-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  background: $white;
+  border: 2px solid rgba($charcoal, 0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: rgba($pyro-red, 0.4);
+  }
+
+  &--selected {
+    border-color: $pyro-red;
+    background: rgba($pyro-red, 0.05);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @include dark-mode {
+    background: $dark-card;
+    border-color: $dark-border;
+
+    &:hover:not(:disabled) {
+      border-color: rgba($pyro-red, 0.6);
+    }
+
+    &--selected {
+      border-color: $pyro-red;
+      background: rgba($pyro-red, 0.15);
+    }
+  }
+
+  &__label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $charcoal;
+
+    @include dark-mode {
+      color: $dark-text;
+    }
+  }
+
+  &__price {
+    font-size: 0.75rem;
+    color: $charcoal-light;
+
+    @include dark-mode {
+      color: $dark-text-muted;
+    }
+  }
+}

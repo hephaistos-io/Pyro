@@ -25,6 +25,27 @@ services:
     networks:
       - flagforge-network
 
+  # Stripe Mock for Payment Testing (only in mock profile)
+  # Use: docker compose --profile mock up
+  # Or:  ./gradlew dockerUp (default)
+  # Skip with: ./gradlew dockerUp -Pstripe.mode=sandbox
+  stripe-mock:
+    image: stripe/stripe-mock:latest
+    container_name: flagforge-stripe-mock
+    profiles: [ "mock" ]
+    ports:
+      - "12111:12111"
+      - "12112:12112"
+    healthcheck:
+      # stripe-mock returns 401 on unauthenticated requests, but any response means it's healthy
+      # wget returns exit 1 on HTTP error, we accept that as healthy since server is responding
+      test: [ "CMD-SHELL", "wget --spider http://localhost:12111/ 2>&1 || test $? -eq 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - flagforge-network
+
   # Mailpit for Email Testing
   mailpit:
     image: axllent/mailpit:latest
@@ -73,7 +94,7 @@ services:
       target: production
     container_name: flagforge-backend
     env_file:
-      - local.env
+      - ${COMPOSE_ENV_FILE:-local.env}
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${WEBAPP_DB_USERNAME}
@@ -88,6 +109,9 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_healthy
+      stripe-mock:
+        condition: service_healthy
+        required: false  # Optional: only when using mock profile
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v3/api-docs" ]
       interval: 30s
@@ -114,6 +138,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      webapp-api:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/v3/api-docs" ]

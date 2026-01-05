@@ -13,7 +13,8 @@ import java.util.UUID;
  * operations are no-ops.
  */
 @Service
-@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false")
+@ConditionalOnProperty(name = "flagforge.redis.enabled", havingValue = "false",
+        matchIfMissing = true)
 public class NoOpCacheInvalidationPublisher extends CacheInvalidationPublisher {
 
     private static final Logger LOGGER =

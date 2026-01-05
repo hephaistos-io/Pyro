@@ -1,0 +1,255 @@
+= Stripe Testing
+
+This guide covers the different Stripe integration modes available for testing payment flows.
+
+== Testing Modes
+
+FlagForge supports three Stripe integration modes:
+
+[cols="1,2,2,2"]
+|===
+| Mode | API Target | Webhooks | Use Case
+
+| Mock
+| stripe-mock container
+| Manual test payloads
+| Unit tests, CI, fast iteration
+
+| Sandbox
+| Stripe Test API (sk_test_*)
+| Stripe CLI forwarding
+| E2E tests, manual QA
+
+| Production
+| Stripe Live API
+| Direct webhook endpoint
+| Live environment
+|===
+
+== Mock Mode (Default)
+
+Mock mode uses the `stripe-mock` container for fast, offline testing.
+This is the default mode.
+
+[source,bash]
+----
+# Start with mock mode (default)
+./gradlew dockerUp
+----
+
+=== How It Works
+
+The `stripe-mock` container runs a local HTTP server that mimics the Stripe API.
+It accepts any API key and returns mock responses.
+
+=== Limitations
+
+* No metadata persistence on checkout sessions
+* No real webhook delivery
+* Subscription items don't persist across requests
+* Requires workarounds in `MockStripeService` (local caching)
+
+=== When to Use
+
+* Running unit and integration tests
+* CI/CD pipelines
+* Fast local development iteration
+* When you don't need real Stripe behavior
+
+== Sandbox Mode
+
+Sandbox mode connects to Stripe's real test API with CLI webhook forwarding.
+
+=== Prerequisites
+
+1. Stripe account with test API keys
+2. Stripe CLI installed
+3. Products/prices created in Stripe dashboard
+
+==== Installing Stripe CLI
+
+[source,bash]
+----
+# macOS
+brew install stripe/stripe-cli/stripe
+
+# Login to your Stripe account
+stripe login
+----
+
+=== Setup
+
+[source,bash]
+----
+# Terminal 1: Start application in sandbox mode
+./gradlew dockerUp -Pstripe.mode=sandbox
+
+# Terminal 2: Start Stripe CLI webhook forwarding
+./scripts/stripe-sandbox.sh
+----
+
+Or using the dedicated task:
+
+[source,bash]
+----
+./gradlew dockerUpSandbox
+----
+
+=== Configuration
+
+Create `deployment/local/sandbox.env` with your Stripe test keys:
+
+[source,bash]
+----
+# Mode: sandbox uses real Stripe test API
+STRIPE_MODE=sandbox
+
+# Get from: https://dashboard.stripe.com/test/apikeys
+STRIPE_API_KEY=sk_test_YOUR_KEY
+STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_KEY
+
+# Get from: stripe listen --print-secret
+STRIPE_WEBHOOK_SECRET=whsec_FROM_CLI
+
+# Create in Stripe Dashboard > Products
+STRIPE_PRICE_BASIC=price_xxx
+STRIPE_PRICE_STANDARD=price_xxx
+STRIPE_PRICE_PRO=price_xxx
+STRIPE_PRICE_BUSINESS=price_xxx
+----
+
+=== Test Cards
+
+Use these test card numbers in sandbox mode:
+
+[cols="1,2"]
+|===
+| Card Number | Description
+
+| 4242424242424242
+| Successful payment
+
+| 4000002500003155
+| Requires authentication (3D Secure)
+
+| 4000000000000341
+| Attach succeeds, charge fails (test failed subscriptions)
+
+| 4000000000009995
+| Insufficient funds
+
+| 4000000000000002
+| Card declined
+|===
+
+For all test cards, use:
+
+* Expiry: Any future date (e.g., 12/34)
+* CVC: Any 3 digits (e.g., 123)
+* ZIP: Any 5 digits (e.g., 12345)
+
+=== When to Use
+
+* Testing real Stripe checkout flow
+* Verifying webhook handling
+* Manual QA testing
+* Pre-production validation
+
+== Creating Stripe Test Products
+
+Before using sandbox mode, create products in the Stripe Dashboard (Test Mode):
+
+1. Go to https://dashboard.stripe.com/test/products
+2. Click "Add Product"
+3. Create the following products with monthly recurring prices:
+
+[cols="1,1"]
+|===
+| Product | Price
+
+| Basic Plan
+| $10/month
+
+| Standard Plan
+| $25/month
+
+| Pro Plan
+| $50/month
+
+| Business Plan
+| $100/month
+|===
+
+4. Copy each price ID (starts with `price_`) to your `sandbox.env` file
+
+== E2E Testing with Playwright
+
+The `system-tests/utils/stripe-checkout.util.ts` provides helpers for testing checkout:
+
+[source,typescript]
+----
+import { completeCheckout, TEST_CARDS } from '../utils/stripe-checkout.util';
+
+test('can complete checkout', async ({ page }) => {
+    // Navigate to checkout
+    await page.goto('/dashboard/checkout');
+
+    // Complete checkout (works in both mock and sandbox mode)
+    await completeCheckout(page);
+
+    // Verify success
+    await expect(page).toHaveURL(/checkout\/success/);
+});
+
+// Test with declined card (sandbox only)
+test('handles declined card', async ({ page }) => {
+    await page.goto('/dashboard/checkout');
+
+    await completeCheckout(page, {
+        cardNumber: TEST_CARDS.DECLINED
+    });
+
+    // Verify error handling
+    await expect(page.locator('.error-message')).toBeVisible();
+});
+----
+
+== Production Mode
+
+Production mode uses Stripe's live API.
+Configure with:
+
+[source,bash]
+----
+STRIPE_MODE=production
+STRIPE_API_KEY=sk_live_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx  # From Stripe Dashboard webhook configuration
+----
+
+CAUTION: Never use production keys in development or test environments.
+
+== Troubleshooting
+
+=== Webhooks Not Received
+
+1. Ensure Stripe CLI is running: `./scripts/stripe-sandbox.sh`
+2. Check the webhook secret matches `STRIPE_WEBHOOK_SECRET` in your env file
+3. Verify the endpoint path: `/api/webhooks/stripe`
+
+=== Mock Mode Not Working
+
+1. Check stripe-mock container is running: `docker ps | grep stripe-mock`
+2. Verify `STRIPE_MODE=mock` in your environment
+3. Check the mock URL: `http://stripe-mock:12111`
+
+=== Sandbox Checkout Fails
+
+1. Verify your test API keys are correct
+2. Check that products/prices exist in Stripe Dashboard
+3. Ensure webhook forwarding is active
+
+== Related Documentation
+
+* https://docs.stripe.com/testing[Stripe Testing Documentation]
+* https://github.com/stripe/stripe-mock[stripe-mock on GitHub]
+* https://docs.stripe.com/stripe-cli[Stripe CLI Documentation]

@@ -10,21 +10,28 @@ import io.hephaistos.flagforge.common.enums.CustomerRole;
 import io.hephaistos.flagforge.controller.dto.ApplicationCreationRequest;
 import io.hephaistos.flagforge.controller.dto.ApplicationResponse;
 import io.hephaistos.flagforge.controller.dto.CustomerResponse;
+import io.hephaistos.flagforge.controller.dto.InviteCreationRequest;
+import io.hephaistos.flagforge.controller.dto.InviteCreationResponse;
 import io.hephaistos.flagforge.controller.dto.TeamResponse;
 import io.hephaistos.flagforge.controller.dto.UpdateCustomerRequest;
 import io.hephaistos.flagforge.data.repository.ApplicationRepository;
+import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,9 +51,16 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
     @Autowired
     private ApplicationRepository applicationRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CompanyInviteRepository companyInviteRepository;
+
     @BeforeEach
     void beforeEach() {
         initializeTestSupport();
+        companyInviteRepository.deleteAll();
         applicationRepository.deleteAll();
         companyRepository.deleteAll();
         customerRepository.deleteAll();
@@ -196,5 +210,168 @@ class CustomerControllerIntegrationTest extends IntegrationTestSupport {
         customerEntity.setPassword(UUID.randomUUID().toString());
         customerEntity.setCompanyId(id);
         customerRepository.save(customerEntity);
+    }
+
+    private String createUserWithRole(String adminToken, CustomerRole role) {
+        String email = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+        var inviteRequest = new InviteCreationRequest(email, role, Set.of(), null);
+        post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+
+        String inviteToken = getInviteTokenByEmail(email);
+        registerUserWithInvite("Test", "User", "password123", inviteToken);
+        return authenticate(email, "password123");
+    }
+
+    private String getInviteTokenByEmail(String email) {
+        return companyInviteRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Invite not found for email: " + email))
+                .getToken();
+    }
+
+    @Nested
+    @DisplayName("Role-based Access Control")
+    class RoleBasedAccessControl {
+
+        @Test
+        void adminRoleCanGetTeam() {
+            String adminToken = registerAndAuthenticateWithCompany();
+
+            var response = get("/v1/customer/all", adminToken, TeamResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().members()).isNotEmpty();
+        }
+
+        @Test
+        void devRoleCannotGetTeam() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create DEV user via invite
+            String devToken = createUserWithRole(adminToken, CustomerRole.DEV);
+
+            // DEV should NOT be able to get team
+            var response = get("/v1/customer/all", devToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void readOnlyRoleCannotGetTeam() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create READ_ONLY user via invite
+            String readOnlyToken = createUserWithRole(adminToken, CustomerRole.READ_ONLY);
+
+            // READ_ONLY should NOT be able to get team
+            var response = get("/v1/customer/all", readOnlyToken, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void adminRoleCanUpdateCustomer() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create target user via invite
+            String targetEmail = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+            var inviteRequest =
+                    new InviteCreationRequest(targetEmail, CustomerRole.READ_ONLY, Set.of(), null);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+            String inviteToken = getInviteTokenByEmail(targetEmail);
+            registerUserWithInvite("Target", "User", "password123", inviteToken);
+
+            // Get the target user's ID
+            var targetCustomer = customerRepository.findByEmail(targetEmail).orElseThrow();
+
+            // Admin should be able to update customer
+            var updateRequest = new UpdateCustomerRequest(List.of(), CustomerRole.DEV);
+            var response = put("/v1/customer/" + targetCustomer.getId(), updateRequest, adminToken,
+                    CustomerResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().role()).isEqualTo(CustomerRole.DEV);
+        }
+
+        @Test
+        void devRoleCannotUpdateCustomer() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create DEV user via invite
+            String devToken = createUserWithRole(adminToken, CustomerRole.DEV);
+
+            // Create target user via invite
+            String targetEmail = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+            var inviteRequest =
+                    new InviteCreationRequest(targetEmail, CustomerRole.READ_ONLY, Set.of(), null);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+            String inviteToken = getInviteTokenByEmail(targetEmail);
+            registerUserWithInvite("Target", "User", "password123", inviteToken);
+
+            // Get the target user's ID
+            var targetCustomer = customerRepository.findByEmail(targetEmail).orElseThrow();
+
+            // DEV should NOT be able to update customer
+            var updateRequest = new UpdateCustomerRequest(List.of(), CustomerRole.DEV);
+            var response = put("/v1/customer/" + targetCustomer.getId(), updateRequest, devToken,
+                    String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void readOnlyRoleCannotUpdateCustomer() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create READ_ONLY user via invite
+            String readOnlyToken = createUserWithRole(adminToken, CustomerRole.READ_ONLY);
+
+            // Create target user via invite
+            String targetEmail = UUID.randomUUID().toString().substring(0, 8) + "@test.com";
+            var inviteRequest =
+                    new InviteCreationRequest(targetEmail, CustomerRole.DEV, Set.of(), null);
+            post("/v1/company/invite", inviteRequest, adminToken, InviteCreationResponse.class);
+            String inviteToken = getInviteTokenByEmail(targetEmail);
+            registerUserWithInvite("Target", "User", "password123", inviteToken);
+
+            // Get the target user's ID
+            var targetCustomer = customerRepository.findByEmail(targetEmail).orElseThrow();
+
+            // READ_ONLY should NOT be able to update customer
+            var updateRequest = new UpdateCustomerRequest(List.of(), CustomerRole.READ_ONLY);
+            var response =
+                    put("/v1/customer/" + targetCustomer.getId(), updateRequest, readOnlyToken,
+                            String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        void allRolesCanGetOwnProfile() {
+            // Setup: Admin creates company
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+
+            // Create users with different roles via invite
+            String devToken = createUserWithRole(adminToken, CustomerRole.DEV);
+            String readOnlyToken = createUserWithRole(adminToken, CustomerRole.READ_ONLY);
+
+            // All users should be able to get their own profile
+            var devResponse = get("/v1/customer/profile", devToken, CustomerResponse.class);
+            assertThat(devResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            var readOnlyResponse =
+                    get("/v1/customer/profile", readOnlyToken, CustomerResponse.class);
+            assertThat(readOnlyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
     }
 }

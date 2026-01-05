@@ -6,21 +6,53 @@
 // Uses shell wrapper to inherit PATH correctly at execution time
 
 val dockerComposeDir = file("deployment/local")
-val dockerCompose = "docker compose --env-file local.env"
+
+// Stripe mode configuration: mock (default) | sandbox | production
+// Use -Pstripe.mode=sandbox to run with real Stripe test API
+val stripeMode = project.findProperty("stripe.mode")?.toString() ?: "mock"
+val dockerComposeEnvFile = if (stripeMode == "sandbox") "sandbox.env" else "local.env"
+val dockerComposeProfile = if (stripeMode == "mock") "--profile mock" else ""
+// COMPOSE_ENV_FILE is used by docker-compose.yml to load the correct env file into containers
+val dockerCompose =
+    "COMPOSE_ENV_FILE=$dockerComposeEnvFile docker compose --env-file $dockerComposeEnvFile $dockerComposeProfile"
 
 tasks.register<Exec>("dockerBuildBackend") {
     description = "Build backend Docker images (webapp-api, customer-api)"
     group = "docker"
     workingDir = dockerComposeDir
-    commandLine("sh", "-c", "$dockerCompose build webapp-api customer-api")
+    commandLine("sh", "-c", "docker compose --env-file local.env build webapp-api customer-api")
 }
 
 tasks.register<Exec>("dockerUp") {
-    description = "Start all containers with Docker Compose"
+    description = "Start all containers with Docker Compose. Use -Pstripe.mode=sandbox for real Stripe API"
     group = "docker"
     workingDir = dockerComposeDir
     commandLine("sh", "-c", "$dockerCompose up -d --wait")
     dependsOn("dockerBuildBackend")
+
+    doFirst {
+        if (stripeMode == "sandbox") {
+            logger.lifecycle("")
+            logger.lifecycle("⚠️  SANDBOX MODE: Using real Stripe test API")
+            logger.lifecycle("   Run in another terminal: stripe listen --forward-to http://localhost:8080/api/webhooks/stripe")
+            logger.lifecycle("")
+        }
+    }
+}
+
+tasks.register<Exec>("dockerUpSandbox") {
+    description = "Start containers in sandbox mode (real Stripe test API)"
+    group = "docker"
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "COMPOSE_ENV_FILE=sandbox.env docker compose --env-file sandbox.env up -d --wait")
+    dependsOn("dockerBuildBackend")
+
+    doFirst {
+        logger.lifecycle("")
+        logger.lifecycle("⚠️  SANDBOX MODE: Using real Stripe test API")
+        logger.lifecycle("   Run in another terminal: stripe listen --forward-to http://localhost:8080/api/webhooks/stripe")
+        logger.lifecycle("")
+    }
 }
 
 tasks.register<Exec>("dockerDown") {

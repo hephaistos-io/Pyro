@@ -9,6 +9,7 @@ import io.hephaistos.flagforge.controller.dto.TemplateResponse;
 import io.hephaistos.flagforge.controller.dto.TemplateUpdateRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesRequest;
 import io.hephaistos.flagforge.controller.dto.TemplateValuesResponse;
+import io.hephaistos.flagforge.security.RequireDev;
 import io.hephaistos.flagforge.service.TemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -61,6 +62,7 @@ public class TemplateController {
     @Operation(summary = "Update a template's schema")
     @PutMapping(value = "/{type}", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireDev
     public TemplateResponse updateTemplate(@PathVariable UUID applicationId,
             @PathVariable TemplateType type, @Valid @RequestBody TemplateUpdateRequest request) {
         return templateService.updateTemplate(applicationId, type, request);
@@ -100,6 +102,7 @@ public class TemplateController {
     @Operation(summary = "Set or update override values for a specific identifier")
     @PutMapping(value = "/{type}/environments/{environmentId}/overrides/{identifier}",
             produces = APPLICATION_JSON_VALUE)
+    @RequireDev
     @ResponseStatus(HttpStatus.OK)
     public TemplateValuesResponse setOverride(@PathVariable UUID applicationId,
             @PathVariable TemplateType type, @PathVariable UUID environmentId,
@@ -110,6 +113,7 @@ public class TemplateController {
     @Operation(summary = "Delete an override for a specific identifier")
     @DeleteMapping(value = "/{type}/environments/{environmentId}/overrides/{identifier}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequireDev
     public void deleteOverride(@PathVariable UUID applicationId, @PathVariable TemplateType type,
             @PathVariable UUID environmentId, @PathVariable String identifier) {
         templateService.deleteOverride(applicationId, environmentId, type, identifier);
@@ -118,6 +122,7 @@ public class TemplateController {
     @Operation(summary = "Copy overrides from one environment to another")
     @PostMapping(value = "/copy-overrides", produces = APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    @RequireDev
     public CopyOverridesResponse copyOverrides(@PathVariable UUID applicationId,
             @Valid @RequestBody CopyOverridesRequest request) {
         return templateService.copyOverrides(applicationId, request);

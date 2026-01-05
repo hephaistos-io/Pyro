@@ -16,6 +16,8 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("io.lettuce:lettuce-core")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("com.stripe:stripe-java")
+    implementation("com.google.code.gson:gson")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

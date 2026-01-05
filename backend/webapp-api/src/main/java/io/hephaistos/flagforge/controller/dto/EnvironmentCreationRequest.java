@@ -1,5 +1,6 @@
 package io.hephaistos.flagforge.controller.dto;
 
+import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,5 +11,12 @@ public record EnvironmentCreationRequest(@Schema(requiredMode = REQUIRED, minLen
         message = "Environment name can't be blank") @Size(min = 2,
         message = "Environment name must be at least 2 characters") String name,
                                          @Schema(requiredMode = REQUIRED) @NotBlank(
-                                                 message = "Environment description can't be blank") String description) {
+                                                 message = "Environment description can't be blank") String description,
+                                         @Schema(description = "Pricing tier for the environment") PricingTier tier) {
+
+    public EnvironmentCreationRequest {
+        if (tier == null) {
+            tier = PricingTier.FREE;
+        }
+    }
 }
