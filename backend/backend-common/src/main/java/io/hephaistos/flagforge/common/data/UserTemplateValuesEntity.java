@@ -3,15 +3,12 @@ package io.hephaistos.flagforge.common.data;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -20,12 +17,14 @@ import java.util.UUID;
  * Per-user template override values for USER templates. The user_id is a deterministic UUID derived
  * from the customer's user identifier string. Access control is enforced via application access
  * filter.
+ * <p>
+ * Extends {@link AuditableEntity} for automatic audit tracking.
  */
 @Entity
 @Table(name = "user_template_values")
 @Filter(name = ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER,
         condition = "application_id IN (:accessibleAppIds)")
-public class UserTemplateValuesEntity {
+public class UserTemplateValuesEntity extends AuditableEntity {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
@@ -44,22 +43,7 @@ public class UserTemplateValuesEntity {
     @Column(columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> values;
 
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = Instant.now();
-        updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
-    }
+    // Audit fields (createdAt, updatedAt, createdBy, updatedBy) inherited from AuditableEntity
 
     public UUID getId() {
         return id;
@@ -101,13 +85,7 @@ public class UserTemplateValuesEntity {
         this.values = values;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    // getCreatedAt(), getUpdatedAt(), getCreatedBy(), getUpdatedBy() inherited from AuditableEntity
 
     @Override
     public boolean equals(Object o) {

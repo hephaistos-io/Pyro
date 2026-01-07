@@ -14,13 +14,16 @@ import java.util.UUID;
  * <p>
  * Entities extending this class will inherit the application_id field and the Hibernate filter for
  * automatic access control.
+ * <p>
+ * Extends {@link AuditableEntity} to provide automatic audit tracking (createdAt, updatedAt,
+ * createdBy, updatedBy).
  */
 @MappedSuperclass
 @FilterDef(name = ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER,
         parameters = @ParamDef(name = "accessibleAppIds", type = UUID.class))
 @Filter(name = ApplicationOwnedEntity.APPLICATION_ACCESS_FILTER,
         condition = "application_id IN (:accessibleAppIds)")
-public abstract class ApplicationOwnedEntity {
+public abstract class ApplicationOwnedEntity extends AuditableEntity {
 
     public static final String APPLICATION_ACCESS_FILTER = "applicationAccessFilter";
 

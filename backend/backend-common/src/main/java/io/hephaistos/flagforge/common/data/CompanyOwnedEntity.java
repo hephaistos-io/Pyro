@@ -15,12 +15,15 @@ import java.util.UUID;
  * Unlike @TenantId, this approach allows: - Operations without a tenant context during
  * bootstrap/tests - Explicit control over when filtering is enabled - Admin operations that need to
  * access all data
+ * <p>
+ * Extends {@link AuditableEntity} to provide automatic audit tracking (createdAt, updatedAt,
+ * createdBy, updatedBy).
  */
 @MappedSuperclass
 @FilterDef(name = CompanyOwnedEntity.COMPANY_FILTER,
         parameters = @ParamDef(name = "companyId", type = UUID.class))
 @Filter(name = CompanyOwnedEntity.COMPANY_FILTER, condition = "company_id = :companyId")
-public abstract class CompanyOwnedEntity {
+public abstract class CompanyOwnedEntity extends AuditableEntity {
 
     public static final String COMPANY_FILTER = "companyFilter";
 

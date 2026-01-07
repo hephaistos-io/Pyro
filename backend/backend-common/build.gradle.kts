@@ -16,6 +16,9 @@ dependencies {
     // JPA & Hibernate (annotations only - no Spring Boot app)
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
+    // Spring Security for security context access in AuditableEntity
+    implementation("org.springframework.security:spring-security-core")
+
     // Jackson for JSON types (version managed by Spring Boot BOM)
     implementation("com.fasterxml.jackson.core:jackson-annotations")
 
