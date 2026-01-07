@@ -1,9 +1,14 @@
-<button (click)="onClick()" [class.app-card--add]="isAddCard()" class="app-card">
+<button (click)="onClick()" [class.app-card--add]="isAddCard()" class="app-card" [title]="getTooltip()">
   @if (isAddCard()) {
     <span class="app-card__icon">+</span>
     <span class="app-card__label">New Application</span>
   } @else {
-    <span class="app-card__name">{{ name() }}</span>
+    <div class="app-card__content">
+      <span class="app-card__name">{{ name() }}</span>
+      @if (application()?.updatedAt) {
+        <span class="app-card__metadata">Updated {{ getRelativeUpdatedTime() }}</span>
+      }
+    </div>
     @if (application()?.environments?.length) {
       <span class="app-card__badge">
         {{ application()?.environments?.length }} {{ application()?.environments?.length === 1 ? 'environment' : 'environments' }}

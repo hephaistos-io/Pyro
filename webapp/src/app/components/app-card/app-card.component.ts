@@ -1,5 +1,6 @@
 import {Component, input, output} from '@angular/core';
 import {ApplicationListResponse} from '../../api/generated/models';
+import {formatFullDate, getRelativeTime} from '../../utils/time.util';
 
 @Component({
   selector: 'app-card',
@@ -24,5 +25,23 @@ export class AppCardComponent {
         this.applicationClick.emit(app);
       }
     }
+  }
+
+  getRelativeUpdatedTime(): string {
+    const app = this.application();
+    return getRelativeTime(app?.updatedAt);
+  }
+
+  getTooltip(): string {
+    const app = this.application();
+    if (!app?.createdAt) return '';
+
+    let tooltip = `Created: ${formatFullDate(app.createdAt)}`;
+    if (app.createdByName) tooltip += ` by ${app.createdByName}`;
+    if (app.updatedAt) {
+      tooltip += `\nUpdated: ${formatFullDate(app.updatedAt)}`;
+      if (app.updatedByName) tooltip += ` by ${app.updatedByName}`;
+    }
+    return tooltip;
   }
 }
