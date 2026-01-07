@@ -177,7 +177,8 @@ test.describe('Email Change from Profile', () => {
         await completeEmailChange(page, verificationUrl);
 
         // Login with new email
-        await page.getByRole('button', {name: 'Log In'}).click();
+        await page.goto('/login');
+        await expect(page.getByRole('heading', {name: 'Welcome back'})).toBeVisible();
         await page.getByLabel('Email').fill(newEmail);
         await page.getByLabel('Password').fill(DEFAULT_PASSWORD);
         await page.getByRole('button', {name: 'Log In'}).click();

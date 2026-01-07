@@ -113,14 +113,10 @@ test.describe('Usage Statistics', () => {
         const periodSelector = sharedPage.locator('.usage-stats-card__period-selector');
         await periodSelector.getByRole('button', {name: '7d'}).click();
 
-        // Either the chart with bars OR empty state should be visible
-        const chart = sharedPage.locator('.usage-chart');
-        const emptyState = sharedPage.locator('.usage-chart__empty');
-
-        const hasChart = await chart.isVisible().catch(() => false);
-        const hasEmptyState = await emptyState.isVisible().catch(() => false);
-
-        expect(hasChart || hasEmptyState).toBeTruthy();
+        // Wait for either the chart OR empty state to be visible
+        // Using locator.or() to match either element
+        const chartOrEmpty = sharedPage.locator('.usage-chart').or(sharedPage.locator('.usage-chart__empty'));
+        await expect(chartOrEmpty).toBeVisible();
     });
 
     test('card can be collapsed and expanded', async () => {
