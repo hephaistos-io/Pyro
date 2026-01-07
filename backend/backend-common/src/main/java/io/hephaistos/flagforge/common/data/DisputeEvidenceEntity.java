@@ -6,7 +6,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.UuidGenerator;
 
-import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -55,12 +54,6 @@ public class DisputeEvidenceEntity extends CompanyOwnedEntity {
 
     @Column(name = "service_documentation_url")
     private String serviceDocumentationUrl;
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
-
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt = Instant.now();
 
     public UUID getId() {
         return id;
@@ -156,29 +149,6 @@ public class DisputeEvidenceEntity extends CompanyOwnedEntity {
 
     public void setServiceDocumentationUrl(String serviceDocumentationUrl) {
         this.serviceDocumentationUrl = serviceDocumentationUrl;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    /**
-     * Updates the updatedAt timestamp. Call this before saving.
-     */
-    public void touch() {
-        this.updatedAt = Instant.now();
     }
 
     /**

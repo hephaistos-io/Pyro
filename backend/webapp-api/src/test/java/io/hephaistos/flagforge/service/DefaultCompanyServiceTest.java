@@ -11,7 +11,7 @@ import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.data.repository.CustomerRepository;
 import io.hephaistos.flagforge.exception.CompanyAlreadyAssignedException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
-import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.common.security.FlagForgeSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

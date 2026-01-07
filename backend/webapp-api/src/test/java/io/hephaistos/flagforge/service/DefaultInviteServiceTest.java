@@ -10,7 +10,7 @@ import io.hephaistos.flagforge.data.repository.CompanyInviteRepository;
 import io.hephaistos.flagforge.data.repository.CompanyRepository;
 import io.hephaistos.flagforge.exception.InvalidInviteException;
 import io.hephaistos.flagforge.exception.InvalidInviteException.InvalidInviteReason;
-import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.common.security.FlagForgeSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

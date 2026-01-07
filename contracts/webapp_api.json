@@ -42,6 +42,41 @@
         }
       }
     },
+    "/v1/payment/environments/{environmentId}/tier": {
+      "put": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Update environment pricing tier",
+        "operationId": "updateEnvironmentTier",
+        "parameters": [
+          {
+            "name": "environmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTierRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/v1/customer/{customerId}": {
       "put": {
         "tags": [
@@ -332,6 +367,47 @@
         }
       }
     },
+    "/webhooks/stripe": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Handle Stripe webhook events",
+        "operationId": "handleWebhook",
+        "parameters": [
+          {
+            "name": "Stripe-Signature",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/profile/password-reset": {
       "post": {
         "tags": [
@@ -366,6 +442,123 @@
         "responses": {
           "204": {
             "description": "No Content"
+          }
+        }
+      }
+    },
+    "/v1/payment/portal": {
+      "post": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Create a Stripe Customer Portal session for managing billing",
+        "operationId": "createPortalSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/customer": {
+      "post": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Create or get Stripe customer for the company",
+        "operationId": "createOrGetCustomer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/checkout": {
+      "post": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Create a Stripe Checkout session for pending environments",
+        "operationId": "createCheckoutSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/checkout/complete": {
+      "post": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Complete a checkout session (for mock/development mode)",
+        "operationId": "completeCheckoutSession",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteCheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -874,6 +1067,84 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/subscription": {
+      "get": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Get current subscription status",
+        "operationId": "getSubscriptionStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionStatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/invoices": {
+      "get": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Get invoice history",
+        "operationId": "getInvoices",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InvoiceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payment/config": {
+      "get": {
+        "tags": [
+          "payment"
+        ],
+        "summary": "Get Stripe publishable key for client-side integration",
+        "operationId": "getPaymentConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentConfigResponse"
                 }
               }
             }
@@ -1506,6 +1777,24 @@
           "ADMIN"
         ]
       },
+      "UpdateTierRequest": {
+        "required": [
+          "tier"
+        ],
+        "type": "object",
+        "properties": {
+          "tier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
+            ]
+          }
+        }
+      },
       "UpdateCustomerRequest": {
         "type": "object",
         "properties": {
@@ -1841,6 +2130,20 @@
               "PRO",
               "BUSINESS"
             ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         }
       },
@@ -1854,6 +2157,117 @@
             "minLength": 1,
             "type": "string",
             "format": "email"
+          }
+        }
+      },
+      "PortalRequest": {
+        "required": [
+          "returnUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "returnUrl": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      },
+      "PortalSessionResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "CustomerRequest": {
+        "required": [
+          "companyName",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "companyName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "email": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      },
+      "CheckoutRequest": {
+        "required": [
+          "cancelUrl",
+          "pendingEnvironments",
+          "successUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "pendingEnvironments": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingEnvironmentDto"
+            }
+          },
+          "successUrl": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "cancelUrl": {
+            "minLength": 1,
+            "type": "string"
+          }
+        }
+      },
+      "PendingEnvironmentDto": {
+        "required": [
+          "environmentId",
+          "tier"
+        ],
+        "type": "object",
+        "properties": {
+          "environmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "environmentName": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
+            ]
+          }
+        }
+      },
+      "CheckoutSessionResponse": {
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string"
+          },
+          "checkoutUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "CompleteCheckoutRequest": {
+        "required": [
+          "sessionId"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "minLength": 1,
+            "type": "string"
           }
         }
       },
@@ -2081,6 +2495,28 @@
             "items": {
               "$ref": "#/components/schemas/TemplateResponse"
             }
+          },
+          "audit": {
+            "$ref": "#/components/schemas/AuditInfo"
+          }
+        }
+      },
+      "AuditInfo": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         }
       },
@@ -2152,6 +2588,17 @@
           "description": {
             "minLength": 1,
             "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "description": "Pricing tier for the environment",
+            "enum": [
+              "FREE",
+              "BASIC",
+              "STANDARD",
+              "PRO",
+              "BUSINESS"
+            ]
           }
         }
       },
@@ -2179,6 +2626,98 @@
           "expirationDate": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SubscriptionItemDto": {
+        "type": "object",
+        "properties": {
+          "environmentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "environmentName": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "priceCents": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SubscriptionStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "totalMonthlyPriceCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currentPeriodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancelAtPeriodEnd": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionItemDto"
+            }
+          }
+        }
+      },
+      "InvoiceResponse": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string"
+          },
+          "amountCents": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "pdfUrl": {
+            "type": "string"
+          },
+          "hostedUrl": {
+            "type": "string"
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaymentConfigResponse": {
+        "type": "object",
+        "properties": {
+          "publishableKey": {
+            "type": "string"
           }
         }
       },
@@ -2339,6 +2878,20 @@
             "items": {
               "$ref": "#/components/schemas/EnvironmentResponse"
             }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdByName": {
+            "type": "string"
+          },
+          "updatedByName": {
+            "type": "string"
           }
         }
       },

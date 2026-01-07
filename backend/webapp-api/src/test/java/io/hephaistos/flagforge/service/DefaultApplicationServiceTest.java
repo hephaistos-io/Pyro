@@ -10,7 +10,7 @@ import io.hephaistos.flagforge.data.repository.UserTemplateValuesRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NoCompanyAssignedException;
 import io.hephaistos.flagforge.exception.NotFoundException;
-import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.common.security.FlagForgeSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -52,6 +52,9 @@ class DefaultApplicationServiceTest {
     @Mock
     private UsageTrackingService usageTrackingService;
 
+    @Mock
+    private AuditInfoService auditInfoService;
+
     private DefaultApplicationService applicationService;
     private UUID testCompanyId;
     private UUID testCustomerId;
@@ -61,7 +64,7 @@ class DefaultApplicationServiceTest {
         applicationService =
                 new DefaultApplicationService(applicationRepository, environmentService,
                         templateService, customerRepository, userTemplateValuesRepository,
-                        usageTrackingService);
+                        usageTrackingService, auditInfoService);
         testCompanyId = UUID.randomUUID();
         testCustomerId = UUID.randomUUID();
         setupSecurityContext(testCompanyId, testCustomerId);

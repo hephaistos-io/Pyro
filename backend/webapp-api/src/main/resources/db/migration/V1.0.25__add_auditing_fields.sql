@@ -49,3 +49,14 @@ ALTER TABLE user_template_values
 ALTER TABLE company_invite
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     ADD COLUMN IF NOT EXISTS updated_by UUID;
+
+-- dispute_evidence already has created_at and updated_at - just add user tracking
+ALTER TABLE dispute_evidence
+    ADD COLUMN IF NOT EXISTS created_by UUID,
+    ADD COLUMN IF NOT EXISTS updated_by UUID;
+
+-- payment_history already has created_at - add remaining audit columns
+ALTER TABLE payment_history
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS created_by UUID,
+    ADD COLUMN IF NOT EXISTS updated_by UUID;
