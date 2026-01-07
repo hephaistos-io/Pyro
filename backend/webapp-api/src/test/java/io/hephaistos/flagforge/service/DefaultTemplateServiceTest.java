@@ -18,7 +18,7 @@ import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.data.repository.TemplateRepository;
 import io.hephaistos.flagforge.data.repository.TemplateValuesRepository;
 import io.hephaistos.flagforge.exception.NotFoundException;
-import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.common.security.FlagForgeSecurityContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

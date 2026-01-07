@@ -390,7 +390,6 @@ public class StripeWebhookHandler {
             // Auto-submit evidence
             evidenceService.submitEvidence(dispute.getId(), evidence);
             disputeEntity.setEvidenceSubmitted(true);
-            disputeEntity.touch();
             disputeEvidenceRepository.save(disputeEntity);
 
             LOGGER.info("Evidence collected and submitted for dispute {}", dispute.getId());
@@ -412,7 +411,6 @@ public class StripeWebhookHandler {
 
         disputeEvidenceRepository.findByStripeDisputeId(dispute.getId()).ifPresent(entity -> {
             entity.setStatus(dispute.getStatus());
-            entity.touch();
             disputeEvidenceRepository.save(entity);
             LOGGER.info("Dispute {} updated to status {}", dispute.getId(), dispute.getStatus());
         });
@@ -428,7 +426,6 @@ public class StripeWebhookHandler {
 
         disputeEvidenceRepository.findByStripeDisputeId(dispute.getId()).ifPresent(entity -> {
             entity.setStatus(dispute.getStatus());
-            entity.touch();
             disputeEvidenceRepository.save(entity);
             LOGGER.info("Dispute {} closed with status {}", dispute.getId(), dispute.getStatus());
         });

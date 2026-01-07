@@ -1,7 +1,7 @@
 package io.hephaistos.flagforge.configuration;
 
 import io.hephaistos.flagforge.common.data.ApplicationOwnedEntity;
-import io.hephaistos.flagforge.security.FlagForgeSecurityContext;
+import io.hephaistos.flagforge.common.security.FlagForgeSecurityContext;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Filter;
 import org.hibernate.Session;

@@ -52,9 +52,6 @@ public class PaymentHistoryEntity extends CompanyOwnedEntity {
     @Column(name = "paid_at")
     private Instant paidAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
-
     public UUID getId() {
         return id;
     }
@@ -141,14 +138,6 @@ public class PaymentHistoryEntity extends CompanyOwnedEntity {
 
     public void setPaidAt(Instant paidAt) {
         this.paidAt = paidAt;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
     }
 
     /**
