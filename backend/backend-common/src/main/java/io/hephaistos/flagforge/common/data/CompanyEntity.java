@@ -12,9 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Company entity representing a customer organization.
+ * <p>
+ * Extends {@link AuditableEntity} for automatic audit tracking.
+ */
 @Entity
 @Table(name = "company")
-public class CompanyEntity {
+public class CompanyEntity extends AuditableEntity {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)

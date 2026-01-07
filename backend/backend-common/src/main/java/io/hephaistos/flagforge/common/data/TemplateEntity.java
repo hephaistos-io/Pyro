@@ -10,15 +10,12 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -53,22 +50,7 @@ public class TemplateEntity extends CompanyOwnedEntity {
     @Column(columnDefinition = "jsonb", nullable = false)
     private TemplateSchema schema;
 
-    @Column(name = "created_at")
-    private Instant createdAt;
-
-    @Column(name = "updated_at")
-    private Instant updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = Instant.now();
-        updatedAt = Instant.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = Instant.now();
-    }
+    // Audit fields (createdAt, updatedAt, createdBy, updatedBy) inherited from CompanyOwnedEntity
 
     public UUID getId() {
         return id;
@@ -117,13 +99,7 @@ public class TemplateEntity extends CompanyOwnedEntity {
         this.schema = schema;
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    // getCreatedAt(), getUpdatedAt(), getCreatedBy(), getUpdatedBy() inherited from AuditableEntity
 
     @Override
     public boolean equals(Object o) {

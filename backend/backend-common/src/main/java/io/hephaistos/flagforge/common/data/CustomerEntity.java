@@ -21,10 +21,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Customer entity representing a user in the system.
+ * <p>
+ * Extends {@link AuditableEntity} for automatic audit tracking.
+ */
 @Entity
 @Table(name = "customer")
 @Filter(name = CompanyOwnedEntity.COMPANY_FILTER, condition = "company_id = :companyId")
-public class CustomerEntity {
+public class CustomerEntity extends AuditableEntity {
 
     @Id
     @UuidGenerator(style = UuidGenerator.Style.TIME)
