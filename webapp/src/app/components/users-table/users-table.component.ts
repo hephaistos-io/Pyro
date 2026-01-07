@@ -7,6 +7,7 @@ import {OverlayService} from '../../services/overlay.service';
 import {DeleteUserConfirmationComponent} from '../delete-user-confirmation/delete-user-confirmation.component';
 import {DeleteInviteConfirmationComponent} from '../delete-invite-confirmation/delete-invite-confirmation.component';
 import {RegenerateInviteSuccessComponent} from '../regenerate-invite-success/regenerate-invite-success.component';
+import {getRelativeTime} from '../../utils/time.util';
 
 @Component({
   selector: 'app-users-table',
@@ -43,20 +44,7 @@ export class UsersTableComponent implements OnInit {
   }
 
   getRelativeTime(date: Date | null): string {
-    if (!date) return 'Never';
-
-    const now = new Date();
-    const diffMs = now.getTime() - new Date(date).getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-    return `${Math.floor(diffDays / 30)}mo ago`;
+    return getRelativeTime(date);
   }
 
   getRoleVariant(roleType: 'admin' | 'developer' | 'viewer'): 'role-admin' | 'role-developer' | 'role-viewer' {

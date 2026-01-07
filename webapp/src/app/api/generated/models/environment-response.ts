@@ -3,8 +3,12 @@
 
 export interface EnvironmentResponse {
   applicationId?: string;
+  createdAt?: string;
+  createdByName?: string;
   description?: string;
   id?: string;
   name?: string;
   tier?: 'FREE' | 'BASIC' | 'STANDARD' | 'PRO' | 'BUSINESS';
+  updatedAt?: string;
+  updatedByName?: string;
 }

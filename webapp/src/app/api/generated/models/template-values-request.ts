@@ -7,6 +7,7 @@ export interface TemplateValuesRequest {
    * Key-value pairs for template fields
    */
   values: {
-    [key: string]: {};
-  };
+[key: string]: {
+};
+};
 }

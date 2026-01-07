@@ -29,6 +29,13 @@
     }
   }
 
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.125rem;
+  }
+
   &__name {
     font-size: 0.95rem;
     font-weight: 500;
@@ -36,6 +43,15 @@
 
     @include dark-mode {
       color: $dark-text;
+    }
+  }
+
+  &__metadata {
+    font-size: 0.7rem;
+    color: rgba($charcoal, 0.5);
+
+    @include dark-mode {
+      color: rgba($white, 0.4);
     }
   }
 
