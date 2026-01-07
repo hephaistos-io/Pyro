@@ -36,18 +36,12 @@
   margin-bottom: 1.5rem;
   text-align: left;
 
-  .label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-  }
-
   label {
     display: block;
     font-weight: 500;
     font-size: 0.875rem;
     color: $charcoal;
+    margin-bottom: 0.5rem;
 
     @include dark-mode {
       color: $dark-text;
@@ -55,10 +49,13 @@
   }
 
   .forgot-link {
+    display: block;
     font-size: 0.85rem;
     color: $pyro-red;
     text-decoration: none;
     transition: color 0.2s;
+    margin-top: 0.5rem;
+    text-align: right;
 
     &:hover {
       color: $pyro-red-deep;
