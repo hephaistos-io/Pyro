@@ -31,18 +31,21 @@ public class DefaultApplicationService implements ApplicationService {
     private final CustomerRepository customerRepository;
     private final UserTemplateValuesRepository userTemplateValuesRepository;
     private final UsageTrackingService usageTrackingService;
+    private final AuditInfoService auditInfoService;
 
     public DefaultApplicationService(ApplicationRepository applicationRepository,
             EnvironmentService environmentService, TemplateService templateService,
             CustomerRepository customerRepository,
             UserTemplateValuesRepository userTemplateValuesRepository,
-            UsageTrackingService usageTrackingService) {
+            UsageTrackingService usageTrackingService,
+            AuditInfoService auditInfoService) {
         this.applicationRepository = applicationRepository;
         this.environmentService = environmentService;
         this.templateService = templateService;
         this.customerRepository = customerRepository;
         this.userTemplateValuesRepository = userTemplateValuesRepository;
         this.usageTrackingService = usageTrackingService;
+        this.auditInfoService = auditInfoService;
     }
 
     @Override
@@ -72,7 +75,7 @@ public class DefaultApplicationService implements ApplicationService {
         environmentService.createDefaultEnvironments(application);
         templateService.createDefaultTemplates(application);
 
-        return ApplicationResponse.fromEntity(application);
+        return ApplicationResponse.fromEntity(application, auditInfoService);
     }
 
     @Override
@@ -80,7 +83,8 @@ public class DefaultApplicationService implements ApplicationService {
     @Transactional(readOnly = true)
     public List<ApplicationListResponse> getApplications() {
         return applicationRepository.findAll()
-                .stream().map(ApplicationListResponse::fromEntity)
+                .stream()
+                .map(app -> ApplicationListResponse.fromEntity(app, auditInfoService))
                 .toList();
     }
 
