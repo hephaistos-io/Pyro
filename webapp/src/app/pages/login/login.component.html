@@ -22,10 +22,7 @@
 
       <!-- Password field -->
       <div class="form-group">
-        <div class="label-row">
-          <label for="password">Password</label>
-          <a class="forgot-link" routerLink="/forgot-password">Forgot password?</a>
-        </div>
+        <label for="password">Password</label>
         <input
           (ngModelChange)="password.set($event)"
           [ngModel]="password()"
@@ -35,6 +32,7 @@
           placeholder="••••••••"
           type="password"
         />
+        <a class="forgot-link" routerLink="/forgot-password">Forgot password?</a>
       </div>
 
       @if (error()) {
