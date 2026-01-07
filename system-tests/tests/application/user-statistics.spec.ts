@@ -127,17 +127,20 @@ test.describe('User Statistics', () => {
         // Navigate to dashboard and back to reload statistics
         await sharedPage.goto('/dashboard');
         await expect(sharedPage.locator('.app-card:not(.app-card--add)')).toBeVisible();
-        await sharedPage.locator('.app-card:not(.app-card--add)').first().click();
 
-        await sharedPage.waitForTimeout(1000);
+        // Click app card and wait for navigation to app overview
+        await Promise.all([
+            sharedPage.waitForURL(/\/dashboard\/application\//),
+            sharedPage.locator('.app-card:not(.app-card--add)').first().click()
+        ]);
 
-        // Verify Hits This Month shows at least 5
-        // (Previous tests may have added some hits too)
+        // Wait for app overview page to load with statistics visible
+        // Previous tests created 4 POST requests (3 users + 1 update), this test adds 5 GET requests = 9 total
         const hitsValue = sharedPage.locator('.summary-stat')
             .filter({hasText: 'Hits This Month'})
             .locator('.summary-stat__value');
-        const hitsText = await hitsValue.textContent();
-        const hits = parseInt(hitsText?.replace(/,/g, '') ?? '0', 10);
-        expect(hits).toBeGreaterThanOrEqual(5);
+
+        // Wait for hits to be >= 5 (may need time to propagate from Redis)
+        await expect(hitsValue).toHaveText(/^[5-9]$|^\d{2,}$/, {timeout: 15000});
     });
 });
