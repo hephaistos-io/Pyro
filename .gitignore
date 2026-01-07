@@ -7,3 +7,4 @@
 /backend/backend-common/build/
 /deployment/local/local.env
 /deployment/local/sandbox.env
+.github/.gh-resolved-account
