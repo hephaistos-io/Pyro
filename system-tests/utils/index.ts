@@ -13,3 +13,4 @@ export * from './setup.util';
 export * from './template.util';
 export * from './profile.util';
 export * from './mailpit.util';
+export * from './stripe-checkout.util';
