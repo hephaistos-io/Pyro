@@ -3,37 +3,20 @@ import {
     addIdentifier,
     addSystemField,
     editOverrideValue,
+    getReadApiKey,
+    getWriteApiKey,
     navigateToOverridesTab,
     navigateToTemplateTab,
+    postWithApiKey,
     selectSystemTemplateType,
+    selectUserTemplateType,
     setupUserWithApplication
 } from '../../utils';
 
 const CUSTOMER_API_BASE = '';
 
 /**
- * Helper to get the Read-Key from the webapp UI
- */
-async function getReadApiKey(page: Page): Promise<string> {
-    // Navigate to Overview tab (should already be there after setup)
-    await page.getByRole('button', {name: 'Overview', exact: true}).click();
-    await expect(page.locator('.overview-layout')).toBeVisible();
-
-    const readKeySection = page.locator('.stat').filter({hasText: 'Read-Key'});
-
-    // Click show button to reveal the key
-    await readKeySection.getByRole('button', {name: 'Show key'}).click();
-
-    // Wait for the actual key to appear (64 hex characters)
-    const keyCode = readKeySection.locator('.stat__code--key');
-    await expect(keyCode).toContainText(/[a-f0-9]{64}/i);
-
-    const keyText = await keyCode.textContent();
-    return keyText?.trim() || '';
-}
-
-/**
- * Helper to make authenticated requests to customer-api with retry on rate limit
+ * Helper to make authenticated GET requests to customer-api with retry on rate limit
  */
 async function fetchWithApiKey(
     page: Page,
@@ -320,5 +303,154 @@ test.describe('Customer API - Templates Environment Isolation', () => {
 
         expect(prodBody.values).toHaveProperty('config_value', 'default');
         expect(prodBody.appliedIdentifier).toBeNull();
+    });
+});
+
+test.describe('Customer API - User Template Overrides', () => {
+    test.describe.configure({mode: 'serial'});
+
+    let sharedPage: Page;
+    let readApiKey: string;
+    let writeApiKey: string;
+
+    test.beforeAll(async ({browser}) => {
+        const context = await browser.newContext();
+        sharedPage = await context.newPage();
+        await setupUserWithApplication(sharedPage);
+
+        // Add user template fields
+        await navigateToTemplateTab(sharedPage);
+        await selectUserTemplateType(sharedPage);
+        await addSystemField(sharedPage, 'theme', 'light');
+        await addSystemField(sharedPage, 'notifications', 'true');
+
+        // Get both API keys
+        readApiKey = await getReadApiKey(sharedPage);
+        writeApiKey = await getWriteApiKey(sharedPage);
+    });
+
+    test.afterAll(async () => {
+        await sharedPage.close();
+    });
+
+    test('returns 401 without API key for POST', async () => {
+        const baseUrl = process.env.BASE_URL || 'http://localhost';
+        const url = `${baseUrl}${CUSTOMER_API_BASE}/v1/api/templates/user/test-user`;
+
+        const response = await sharedPage.request.post(url, {
+            headers: {'Content-Type': 'application/json'},
+            data: {theme: 'dark'}
+        });
+        expect(response.status()).toBe(401);
+    });
+
+    test('returns 403 with READ key for POST', async () => {
+        const {status} = await postWithApiKey(
+            sharedPage,
+            '/v1/api/templates/user/test-user',
+            readApiKey,
+            {theme: 'dark'}
+        );
+        expect(status).toBe(403);
+    });
+
+    test('creates user override with WRITE key', async () => {
+        const userId = `user-${Date.now()}`;
+
+        // POST new values
+        const {status: postStatus} = await postWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            writeApiKey,
+            {theme: 'dark', notifications: 'false'}
+        );
+        expect(postStatus).toBe(200);
+
+        // Verify values were saved
+        const {status: getStatus, body} = await fetchWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            readApiKey
+        ) as { status: number; body: { values: Record<string, unknown> } };
+
+        expect(getStatus).toBe(200);
+        expect(body.values).toHaveProperty('theme', 'dark');
+        expect(body.values).toHaveProperty('notifications', 'false');
+    });
+
+    test('updates existing user override', async () => {
+        const userId = `update-user-${Date.now()}`;
+
+        // Create initial override
+        const {status: createStatus} = await postWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            writeApiKey,
+            {theme: 'blue'}
+        );
+        expect(createStatus).toBe(200);
+
+        // Update with new values
+        const {status: updateStatus} = await postWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            writeApiKey,
+            {theme: 'green', notifications: 'false'}
+        );
+        expect(updateStatus).toBe(200);
+
+        // Verify updated values
+        const {body} = await fetchWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            readApiKey
+        ) as { body: { values: Record<string, unknown> } };
+
+        expect(body.values).toHaveProperty('theme', 'green');
+        expect(body.values).toHaveProperty('notifications', 'false');
+    });
+
+    test('user override persists and applies in GET', async () => {
+        const userId = `persist-user-${Date.now()}`;
+
+        // Set user-specific override (with retry on rate limit)
+        let postSuccess = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const {status} = await postWithApiKey(
+                sharedPage,
+                `/v1/api/templates/user/${userId}`,
+                writeApiKey,
+                {theme: 'custom-theme'}
+            );
+            if (status === 200) {
+                postSuccess = true;
+                break;
+            }
+            if (status === 429) {
+                await sharedPage.waitForTimeout(1000 * (attempt + 1));
+                continue;
+            }
+            break;
+        }
+        expect(postSuccess).toBe(true);
+
+        // First GET should return override
+        const {body: firstGet} = await fetchWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            readApiKey
+        ) as { body: { values: Record<string, unknown>; appliedIdentifier: string } };
+
+        expect(firstGet.values).toHaveProperty('theme', 'custom-theme');
+        expect(firstGet.appliedIdentifier).toBe(userId);
+
+        // Second GET should still return override (verify persistence)
+        const {body: secondGet} = await fetchWithApiKey(
+            sharedPage,
+            `/v1/api/templates/user/${userId}`,
+            readApiKey
+        ) as { body: { values: Record<string, unknown> } };
+
+        expect(secondGet.values).toHaveProperty('theme', 'custom-theme');
     });
 });
