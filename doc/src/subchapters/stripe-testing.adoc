@@ -214,6 +214,153 @@ test('handles declined card', async ({ page }) => {
 });
 ----
 
+== Automated Sandbox E2E Tests
+
+The sandbox E2E tests run against real Stripe APIs with automated webhook forwarding.
+
+=== Running Sandbox Tests
+
+[source,bash]
+----
+# Run all sandbox tests (single command - handles everything)
+./gradlew systemTestsSandbox
+----
+
+This command will:
+
+1. Build backend Docker images
+2. Start Docker with `--profile sandbox` (includes stripe-cli container)
+3. Stripe CLI auto-starts and exports webhook secret to shared volume
+4. webapp-api reads secret from file at startup
+5. Run all Playwright sandbox tests
+6. Stop all containers and clean up
+
+=== How It Works
+
+The sandbox testing infrastructure uses a Docker sidecar approach:
+
+[plantuml]
+----
+@startuml
+skinparam componentStyle rectangle
+
+package "Docker Compose (sandbox profile)" {
+    [stripe-cli] as cli
+    [webapp-api] as api
+    database "stripe-secret\nvolume" as vol
+
+    cli --> vol : writes whsec_xxx
+    vol --> api : reads secret
+}
+
+cloud "Stripe Test API" {
+    [Checkout] as checkout
+    [Webhooks] as webhooks
+}
+
+cli <--> webhooks : forwards events
+api --> checkout : creates session
+@enduml
+----
+
+1. **stripe-cli container**: Runs `stripe listen` with your `STRIPE_API_KEY`
+2. **Shared volume**: stripe-cli writes the webhook secret to `/shared/stripe-webhook-secret`
+3. **webapp-api**: `StripeSandboxWebhookConfiguration` reads secret from file at startup
+4. **Health check**: webapp-api waits for stripe-cli to be healthy (secret file exists)
+
+=== Test Coverage
+
+The sandbox tests cover all Stripe test card scenarios:
+
+[cols="1,2,2"]
+|===
+| Test File | Test Card | Scenario
+
+| `checkout-success.spec.ts`
+| 4242424242424242
+| Successful payment, webhook processing, subscription activation
+
+| `checkout-declined.spec.ts`
+| 4000000000000002
+| Card declined error handling
+
+| `checkout-3ds.spec.ts`
+| 4000002500003155
+| 3D Secure authentication flow
+
+| `checkout-insufficient-funds.spec.ts`
+| 4000000000009995
+| Insufficient funds error handling
+
+| `checkout-cancel.spec.ts`
+| N/A
+| Checkout cancellation, cart preservation
+
+| `webhook-processing.spec.ts`
+| 4242424242424242
+| Webhook verification (subscription active, billing updated)
+|===
+
+=== Prerequisites
+
+1. `sandbox.env` configured with your Stripe test API keys:
++
+[source,bash]
+----
+STRIPE_MODE=sandbox
+STRIPE_API_KEY=sk_test_xxx      # From Stripe Dashboard
+STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+STRIPE_PRICE_BASIC=price_xxx    # Create in Stripe Dashboard
+STRIPE_PRICE_STANDARD=price_xxx
+STRIPE_PRICE_PRO=price_xxx
+STRIPE_PRICE_BUSINESS=price_xxx
+----
+
+2. Products/prices created in Stripe Dashboard (Test Mode)
+
+=== Manual Testing (Alternative)
+
+If you prefer to run the Stripe CLI manually:
+
+[source,bash]
+----
+# Terminal 1: Start Docker in sandbox mode
+./gradlew dockerUpSandbox
+
+# Terminal 2: Start Stripe CLI manually
+./scripts/stripe-sandbox.sh
+
+# Copy the webhook secret to sandbox.env, then restart webapp-api
+
+# Terminal 3: Run sandbox tests only (no Docker management)
+./gradlew systemTestsSandboxOnly
+----
+
+=== Debugging Sandbox Tests
+
+1. **View stripe-cli logs**:
++
+[source,bash]
+----
+docker logs flagforge-stripe-cli -f
+----
+
+2. **Check webhook secret was written**:
++
+[source,bash]
+----
+docker exec flagforge-stripe-cli cat /shared/stripe-webhook-secret
+----
+
+3. **View Playwright traces**: Check `system-tests/test-results/` for trace files
+
+4. **Run tests in headed mode**:
++
+[source,bash]
+----
+cd system-tests && npm run test:sandbox -- --headed
+----
+
 == Production Mode
 
 Production mode uses Stripe's live API.
@@ -247,6 +394,27 @@ CAUTION: Never use production keys in development or test environments.
 1. Verify your test API keys are correct
 2. Check that products/prices exist in Stripe Dashboard
 3. Ensure webhook forwarding is active
+
+== Development Requirements
+
+IMPORTANT: **Sandbox tests must pass when modifying billing logic.**
+
+When working on any code related to:
+
+* Checkout flow
+* Subscription management
+* Webhook handling
+* Billing page
+* Payment processing
+* Stripe integration
+
+You MUST:
+
+1. Run sandbox tests before committing: `./gradlew systemTestsSandbox`
+2. Ensure all 36 tests pass
+3. Fix any regressions before merging
+
+This ensures payment flows work correctly with real Stripe APIs.
 
 == Related Documentation
 
