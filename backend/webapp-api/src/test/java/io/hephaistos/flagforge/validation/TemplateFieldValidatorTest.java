@@ -352,6 +352,48 @@ class TemplateFieldValidatorTest {
                 UnsupportedOperationException.class);
     }
 
+    @Test
+    void enumFieldWithNullDefaultValueIsValid() {
+        var field = new EnumTemplateField("tier", "Subscription tier", false, null,
+                List.of("free", "pro", "enterprise"));
+
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
+    @Test
+    void enumFieldWithBlankKeyIsInvalid() {
+        var field = new EnumTemplateField("", FieldType.ENUM, "Subscription tier", false, "free",
+                List.of("free", "pro"));
+
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("key");
+    }
+
+    @Test
+    void enumFieldWithBlankOptionIsInvalid() {
+        var field = new EnumTemplateField("tier", FieldType.ENUM, "Subscription tier", false, "free",
+                List.of("free", "", "pro"));
+
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).hasSize(1);
+        assertThat(violations.iterator().next().getMessage()).contains("non-blank");
+    }
+
+    @Test
+    void enumFieldWithSingleOptionIsValid() {
+        var field = new EnumTemplateField("status", "Status", false, "active",
+                List.of("active"));
+
+        Set<ConstraintViolation<EnumTemplateField>> violations = validator.validate(field);
+
+        assertThat(violations).isEmpty();
+    }
+
     // ========== BOOLEAN Type Tests ==========
 
     @Test
