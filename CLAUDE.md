@@ -65,6 +65,10 @@ pyro/
 - Run with `./gradlew systemTests` or `cd system-tests && npm test`
 - Use strict Playwright locators (`getByRole`, `getByLabel`)
 
+## Testing Philosophy
+
+**Failing tests must be fixed, not blamed.** If a test fails, fix it regardless of what caused the issue. Do not waste time investigating whether it's "your fault" or a pre-existing problem—just fix it and move on.
+
 ## Architecture Documentation
 
 Full ARC42 documentation in `doc/`:
