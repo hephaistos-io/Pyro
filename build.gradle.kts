@@ -149,6 +149,62 @@ tasks.register<Exec>("systemTestsCrossBrowser") {
     finalizedBy("dockerDown")
 }
 
+// Sandbox System Tests - Real Stripe Payment Testing
+val sandboxDockerCompose =
+    "COMPOSE_ENV_FILE=sandbox.env docker compose --env-file sandbox.env --profile sandbox"
+
+tasks.register<Exec>("dockerUpSandboxWithCli") {
+    description = "Start containers in sandbox mode with Stripe CLI webhook forwarding"
+    group = "docker"
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$sandboxDockerCompose up -d --wait")
+    dependsOn("dockerBuildBackend")
+
+    doFirst {
+        logger.lifecycle("")
+        logger.lifecycle("=".repeat(60))
+        logger.lifecycle("  SANDBOX MODE WITH STRIPE CLI")
+        logger.lifecycle("=".repeat(60))
+        logger.lifecycle("")
+        logger.lifecycle("Starting stripe-cli container for automated webhook forwarding...")
+        logger.lifecycle("The webhook secret will be automatically shared with webapp-api.")
+        logger.lifecycle("")
+    }
+}
+
+tasks.register<Exec>("dockerDownSandbox") {
+    description = "Stop sandbox containers and clean up stripe-secret volume"
+    group = "docker"
+    workingDir = dockerComposeDir
+    commandLine("sh", "-c", "$sandboxDockerCompose down -v")
+}
+
+tasks.register<Exec>("systemTestsSandbox") {
+    description = "Run Playwright sandbox tests with real Stripe payment flows"
+    group = "verification"
+    workingDir = file("system-tests")
+    commandLine("sh", "-c", "npm run test:sandbox")
+    dependsOn("dockerUpSandboxWithCli")
+    finalizedBy("dockerDownSandbox")
+
+    doFirst {
+        logger.lifecycle("")
+        logger.lifecycle("=".repeat(60))
+        logger.lifecycle("  STRIPE SANDBOX E2E TESTS")
+        logger.lifecycle("=".repeat(60))
+        logger.lifecycle("")
+        logger.lifecycle("Running tests with real Stripe checkout and webhooks...")
+        logger.lifecycle("")
+    }
+}
+
+tasks.register<Exec>("systemTestsSandboxOnly") {
+    description = "Run sandbox tests only (assumes Docker already running in sandbox mode)"
+    group = "verification"
+    workingDir = file("system-tests")
+    commandLine("sh", "-c", "npm run test:sandbox")
+}
+
 // Run all tests in order: architecture -> JUnit -> Playwright
 tasks.register("allTests") {
     description = "Run all tests: architecture, backend (JUnit), and system (Playwright)"

@@ -54,6 +54,21 @@ export default defineConfig({
             name: 'webkit',
             use: {...devices['Desktop Safari']},
         },
+        /* Sandbox tests for real Stripe payment testing */
+        {
+            name: 'sandbox',
+            testDir: './tests-sandbox',
+            use: {
+                ...devices['Desktop Chrome'],
+                /* Longer timeouts for real Stripe interactions */
+                actionTimeout: 30000,
+                navigationTimeout: 60000,
+            },
+            /* Run sandbox tests serially (payments should not be concurrent) */
+            fullyParallel: false,
+            /* Longer test timeout for webhook processing */
+            timeout: 60000,
+        },
     ],
 
     /* Global timeout for each test */

@@ -4,6 +4,7 @@
   "description": "End-to-end tests for FlagForge using Playwright",
   "scripts": {
     "test": "playwright test",
+    "test:sandbox": "playwright test --project=sandbox",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:chromium": "playwright test --project=chromium",
