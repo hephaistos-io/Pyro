@@ -5,6 +5,7 @@ flagforge:
   stripe:
     api-key: ${STRIPE_API_KEY:sk_test_mock}
     webhook-secret: ${STRIPE_WEBHOOK_SECRET:whsec_mock}
+    webhook-secret-file: ${STRIPE_WEBHOOK_SECRET_FILE:}  # Optional: path to file containing webhook secret (for sandbox Docker)
     publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_mock}
     mode: ${STRIPE_MODE:mock}
     mock-base-url: ${STRIPE_MOCK_URL:http://localhost:12111}
