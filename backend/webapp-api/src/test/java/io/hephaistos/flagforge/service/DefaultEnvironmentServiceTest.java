@@ -4,6 +4,7 @@ import io.hephaistos.flagforge.cache.CacheInvalidationPublisher;
 import io.hephaistos.flagforge.common.data.ApplicationEntity;
 import io.hephaistos.flagforge.common.data.EnvironmentEntity;
 import io.hephaistos.flagforge.common.enums.KeyType;
+import io.hephaistos.flagforge.common.enums.PaymentStatus;
 import io.hephaistos.flagforge.common.enums.PricingTier;
 import io.hephaistos.flagforge.controller.dto.EnvironmentCreationRequest;
 import io.hephaistos.flagforge.controller.dto.EnvironmentUpdateRequest;
@@ -11,6 +12,7 @@ import io.hephaistos.flagforge.data.repository.ApplicationRepository;
 import io.hephaistos.flagforge.data.repository.EnvironmentRepository;
 import io.hephaistos.flagforge.exception.DuplicateResourceException;
 import io.hephaistos.flagforge.exception.NotFoundException;
+import io.hephaistos.flagforge.exception.PaymentException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -403,6 +406,51 @@ class DefaultEnvironmentServiceTest {
 
         verify(stripeService, never()).removeSubscriptionItem(any(), any());
         verify(environmentRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteEnvironmentFailsWhenStripeRemovalFails() {
+        UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
+
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+        doThrow(new PaymentException("Failed to remove subscription item")).when(stripeService)
+                .removeSubscriptionItem(testCompanyId, environmentId);
+
+        assertThatThrownBy(() -> environmentService.deleteEnvironment(testApplicationId,
+                environmentId)).isInstanceOf(PaymentException.class)
+                .hasMessageContaining("Failed to remove subscription item");
+
+        // Verify database deletion was NOT attempted after Stripe failure
+        verify(environmentRepository, never()).deleteById(any());
+        verify(redisCleanupService, never()).cleanupEnvironmentKeys(any());
+        verify(cacheInvalidationPublisher, never()).publishEnvironmentDeleted(any(), any());
+    }
+
+    @Test
+    void deleteEnvironmentWithPendingPaymentStatusSucceedsForPaidTier() {
+        UUID environmentId = UUID.randomUUID();
+        var application = createApplicationEntity(testApplicationId);
+        var environment =
+                createEnvironmentEntity(environmentId, testApplicationId, PricingTier.BASIC);
+        environment.setPaymentStatus(PaymentStatus.PENDING);
+
+        when(applicationRepository.findByIdFiltered(testApplicationId)).thenReturn(
+                Optional.of(application));
+        when(environmentRepository.findById(environmentId)).thenReturn(Optional.of(environment));
+
+        environmentService.deleteEnvironment(testApplicationId, environmentId);
+
+        // Even with PENDING status, Stripe service is called (it handles missing items gracefully)
+        verify(stripeService).removeSubscriptionItem(testCompanyId, environmentId);
+        verify(environmentRepository).deleteById(environmentId);
+        verify(redisCleanupService).cleanupEnvironmentKeys(environmentId);
+        verify(cacheInvalidationPublisher).publishEnvironmentDeleted(testApplicationId,
+                environmentId);
     }
 
     // ========== Update Environment Tests ==========
