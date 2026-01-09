@@ -440,6 +440,81 @@ class PaymentControllerIntegrationTest extends IntegrationTestSupport {
         assertThat(statusAfter.getBody().totalMonthlyPriceCents()).isEqualTo(1000);
     }
 
+    @Test
+    void deleteEnvironment_succeeds_forPendingPaymentStatus() {
+        String token = registerAndAuthenticateWithCompany();
+
+        // Create customer (needed for stripe operations)
+        post("/v1/payment/customer",
+                new PaymentController.CustomerRequest("Test Company", "billing@test.com"), token,
+                PaymentController.CustomerResponse.class);
+
+        UUID applicationId = createApplication(token, "Test App");
+
+        // Create a paid environment but DON'T complete checkout
+        // This leaves the environment in PENDING payment status with no subscription item
+        UUID pendingEnvId = createPaidEnvironment(token, applicationId, "Pending Env");
+
+        // Verify environment exists
+        var listBefore = get("/v1/applications/" + applicationId + "/environments", token,
+                EnvironmentResponse[].class);
+        assertThat(listBefore.getBody()).anyMatch(e -> e.id().equals(pendingEnvId));
+
+        // Delete the environment with PENDING status - should succeed
+        var deleteResponse =
+                delete("/v1/applications/" + applicationId + "/environments/" + pendingEnvId, token,
+                        Void.class);
+        assertThat(deleteResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+
+        // Verify environment is deleted
+        var listAfter = get("/v1/applications/" + applicationId + "/environments", token,
+                EnvironmentResponse[].class);
+        assertThat(listAfter.getBody()).noneMatch(e -> e.id().equals(pendingEnvId));
+    }
+
+    @Test
+    void deleteEnvironment_removesCorrectSubscriptionItem_whenMultipleExist() {
+        String token = registerAndAuthenticateWithCompany();
+
+        // Create customer
+        post("/v1/payment/customer",
+                new PaymentController.CustomerRequest("Test Company", "billing@test.com"), token,
+                PaymentController.CustomerResponse.class);
+
+        UUID applicationId = createApplication(token, "Test App");
+        UUID env1Id = createPaidEnvironment(token, applicationId, "Environment 1");
+        UUID env2Id = createEnvironmentWithTier(token, applicationId, "Environment 2",
+                PricingTier.STANDARD);
+
+        // Create and complete checkout for both environments
+        var checkoutRequest = new CheckoutRequest(
+                List.of(new CheckoutRequest.PendingEnvironmentDto(env1Id, "Environment 1",
+                                PricingTier.BASIC),
+                        new CheckoutRequest.PendingEnvironmentDto(env2Id, "Environment 2",
+                                PricingTier.STANDARD)), "http://localhost:4200/success",
+                "http://localhost:4200/cancel");
+
+        var checkoutResponse =
+                post("/v1/payment/checkout", checkoutRequest, token, CheckoutSessionResponse.class);
+        post("/v1/payment/checkout/complete", new PaymentController.CompleteCheckoutRequest(
+                checkoutResponse.getBody().sessionId()), token, Void.class);
+
+        // Verify both subscription items exist
+        var statusBefore = get("/v1/payment/subscription", token, SubscriptionStatusResponse.class);
+        assertThat(statusBefore.getBody().items()).hasSize(2);
+        assertThat(statusBefore.getBody().totalMonthlyPriceCents()).isEqualTo(5000); // $10 + $40
+
+        // Delete only the BASIC tier environment
+        delete("/v1/applications/" + applicationId + "/environments/" + env1Id, token, Void.class);
+
+        // Verify only env2's subscription item remains (STANDARD tier)
+        var statusAfter = get("/v1/payment/subscription", token, SubscriptionStatusResponse.class);
+        assertThat(statusAfter.getBody().items()).hasSize(1);
+        assertThat(statusAfter.getBody().items().getFirst().environmentId()).isEqualTo(env2Id);
+        assertThat(statusAfter.getBody().items().getFirst().tier()).isEqualTo("STANDARD");
+        assertThat(statusAfter.getBody().totalMonthlyPriceCents()).isEqualTo(4000); // $40 only
+    }
+
     // ========== Helper Methods ==========
 
     private UUID createApplication(String token, String name) {

@@ -290,3 +290,181 @@ GET usage:rejected:550e8400-e29b-41d4-a716-446655440000:2024-12-24
 |**Fail-open rate limiting**
 |Availability over correctness - if Redis is down, allow requests rather than reject all traffic.
 |===
+
+=== Stripe Payment Integration
+
+FlagForge uses Stripe for subscription billing of paid environments.
+Each paid environment tier corresponds to a Stripe subscription item.
+
+==== Environment Tiers & Pricing
+
+[cols="1,1,1,1"]
+|===
+|Tier |Monthly Requests |Rate Limit |Price/month
+
+|FREE
+|500,000
+|5 req/sec
+|$0
+
+|BASIC
+|2,000,000
+|20 req/sec
+|$10
+
+|STANDARD
+|10,000,000
+|100 req/sec
+|$40
+
+|PRO
+|25,000,000
+|500 req/sec
+|$100
+
+|BUSINESS
+|100,000,000
+|2,000 req/sec
+|$400
+|===
+
+**Default environments:** Each application gets two FREE environments (Development and Production) automatically.
+
+==== Subscription Data Model
+
+[plantuml,stripe-model,svg]
+----
+@startuml
+!theme plain
+
+entity "CompanySubscriptionEntity" as sub {
+    * id : UUID
+    --
+    * company_id : UUID
+    * stripe_customer_id : String
+    stripe_subscription_id : String
+    status : SubscriptionStatus
+    current_period_start : Instant
+    current_period_end : Instant
+    cancel_at_period_end : Boolean
+}
+
+entity "SubscriptionItemEntity" as item {
+    * id : UUID
+    --
+    * subscription_id : UUID
+    * environment_id : UUID
+    * stripe_subscription_item_id : String
+    * stripe_price_id : String
+    quantity : Integer
+}
+
+entity "EnvironmentEntity" as env {
+    * id : UUID
+    --
+    * application_id : UUID
+    * name : String
+    tier : PricingTier
+    payment_status : PaymentStatus
+}
+
+sub ||--o{ item : "has"
+item }o--|| env : "for"
+
+@enduml
+----
+
+* **CompanySubscriptionEntity** - Links a company to their Stripe customer and subscription
+* **SubscriptionItemEntity** - Maps each paid environment to a Stripe subscription line item
+* **PaymentStatus** - PAID (active), PENDING (awaiting checkout), UNPAID (payment failed)
+
+==== Environment Deletion with Stripe
+
+When deleting an environment, the system handles Stripe subscriptions based on the environment's tier:
+
+[plantuml,env-deletion-flow,svg]
+----
+@startuml
+!theme plain
+
+start
+:Delete Environment Request;
+
+:Verify application access;
+if (Application found?) then (no)
+    :NotFoundException;
+    stop
+endif
+
+:Fetch environment;
+if (Environment found?) then (no)
+    :NotFoundException;
+    stop
+endif
+
+if (Environment belongs to application?) then (no)
+    :NotFoundException;
+    stop
+endif
+
+if (Tier is PAID?) then (yes)
+    :Call Stripe API to delete subscription item;
+    if (Stripe API success?) then (no)
+        :PaymentException;
+        note right: Transaction rolls back\nEnvironment NOT deleted
+        stop
+    endif
+    :Delete subscription item from DB;
+else (no - FREE tier)
+    :Skip Stripe (no subscription item exists);
+endif
+
+:Delete environment from database;
+:Cleanup Redis keys;
+:Invalidate cached templates;
+
+stop
+
+@enduml
+----
+
+**Key behaviors:**
+
+1. **FREE tier environments** - Deleted without any Stripe interaction (no subscription item exists)
+2. **Paid tier environments** - Stripe subscription item is removed _before_ database deletion
+3. **Stripe failure handling** - If Stripe API fails, `PaymentException` is thrown and the transaction rolls back (environment is NOT deleted)
+4. **PENDING payment status** - Environments in PENDING status can be deleted; Stripe service gracefully handles missing subscription items
+
+This ensures billing consistency: environments cannot be deleted from our database while still being billed in Stripe.
+
+==== Service Modes
+
+FlagForge supports three Stripe modes:
+
+[cols="1,2,2"]
+|===
+|Mode |Usage |Implementation
+
+|**MOCK**
+|Local development
+|Uses stripe-mock container, simulates webhooks via API call
+
+|**SANDBOX**
+|Testing with real Stripe
+|Uses Stripe test API keys, real webhooks
+
+|**PRODUCTION**
+|Live billing
+|Uses Stripe live API keys, real webhooks
+|===
+
+Configure via `flagforge.stripe.mode` property.
+
+==== Webhook Events
+
+In SANDBOX and PRODUCTION modes, Stripe webhooks update subscription state:
+
+* `checkout.session.completed` - Marks environments as PAID, creates subscription items
+* `customer.subscription.updated` - Updates subscription status and billing period
+* `customer.subscription.deleted` - Marks subscription as canceled
+* `invoice.payment_failed` - Marks subscription as past due
