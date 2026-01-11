@@ -39,7 +39,7 @@ subprojects {
             implementation("org.springframework.boot:spring-boot-starter-flyway:4.0.0")
             implementation("org.springframework.boot:spring-boot-starter-mail:4.0.0")
             implementation("org.flywaydb:flyway-database-postgresql:10.20.1")
-            runtimeOnly("org.postgresql:postgresql:42.7.4")
+            runtimeOnly("org.postgresql:postgresql:42.7.8")
 
             // Stripe payment integration
             implementation("com.stripe:stripe-java:28.2.0")

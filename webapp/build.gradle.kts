@@ -38,3 +38,11 @@ tasks.register<Exec>("webappBuild") {
   workingDir = file("${project.projectDir}")
   commandLine("bash", "-c", "npx ng build --configuration ci")
 }
+
+tasks.register<Exec>("webappTest") {
+  group = "verification"
+  description = "Run Angular unit tests with Vitest"
+
+  workingDir = file("${project.projectDir}")
+  commandLine("bash", "-c", "npx ng test")
+}

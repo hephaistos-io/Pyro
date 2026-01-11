@@ -35,7 +35,22 @@ export class LoginComponent implements OnInit {
     }
 
     // Get return URL from route parameters or default to dashboard
-    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+    // Validate to prevent open redirect attacks
+    const requestedUrl = this.route.snapshot.queryParams['returnUrl'];
+    this.returnUrl = this.isValidReturnUrl(requestedUrl) ? requestedUrl : '/dashboard';
+  }
+
+  /**
+   * Validates that the return URL is a safe relative path within the application.
+   * Prevents open redirect attacks by rejecting external URLs and unsafe patterns.
+   */
+  private isValidReturnUrl(url: string | undefined): boolean {
+    if (!url) {
+      return false;
+    }
+    // Must start with single forward slash (relative path)
+    // Reject protocol-relative URLs (//), absolute URLs, and javascript: schemes
+    return url.startsWith('/') && !url.startsWith('//') && !url.includes(':');
   }
 
   async onSubmit(): Promise<void> {

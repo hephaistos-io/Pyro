@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -41,6 +42,7 @@ public class ApiSecurityConfiguration {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(this::configureHttpSecurityHeaders)
                 .authorizeHttpRequests(
                         auth -> auth.requestMatchers(HttpMethod.GET, WHITELIST_GET_ENDPOINTS)
                                 .permitAll()
@@ -52,6 +54,18 @@ public class ApiSecurityConfiguration {
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(rateLimitFilter, ApiKeyOncePerRequestFilter.class)
                 .build();
+    }
+
+    private void configureHttpSecurityHeaders(HeadersConfigurer<HttpSecurity> headers) {
+        // Prevent clickjacking attacks
+        headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
+                // Prevent MIME type sniffing
+                .contentTypeOptions(Customizer.withDefaults())
+                // Enable XSS protection (legacy, but still useful for older browsers)
+                .xssProtection(Customizer.withDefaults())
+                // HTTP Strict Transport Security - only over HTTPS
+                .httpStrictTransportSecurity(
+                        hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000));
     }
 
     @Bean
