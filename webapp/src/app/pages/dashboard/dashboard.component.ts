@@ -14,6 +14,7 @@ import {UsersTableComponent} from '../../components/users-table/users-table.comp
 import {PricingStatisticsComponent} from '../../components/pricing-statistics/pricing-statistics.component';
 import {BillingTabComponent} from '../../components/billing-tab/billing-tab.component';
 import {CustomerService} from '../../services/customer.service';
+import {RoleService} from '../../services/role.service';
 import {Api} from '../../api/generated/api';
 import {getApplications} from '../../api/generated/fn/application/get-applications';
 import {ApplicationListResponse, ApplicationResponse, CompanyResponse, CustomerRole} from '../../api/generated/models';
@@ -36,6 +37,7 @@ export class DashboardComponent implements OnInit {
 
   private customerService = inject(CustomerService);
   private router = inject(Router);
+  roleService = inject(RoleService);
   activeTab = signal<DashboardTab>('applications');
   private location = inject(Location);
   showApplicationCreation = signal(false);

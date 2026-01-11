@@ -12,20 +12,24 @@
         type="button">
         Applications
       </button>
-      <button
-        class="dashboard-tab"
-        [class.dashboard-tab--active]="activeTab() === 'users'"
-        (click)="setActiveTab('users')"
-        type="button">
-        Users
-      </button>
-      <button
-        (click)="setActiveTab('billing')"
-        [class.dashboard-tab--active]="activeTab() === 'billing'"
-        class="dashboard-tab"
-        type="button">
-        Billing
-      </button>
+      @if (roleService.canAccessUsersTab()) {
+        <button
+          class="dashboard-tab"
+          [class.dashboard-tab--active]="activeTab() === 'users'"
+          (click)="setActiveTab('users')"
+          type="button">
+          Users
+        </button>
+      }
+      @if (roleService.canAccessBillingTab()) {
+        <button
+          (click)="setActiveTab('billing')"
+          [class.dashboard-tab--active]="activeTab() === 'billing'"
+          class="dashboard-tab"
+          type="button">
+          Billing
+        </button>
+      }
     </div>
   }
 
@@ -34,7 +38,9 @@
       @if (activeTab() === 'applications') {
         <h2 class="section-title">Applications of {{ companyName() }}:</h2>
         <div class="app-cards">
-          <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
+          @if (roleService.canCreateApplications()) {
+            <app-card [isAddCard]="true" (cardClick)="onAddApplicationClick()"/>
+          }
           @for (app of applications(); track app.id) {
             <app-card [name]="app.name" [application]="app" (applicationClick)="onApplicationClick($event)"/>
           }
@@ -49,6 +55,7 @@
       } @else if (activeTab() === 'users') {
         <h2 class="section-title">Users of {{ companyName() }}:</h2>
         <app-users-table
+          [readOnly]="!roleService.canManageUsers()"
           (addUserClick)="onAddUserClick()"
           (editUserClick)="onEditUserClick($event)"/>
       } @else if (activeTab() === 'billing') {

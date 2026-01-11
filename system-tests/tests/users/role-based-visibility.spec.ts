@@ -6,6 +6,7 @@ import {
     createInvite,
     loginUser,
     navigateToUsersTab,
+    openApplication,
     registerUser,
     uniqueEmail
 } from '../../utils';
@@ -80,19 +81,22 @@ test.describe('Role-Based UI Visibility', () => {
         // Verify admin sees cost breakdown
         await expect(adminPage.locator('.costs-overview')).toBeVisible();
 
-        // Invite a Viewer
+        // Invite a Viewer (with access to the application so they can see something on dashboard)
         await navigateToUsersTab(adminPage);
-        const inviteUrl = await createInvite(adminPage, viewerEmail, 'Viewer');
+        const inviteUrl = await createInvite(adminPage, viewerEmail, 'Viewer', {grantAccessToApps: [appName]});
 
         // Viewer completes registration
         const viewerPage = await browser.newPage();
         await completeInviteRegistration(viewerPage, inviteUrl, 'Viewer', 'User');
         await loginUser(viewerPage, viewerEmail);
 
-        // Wait for dashboard content
-        await expect(viewerPage.locator('.app-cards')).toBeVisible();
+        // Wait for dashboard to fully load
+        await viewerPage.waitForLoadState('networkidle');
 
-        // Viewer should NOT see cost breakdown
+        // Viewer should see the application (since they have access)
+        await expect(viewerPage.locator('.app-card').filter({hasText: appName})).toBeVisible();
+
+        // Viewer should NOT see cost breakdown (Admin only)
         await expect(viewerPage.locator('.costs-overview')).not.toBeVisible();
         await expect(viewerPage.getByText('Monthly Cost Breakdown')).not.toBeVisible();
 
@@ -134,5 +138,84 @@ test.describe('Role-Based UI Visibility', () => {
 
         await admin1Page.close();
         await admin2Page.close();
+    });
+
+    test('Admin sees environment management buttons, Developer does not', async ({browser}) => {
+        const adminEmail = uniqueEmail('admin');
+        const devEmail = uniqueEmail('dev');
+        const companyName = 'Test Corp';
+        const appName = 'Test Application';
+
+        // Setup admin with company and application
+        const adminPage = await browser.newPage();
+        await registerUser(adminPage, adminEmail, 'Admin', 'User');
+        await loginUser(adminPage, adminEmail);
+        await createCompany(adminPage, companyName);
+        await createApplication(adminPage, appName);
+
+        // Navigate to application page
+        await openApplication(adminPage, appName);
+
+        // Admin should see environment management buttons
+        await expect(adminPage.locator('.add-env-btn')).toBeVisible();
+        await expect(adminPage.locator('.edit-env-btn')).toBeVisible();
+        await expect(adminPage.locator('.delete-env-btn')).toBeVisible();
+
+        // Go back to dashboard to invite a Developer user
+        await adminPage.goto('/dashboard');
+        await navigateToUsersTab(adminPage);
+        const inviteUrl = await createInvite(adminPage, devEmail, 'Developer', {grantAccessToApps: [appName]});
+
+        // Developer completes registration
+        const devPage = await browser.newPage();
+        await completeInviteRegistration(devPage, inviteUrl, 'Dev', 'User');
+        await loginUser(devPage, devEmail);
+
+        // Navigate to application page
+        await openApplication(devPage, appName);
+
+        // Developer should see the environment selector but NOT management buttons
+        await expect(devPage.locator('.selector-button')).toBeVisible();
+        await expect(devPage.locator('.add-env-btn')).not.toBeVisible();
+        await expect(devPage.locator('.edit-env-btn')).not.toBeVisible();
+        await expect(devPage.locator('.delete-env-btn')).not.toBeVisible();
+
+        await adminPage.close();
+        await devPage.close();
+    });
+
+    test('Viewer does not see environment management buttons', async ({browser}) => {
+        const adminEmail = uniqueEmail('admin');
+        const viewerEmail = uniqueEmail('viewer');
+        const companyName = 'Test Corp';
+        const appName = 'Test Application';
+
+        // Setup admin with company and application
+        const adminPage = await browser.newPage();
+        await registerUser(adminPage, adminEmail, 'Admin', 'User');
+        await loginUser(adminPage, adminEmail);
+        await createCompany(adminPage, companyName);
+        await createApplication(adminPage, appName);
+
+        // Invite a Viewer user
+        await navigateToUsersTab(adminPage);
+        const inviteUrl = await createInvite(adminPage, viewerEmail, 'Viewer', {grantAccessToApps: [appName]});
+
+        // Viewer completes registration
+        const viewerPage = await browser.newPage();
+        await completeInviteRegistration(viewerPage, inviteUrl, 'Viewer', 'User');
+        await loginUser(viewerPage, viewerEmail);
+
+        // Navigate to application page
+        await openApplication(viewerPage, appName);
+
+        // Viewer should see the environment selector but NOT management buttons
+        await expect(viewerPage.locator('.selector-button')).toBeVisible();
+        await expect(viewerPage.locator('.add-env-btn')).not.toBeVisible();
+        await expect(viewerPage.locator('.edit-env-btn')).not.toBeVisible();
+        await expect(viewerPage.locator('.delete-env-btn')).not.toBeVisible();
+
+        await adminPage.close();
+        await viewerPage.close();
     });
 });

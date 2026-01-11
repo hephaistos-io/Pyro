@@ -212,8 +212,8 @@
                       <code class="stat__code">{{ environmentIdentifier() }}</code>
                     </div>
 
-                    <!-- API Keys Component -->
-                    @if (application()?.id && selectedEnvironment()?.id) {
+                    <!-- API Keys Component (Dev and Admin only) -->
+                    @if (roleService.canViewApiKeys() && application()?.id && selectedEnvironment()?.id) {
                       <app-api-keys-card
                         [applicationId]="application()!.id!"
                         [environmentId]="selectedEnvironment()!.id!">
@@ -223,68 +223,72 @@
                 }
               </div>
 
-              <!-- Rate Limit Card (Admin only) -->
-              <div *hasRole="CustomerRole.Admin" class="overview-card rate-limit-card">
-                <div class="overview-card__header">
-                  <h3 class="overview-card__title">Rate Limit</h3>
-                  @if (hasTierChanged()) {
-                    <button
-                      (click)="confirmTierChange()"
-                      class="add-to-cart-btn"
-                      title="Add tier change to cart ({{ priceDifference() >= 0 ? '+' : '' }}{{ priceDifference() / 100 | currency:'USD':'symbol':'1.0-0' }}/mo)">
-                      <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                           stroke-width="2"
-                           viewBox="0 0 24 24" width="18">
-                        <path d="M5 12h14M12 5l7 7-7 7"/>
-                      </svg>
-                      <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                           stroke-width="2"
-                           viewBox="0 0 24 24" width="16">
-                        <path
-                          d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
-                      </svg>
-                    </button>
-                  }
-                </div>
-                <div class="overview-card__content">
-                  <div class="tier-slider-wrapper">
-                    <div class="tier-slider">
-                      <div class="tier-slider__track tier-slider__track--five">
-                        <input
-                          (input)="onRateLimitTierSliderChange($event)"
-                          [max]="rateLimitTiers().length - 1"
-                          [value]="selectedRateLimitTierIndex()"
-                          aria-label="Select rate limit tier"
-                          class="tier-slider__input"
-                          min="0"
-                          type="range">
-                        <div class="tier-slider__labels tier-slider__labels--five">
-                          @for (tier of rateLimitTiers(); track tier.id; let i = $index) {
-                            <button
-                              (click)="selectedRateLimitTierIndex.set(i)"
-                              [class.tier-slider__tick--active]="i === selectedRateLimitTierIndex()"
-                              class="tier-slider__tick">
-                              {{ tier.name }}
-                            </button>
-                          }
+              <!-- Rate Limit Card (Dev and Admin) -->
+              @if (roleService.isAtLeastDev()) {
+                <div class="overview-card rate-limit-card">
+                  <div class="overview-card__header">
+                    <h3 class="overview-card__title">Rate Limit</h3>
+                    @if (roleService.canChangeTier() && hasTierChanged()) {
+                      <button
+                        (click)="confirmTierChange()"
+                        class="add-to-cart-btn"
+                        title="Add tier change to cart ({{ priceDifference() >= 0 ? '+' : '' }}{{ priceDifference() / 100 | currency:'USD':'symbol':'1.0-0' }}/mo)">
+                        <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2"
+                             viewBox="0 0 24 24" width="18">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                        <svg fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                             stroke-width="2"
+                             viewBox="0 0 24 24" width="16">
+                          <path
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                  <div class="overview-card__content">
+                    <div class="tier-slider-wrapper">
+                      <div class="tier-slider" [class.tier-slider--disabled]="!roleService.canChangeTier()">
+                        <div class="tier-slider__track tier-slider__track--five">
+                          <input
+                            (input)="onRateLimitTierSliderChange($event)"
+                            [max]="rateLimitTiers().length - 1"
+                            [value]="selectedRateLimitTierIndex()"
+                            [disabled]="!roleService.canChangeTier()"
+                            aria-label="Select rate limit tier"
+                            class="tier-slider__input"
+                            min="0"
+                            type="range">
+                          <div class="tier-slider__labels tier-slider__labels--five">
+                            @for (tier of rateLimitTiers(); track tier.id; let i = $index) {
+                              <button
+                                (click)="roleService.canChangeTier() && selectedRateLimitTierIndex.set(i)"
+                                [class.tier-slider__tick--active]="i === selectedRateLimitTierIndex()"
+                                [disabled]="!roleService.canChangeTier()"
+                                class="tier-slider__tick">
+                                {{ tier.name }}
+                              </button>
+                            }
+                          </div>
                         </div>
-                      </div>
-                      <div class="tier-display">
-                        <div class="tier-display__main">
-                          <span
-                            class="tier-display__limit-value">{{ formatRateLimit(currentRateLimitTier().rateLimit) }}</span>
-                          <span class="tier-display__limit-label">req/sec</span>
-                        </div>
-                        <div class="tier-display__details">
-                          <span class="tier-display__price">{{ currentRateLimitTier().price }}<span
-                            class="tier-display__period">/env/mo</span></span>
-                          <span class="tier-display__requests">{{ currentRateLimitTier().requestsPerMonth }}</span>
+                        <div class="tier-display">
+                          <div class="tier-display__main">
+                            <span
+                              class="tier-display__limit-value">{{ formatRateLimit(currentRateLimitTier().rateLimit) }}</span>
+                            <span class="tier-display__limit-label">req/sec</span>
+                          </div>
+                          <div class="tier-display__details">
+                            <span class="tier-display__price">{{ currentRateLimitTier().price }}<span
+                              class="tier-display__period">/env/mo</span></span>
+                            <span class="tier-display__requests">{{ currentRateLimitTier().requestsPerMonth }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              }
             </div>
 
             <!-- Right Column: Usage Overview -->

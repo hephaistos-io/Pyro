@@ -10,6 +10,7 @@ import {
   TemplateValuesResponse
 } from '../../api/generated/models';
 import {TemplateService} from '../../services/template.service';
+import {RoleService} from '../../services/role.service';
 import {OverlayService} from '../../services/overlay.service';
 import {
   CopyOverridesOverlayComponent,
@@ -161,6 +162,7 @@ export class OverrideManagerComponent {
     this.editError.set(error);
   }
   private overlayService = inject(OverlayService);
+  roleService = inject(RoleService);
 
   tryToSaveMatrixCellEdit(): void {
     if (this.editError()) {

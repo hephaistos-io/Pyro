@@ -1,4 +1,4 @@
-import {Component, computed, inject, OnInit, output, signal} from '@angular/core';
+import {Component, computed, inject, input, OnInit, output, signal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {User, UsersService} from '../../services/users.service';
@@ -17,6 +17,8 @@ import {getRelativeTime} from '../../utils/time.util';
   styleUrl: './users-table.component.scss'
 })
 export class UsersTableComponent implements OnInit {
+  /** When true, hides action buttons (invite, edit, delete). Dev users can see users but not manage them. */
+  readOnly = input(false);
   searchQuery = signal('');
   addUserClick = output<void>();
   editUserClick = output<User>();

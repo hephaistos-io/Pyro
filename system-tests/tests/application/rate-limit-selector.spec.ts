@@ -80,13 +80,17 @@ test.describe('Rate Limit Selector Visibility', () => {
         await expect(devPage.getByRole('heading', {name: 'API Attributes'})).toBeVisible();
 
         // ============================================
-        // Step 6: Verify Developer does NOT see Rate Limit section
+        // Step 6: Verify Developer sees Rate Limit section but cannot change it
         // ============================================
-        // The Rate Limit section should NOT be visible (admin-only)
-        await expect(devPage.getByText('Rate Limit', {exact: true})).not.toBeVisible();
-        await expect(devPage.getByRole('slider', {name: 'Select rate limit tier'})).not.toBeVisible();
+        // The Rate Limit section IS visible for developers (they can see tier info)
+        await expect(devPage.getByText('Rate Limit', {exact: true})).toBeVisible();
 
-        // But they should still see other API Attributes content (like Identifier)
+        // But the slider should be disabled (developer cannot change tier)
+        const slider = devPage.getByRole('slider', {name: 'Select rate limit tier'});
+        await expect(slider).toBeVisible();
+        await expect(slider).toBeDisabled();
+
+        // They should still see other API Attributes content (like Identifier)
         await expect(devPage.getByText('Identifier')).toBeVisible();
 
         await adminPage.close();
