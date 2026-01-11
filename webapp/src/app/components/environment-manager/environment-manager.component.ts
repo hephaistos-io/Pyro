@@ -1,11 +1,12 @@
 import {Component, computed, effect, inject, input, model, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {CustomerRole, EnvironmentResponse} from '../../api/generated/models';
+import {EnvironmentResponse} from '../../api/generated/models';
 import {Api} from '../../api/generated/api';
 import {createEnvironment} from '../../api/generated/fn/environments/create-environment';
 import {deleteEnvironment} from '../../api/generated/fn/environments/delete-environment';
 import {updateEnvironment} from '../../api/generated/fn/environments/update-environment';
 import {OverlayService} from '../../services/overlay.service';
+import {RoleService} from '../../services/role.service';
 import {PricingStateService, PricingTier, TIER_PRICES} from '../../services/pricing-state.service';
 import {
   EnvironmentCreationOverlayComponent,
@@ -15,12 +16,11 @@ import {
   DeleteFieldOverlayComponent,
   DeleteFieldOverlayData
 } from '../delete-field-overlay/delete-field-overlay.component';
-import {HasRoleDirective} from '../../directives/has-role.directive';
 
 @Component({
   selector: 'app-environment-manager',
   standalone: true,
-  imports: [FormsModule, HasRoleDirective],
+  imports: [FormsModule],
   templateUrl: './environment-manager.component.html',
   styleUrl: './environment-manager.component.scss'
 })
@@ -34,7 +34,6 @@ export class EnvironmentManagerComponent {
   selectedEnvironment = model.required<EnvironmentResponse | null>();
   // Outputs
   environmentCreated = output<EnvironmentResponse>();
-  protected readonly CustomerRole = CustomerRole;
   environmentDeleted = output<string>(); // environmentId
   // Environment dropdown state
   showEnvironmentDropdown = signal(false);
@@ -56,6 +55,7 @@ export class EnvironmentManagerComponent {
   private api = inject(Api);
   private overlayService = inject(OverlayService);
   private pricingState = inject(PricingStateService);
+  roleService = inject(RoleService);
 
   constructor() {
     // Auto-select first environment when environments change

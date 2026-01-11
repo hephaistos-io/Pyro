@@ -311,7 +311,23 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
     class RoleBasedAccessControl {
 
         @Test
-        void devRoleCanCreateEnvironment() {
+        void adminRoleCanCreateEnvironment() {
+            // Setup: Admin creates company and application
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            // Admin should be able to create environment
+            var response = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            assertThat(response.getBody().name()).isEqualTo("Staging");
+        }
+
+        @Test
+        void devRoleCannotCreateEnvironment() {
             // Setup: Admin creates company and application
             String adminToken = registerAndAuthenticateWithCompany();
             adminToken = authenticate();
@@ -321,13 +337,12 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
             String devToken =
                     createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
 
-            // DEV should be able to create environment
+            // DEV should NOT be able to create environment (admin only)
             var response = post("/v1/applications/" + applicationId + "/environments",
                     new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
-                    devToken, EnvironmentResponse.class);
+                    devToken, String.class);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-            assertThat(response.getBody().name()).isEqualTo("Staging");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
 
         @Test
@@ -351,7 +366,29 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         }
 
         @Test
-        void devRoleCanUpdateEnvironment() {
+        void adminRoleCanUpdateEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Admin should be able to update environment
+            var response =
+                    put("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            new EnvironmentUpdateRequest("Updated Staging", "Updated desc"),
+                            adminToken, EnvironmentResponse.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody().name()).isEqualTo("Updated Staging");
+        }
+
+        @Test
+        void devRoleCannotUpdateEnvironment() {
             // Setup: Admin creates company, application and environment
             String adminToken = registerAndAuthenticateWithCompany();
             adminToken = authenticate();
@@ -366,14 +403,13 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
             String devToken =
                     createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
 
-            // DEV should be able to update environment
+            // DEV should NOT be able to update environment (admin only)
             var response =
                     put("/v1/applications/" + applicationId + "/environments/" + environmentId,
                             new EnvironmentUpdateRequest("Updated Staging", "Updated desc"),
-                            devToken, EnvironmentResponse.class);
+                            devToken, String.class);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            assertThat(response.getBody().name()).isEqualTo("Updated Staging");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
 
         @Test
@@ -403,7 +439,27 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
         }
 
         @Test
-        void devRoleCanDeleteEnvironment() {
+        void adminRoleCanDeleteEnvironment() {
+            // Setup: Admin creates company, application and environment
+            String adminToken = registerAndAuthenticateWithCompany();
+            adminToken = authenticate();
+            UUID applicationId = createApplication(adminToken, "Test App");
+
+            var createResponse = post("/v1/applications/" + applicationId + "/environments",
+                    new EnvironmentCreationRequest("Staging", "Staging env", PricingTier.BASIC),
+                    adminToken, EnvironmentResponse.class);
+            UUID environmentId = createResponse.getBody().id();
+
+            // Admin should be able to delete environment
+            var response =
+                    delete("/v1/applications/" + applicationId + "/environments/" + environmentId,
+                            adminToken, Void.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        }
+
+        @Test
+        void devRoleCannotDeleteEnvironment() {
             // Setup: Admin creates company, application and environment
             String adminToken = registerAndAuthenticateWithCompany();
             adminToken = authenticate();
@@ -418,12 +474,12 @@ class EnvironmentControllerIntegrationTest extends IntegrationTestSupport {
             String devToken =
                     createUserWithRoleAndAppAccess(adminToken, CustomerRole.DEV, applicationId);
 
-            // DEV should be able to delete environment
+            // DEV should NOT be able to delete environment (admin only)
             var response =
                     delete("/v1/applications/" + applicationId + "/environments/" + environmentId,
-                            devToken, Void.class);
+                            devToken, String.class);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
 
         @Test

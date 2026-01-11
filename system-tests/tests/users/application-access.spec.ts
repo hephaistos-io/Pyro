@@ -294,11 +294,14 @@ test.describe('Application Access Management', () => {
         await completeInviteRegistration(viewerPage, inviteUrl, 'Viewer', 'User');
         await loginUser(viewerPage, viewerEmail);
 
-        // Verify viewer sees no applications
-        await expect(viewerPage.locator('.app-cards')).toBeVisible();
-        await expect(viewerPage.locator('.app-card').filter({hasText: appName})).not.toBeVisible();
+        // Wait for the dashboard to fully load
+        await viewerPage.waitForLoadState('networkidle');
 
-        // Viewer should not see any application cards (only actual apps, not the add button)
+        // Verify viewer sees no applications (the app-cards container might be empty or the specific app not visible)
+        // ReadOnly users (Viewers) don't see the Add Application button
+        await expect(viewerPage.locator('.app-card').filter({hasText: appName})).not.toBeVisible({timeout: 5000});
+
+        // Viewer should not see any application cards
         const actualAppCards = await viewerPage.locator('.app-card:not(.app-card--add)').count();
         expect(actualAppCards).toBe(0);
 

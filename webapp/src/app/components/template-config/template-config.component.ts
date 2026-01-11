@@ -2,6 +2,7 @@ import {Component, computed, inject, input, model, output, signal} from '@angula
 import {FormsModule} from '@angular/forms';
 import {TemplateField, TemplateResponse, TemplateType} from '../../api/generated/models';
 import {TemplateService} from '../../services/template.service';
+import {RoleService} from '../../services/role.service';
 import {OverlayService} from '../../services/overlay.service';
 import {FieldOverlayComponent, FieldOverlayData} from '../field-overlay/field-overlay.component';
 import {
@@ -45,6 +46,7 @@ export class TemplateConfigComponent {
   });
   private overlayService = inject(OverlayService);
   private templateService = inject(TemplateService);
+  roleService = inject(RoleService);
   // Filtered system template fields
   filteredSystemTemplateFields = computed<TemplateField[]>(() => {
     const fields = this.systemTemplateFields();

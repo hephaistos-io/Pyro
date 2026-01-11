@@ -3,7 +3,6 @@ import {Router} from '@angular/router';
 import {
   ApplicationResponse,
   BooleanTemplateField,
-  CustomerRole,
   EnumTemplateField,
   EnvironmentResponse,
   NumberTemplateField,
@@ -18,13 +17,13 @@ import {getApplicationStatistics} from '../../api/generated/fn/application/get-a
 import {CurrencyPipe} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {TemplateService} from '../../services/template.service';
+import {RoleService} from '../../services/role.service';
 import {PricingStateService, PricingTier, TIER_PRICES} from '../../services/pricing-state.service';
 import {ApiKeysCardComponent} from '../../components/api-keys-card/api-keys-card.component';
 import {EnvironmentManagerComponent} from '../../components/environment-manager/environment-manager.component';
 import {UsageStatsCardComponent} from '../../components/usage-stats-card/usage-stats-card.component';
 import {TemplateConfigComponent} from '../../components/template-config/template-config.component';
 import {OverrideManagerComponent} from '../../components/override-manager/override-manager.component';
-import {HasRoleDirective} from '../../directives/has-role.directive';
 
 interface RateLimitTier {
     id: string;
@@ -38,7 +37,7 @@ interface RateLimitTier {
 @Component({
     selector: 'app-application-overview',
   standalone: true,
-  imports: [FormsModule, CurrencyPipe, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent, HasRoleDirective],
+  imports: [FormsModule, CurrencyPipe, ApiKeysCardComponent, EnvironmentManagerComponent, UsageStatsCardComponent, TemplateConfigComponent, OverrideManagerComponent],
     templateUrl: './application-overview.html',
     styleUrl: './application-overview.scss',
 })
@@ -98,9 +97,7 @@ export class ApplicationOverview implements OnInit {
   });
 
   private pricingState = inject(PricingStateService);
-
-  // Expose CustomerRole for template
-  readonly CustomerRole = CustomerRole;
+  roleService = inject(RoleService);
     // Pricing breakdown per environment (simplified since we don't have stats from API yet)
     pricingBreakdown = computed(() => {
         const envs = this.environments();
