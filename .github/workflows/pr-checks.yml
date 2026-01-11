@@ -123,15 +123,40 @@ jobs:
       - name: Build Webapp
         run: ./gradlew webapp:webappBuild
 
+  # Webapp unit tests: run after build passes
+  webapp-tests:
+    name: Webapp Unit Tests
+    needs: [ changes, webapp-build ]
+    if: needs.changes.outputs.webapp == 'true' && needs.webapp-build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Install dependencies
+        working-directory: webapp
+        run: npm ci
+
+      - name: Run Unit Tests
+        working-directory: webapp
+        run: npm test
+
   # System tests: run only if all previous jobs passed
   system-tests:
     name: System Tests
-    needs: [ changes, backend-tests, webapp-build ]
+    needs: [ changes, backend-tests, webapp-build, webapp-tests ]
     if: |
       always() &&
       (needs.changes.outputs.backend == 'true' || needs.changes.outputs.webapp == 'true') &&
       (needs.backend-tests.result == 'success' || needs.backend-tests.result == 'skipped') &&
-      (needs.webapp-build.result == 'success' || needs.webapp-build.result == 'skipped')
+      (needs.webapp-build.result == 'success' || needs.webapp-build.result == 'skipped') &&
+      (needs.webapp-tests.result == 'success' || needs.webapp-tests.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -182,7 +207,7 @@ jobs:
   # Final status check - required for branch protection
   status:
     name: PR Status
-    needs: [ backend-tests, webapp-build, system-tests ]
+    needs: [ backend-tests, webapp-build, webapp-tests, system-tests ]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -195,6 +220,11 @@ jobs:
 
           if [[ "${{ needs.webapp-build.result }}" == "failure" ]]; then
             echo "Webapp build failed"
+            exit 1
+          fi
+
+          if [[ "${{ needs.webapp-tests.result }}" == "failure" ]]; then
+            echo "Webapp unit tests failed"
             exit 1
           fi
 
